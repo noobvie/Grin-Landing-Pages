@@ -1,0 +1,32 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# custom_repo.conf — Git deploy configuration for site_manager.sh
+#
+# Usage:
+#   cp deploy/custom_repo.conf.example deploy/custom_repo.conf
+#   # Edit this file, then run:
+#   sudo ./deploy/site_manager.sh --action deploy --deploy-mode git
+#
+# Each site in web/<site-name>/ can have its own repo + branch.
+# To deploy a different branch (e.g. for staging/testing):
+#   just change GIT_BRANCH below and re-run deploy.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Site to deploy ────────────────────────────────────────────────────────────
+# Must match a subdirectory under web/ in this repo (e.g. "grin-money")
+SITE_NAME="grin-money"
+
+# ── Git repository ────────────────────────────────────────────────────────────
+GIT_REPO="https://github.com/youruser/Grin-Landing-Page.git"
+
+# ── Branch to deploy ─────────────────────────────────────────────────────────
+# Change to "staging", "dev", or any branch name for testing
+GIT_BRANCH="main"
+
+# ── Remote web root on the server ─────────────────────────────────────────────
+# The script will deploy web/<SITE_NAME>/ from the repo into this directory.
+# Leave empty to use the nginx configured root for the domain.
+DEPLOY_TARGET_DIR=""
+
+# ── Sparse checkout (optional) ────────────────────────────────────────────────
+# Set to "yes" to only fetch the web/<SITE_NAME>/ subdirectory (saves bandwidth)
+SPARSE_CHECKOUT="yes"
