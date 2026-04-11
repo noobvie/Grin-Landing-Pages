@@ -4,6 +4,12 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Variables ─────────────────────────────────────────────────────────────── */
+/*
+ * Design tokens — single source of truth for colours, sizing, and spacing.
+ * Cyberpunk palette: near-black backgrounds + neon green / cyan / magenta / yellow.
+ * --text-dim / --text / --text-bright form a 3-step readability hierarchy.
+ * All colours are referenced via var() so changing one token propagates everywhere.
+ */
 :root {
   --bg:           #0a0a0a;
   --bg-dark:      #060606;
@@ -25,10 +31,10 @@
   --yellow:       #ffd700;
   --yellow-glow:  rgba(255, 215, 0, 0.15);
 
-  --text:         #888888;
-  --text-bright:  #cccccc;
-  --text-dim:     #444444;
-  --text-code:    #a0a0a0;
+  --text:         #999999;
+  --text-bright:  #dddddd;
+  --text-dim:     #666666;
+  --text-code:    #b0b0b0;
 
   --font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
 
@@ -64,7 +70,7 @@ ul { list-style: none; }
   width: 100%; height: 100%;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.04;
+  opacity: 0.07;
 }
 
 /* ── Layout ──────────────────────────────────────────────────────────────────── */
@@ -106,7 +112,7 @@ ul { list-style: none; }
 
 .section-subtitle {
   color: var(--text);
-  max-width: 640px;
+  max-width: 100%;
   margin-bottom: 3rem;
   font-size: 0.9rem;
 }
@@ -125,10 +131,18 @@ ul { list-style: none; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
-  align-items: start;
+  align-items: stretch; /* both columns grow to the taller side's height */
 }
+/* Make direct children fill the full grid row height */
+.grid-2 > * { height: 100%; }
 
 /* ── Scroll reveal ───────────────────────────────────────────────────────────── */
+/*
+ * Two-state reveal: elements start invisible (opacity:0, shifted 20px down).
+ * JS (IntersectionObserver) adds .visible when an element enters the viewport,
+ * which triggers the CSS transition. The observer calls unobserve() immediately
+ * after — so scrolling back up does not replay the animation a second time.
+ */
 .fade-in {
   opacity: 0;
   transform: translateY(20px);
@@ -140,6 +154,12 @@ ul { list-style: none; }
 }
 
 /* ── Navigation ─────────────────────────────────────────────────────────────── */
+/*
+ * Fixed to the top; backdrop-filter blur creates a frosted-glass depth effect.
+ * Three flex children in .nav-inner: .nav-logo | .nav-block-live | .nav-links.
+ * On mobile (<600px): .nav-links becomes an absolute dropdown activated by
+ * .nav-toggle (hamburger button); .nav-block-live is hidden to free up space.
+ */
 #nav {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -161,6 +181,8 @@ ul { list-style: none; }
 }
 
 .nav-logo {
+  display: flex;
+  align-items: center;
   font-size: 1rem;
   font-weight: 700;
   color: var(--green);
@@ -199,6 +221,14 @@ ul { list-style: none; }
 }
 
 /* ── Terminal window ─────────────────────────────────────────────────────────── */
+/*
+ * Reusable component that imitates a macOS/Linux terminal.
+ * .terminal-bar — top bar with three coloured dots and a title.
+ * .terminal-body — monospaced output area with coloured token spans:
+ *   .prompt  green  "$"    .cmd  bright  command text
+ *   .kw      cyan   key:   .comment  dim  italic inline notes
+ * Used across Protocol, Missions, Talents, and Get Started sections.
+ */
 .terminal-window {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -337,17 +367,6 @@ ul { list-style: none; }
   color: var(--cyan);
   border-color: var(--cyan-dim);
   background: var(--cyan-glow);
-}
-
-.btn-cyan {
-  background: var(--cyan-glow);
-  color: var(--cyan);
-  border-color: var(--cyan-dim);
-}
-.btn-cyan:hover {
-  background: rgba(0, 229, 255, 0.25);
-  color: var(--cyan);
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
 }
 
 .btn-prefix { color: var(--text-dim); }
@@ -561,8 +580,6 @@ ul { list-style: none; }
   padding-bottom: 0.25rem;
 }
 
-.git-hash { color: var(--text-dim); font-size: 0.72rem; min-width: 60px; }
-
 .git-tag {
   padding: 0.1rem 0.5rem;
   border-radius: 3px;
@@ -578,75 +595,8 @@ ul { list-style: none; }
 .git-entry.active .git-msg { color: var(--cyan); }
 .git-entry.origin .git-msg { color: var(--magenta); }
 
-/* ── Toolkit ─────────────────────────────────────────────────────────────────── */
-.toolkit-section {
-  background: linear-gradient(180deg, var(--bg) 0%, rgba(0, 229, 255, 0.02) 50%, var(--bg) 100%);
-}
-
-.toolkit-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 2.5rem;
-}
-
-.toolkit-card {
-  padding: 1.5rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
-  cursor: default;
-}
-.toolkit-card:hover {
-  border-color: var(--cyan-dim);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 229, 255, 0.08);
-}
-
-.tk-number {
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  letter-spacing: 0.1em;
-  margin-bottom: 0.75rem;
-}
-.tk-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-bright);
-  margin-bottom: 0.5rem;
-}
-.tk-desc {
-  font-size: 0.75rem;
-  color: var(--text);
-  line-height: 1.5;
-  margin-bottom: 0.75rem;
-}
-.tk-tag {
-  font-size: 0.65rem;
-  color: var(--cyan-dim);
-  letter-spacing: 0.08em;
-}
-
-.toolkit-cta {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1.25rem 1.5rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  flex-wrap: wrap;
-}
-
-.terminal-inline {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.8rem;
-}
-.cmd-text { color: var(--text-code); }
+/* NOTE: The old Toolkit section was replaced by the Ecosystem grid.
+   All .toolkit-* and .tk-* rules have been removed. */
 
 /* ── Get started ─────────────────────────────────────────────────────────────── */
 .started-grid {
@@ -836,13 +786,6 @@ a.wallet-item:hover {
   z-index: 1;
 }
 
-.footer-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 3rem;
-  margin-bottom: 3rem;
-}
-
 .footer-logo {
   font-size: 1.1rem;
   font-weight: 700;
@@ -857,22 +800,6 @@ a.wallet-item:hover {
   line-height: 1.6;
 }
 
-.footer-heading {
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-}
-
-#footer ul li { margin-bottom: 0.4rem; }
-#footer ul a {
-  color: var(--text);
-  font-size: 0.8rem;
-  transition: color var(--transition);
-}
-#footer ul a:hover { color: var(--green); }
-
 .footer-bottom {
   display: flex;
   justify-content: space-between;
@@ -886,31 +813,575 @@ a.wallet-item:hover {
 .footer-hash { font-variant-numeric: tabular-nums; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────────── */
+/*
+ * Two breakpoints:
+ *   900px (tablet) — 3-column grids collapse to 2-col; prose-heavy grids
+ *                    (process, started) collapse to 1-col for readability.
+ *   600px (mobile) — full mobile layout: nav becomes hamburger dropdown,
+ *                    hero stats stack vertically, all grids go 1-col,
+ *                    clock cursor hidden (touch devices have no pointer),
+ *                    .nav-block-live hidden to give the toggle button room.
+ */
 @media (max-width: 900px) {
-  .grid-2        { grid-template-columns: 1fr; }
-  .process-grid  { grid-template-columns: 1fr; }
-  .toolkit-grid  { grid-template-columns: 1fr 1fr; }
-  .started-grid  { grid-template-columns: 1fr; }
-  .community-grid{ grid-template-columns: 1fr 1fr; }
-  .footer-grid   { grid-template-columns: 1fr 1fr; }
-  .missions-body { grid-template-columns: 1fr; }
-  .mission-item  { border-right: none; }
+  .grid-2              { grid-template-columns: 1fr; }
+  .process-grid        { grid-template-columns: 1fr; }
+  .started-grid        { grid-template-columns: 1fr; }
+  .community-grid      { grid-template-columns: 1fr 1fr; }
+  .community-grid-3    { grid-template-columns: 1fr 1fr; }
+  .missions-body       { grid-template-columns: 1fr; }
+  .mission-item        { border-right: none; }
+  .why-grid            { grid-template-columns: 1fr 1fr; }
+  .eco-grid            { grid-template-columns: 1fr 1fr; }
+  .live-stats-grid     { grid-template-columns: 1fr 1fr; }
+  .hof-cols            { grid-template-columns: 1fr; }
+  .footer-simple       { gap: 2rem; }
 }
 
 @media (max-width: 600px) {
-  .section         { padding: 4rem 0; }
-  .nav-links       { display: none; flex-direction: column; position: absolute; top: 52px; left: 0; right: 0; background: var(--bg-dark); border-bottom: 1px solid var(--border); padding: 1rem; }
-  .nav-links.open  { display: flex; }
-  .nav-toggle      { display: block; }
-  .toolkit-grid    { grid-template-columns: 1fr; }
-  .community-grid  { grid-template-columns: 1fr; }
-  .footer-grid     { grid-template-columns: 1fr 1fr; gap: 2rem; }
-  .hero-stats      { flex-direction: column; gap: 1rem; }
-  .stat-divider    { display: none; }
-  .hero-cta        { flex-direction: column; align-items: center; }
-  .toolkit-cta     { flex-direction: column; align-items: flex-start; }
-  .hof-header, .hof-row { grid-template-columns: 40px 1fr auto; padding: 0.6rem 1rem; }
-  .footer-bottom   { flex-direction: column; gap: 0.5rem; text-align: center; }
+  .section             { padding: 4rem 0; }
+  .slogan-section      { padding: 2.5rem 0; }
+  .nav-links           { display: none; flex-direction: column; position: absolute; top: 52px; left: 0; right: 0; background: var(--bg-dark); border-bottom: 1px solid var(--border); padding: 1rem; }
+  .nav-links.open      { display: flex; }
+  .nav-toggle          { display: block; }
+  .eco-grid            { grid-template-columns: 1fr; }
+  .community-grid      { grid-template-columns: 1fr; }
+  .community-grid-3    { grid-template-columns: 1fr; }
+  .why-grid            { grid-template-columns: 1fr; }
+  .hero-stats          { flex-direction: column; gap: 1rem; }
+  .stat-divider        { display: none; }
+  .hero-cta            { flex-direction: column; align-items: center; }
+  .talents-cta         { flex-direction: column; align-items: flex-start; }
+  .hof-header,
+  .hof-row             { grid-template-columns: 40px 1fr auto; padding: 0.6rem 1rem; }
+  .col-date            { display: none; }
+  .footer-bottom       { flex-direction: column; gap: 0.5rem; text-align: center; }
+  .footer-simple       { flex-direction: column; gap: 2rem; }
+  .footer-noobvie-quote{ border-left: none; border-top: 1px solid var(--border-bright); padding-left: 0; padding-top: 1.5rem; }
+  #clock-cursor { display: none; }
+  .nav-block-live { display: none; }
+  .live-stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Clock cursor ────────────────────────────────────────────────────────────── */
+/*
+ * Hides the native OS cursor and replaces it with a canvas-drawn clock.
+ * Security note: the .js-cursor class is added to <html> by JS on init,
+ * so if JS fails to load the native cursor is never hidden.
+ */
+.js-cursor *, .js-cursor *::before, .js-cursor *::after { cursor: none !important; }
+
+#clock-cursor {
+  position: fixed;
+  pointer-events: none;  /* never blocks clicks */
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: filter 0.15s ease;
+  display: none;         /* hidden until JS initialises it */
+}
+.js-cursor #clock-cursor { display: block; }
+
+#clock-cursor.hover {
+  filter: drop-shadow(0 0 6px var(--cyan));
+}
+
+/* ── Nav block live counter ──────────────────────────────────────────────────── */
+.nav-block-live {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  padding: 0.22rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-block-live span {
+  color: var(--green);
+  font-weight: 500;
+}
+
+/* ── Grin logo — inline left of nav brand text ───────────────────────────────── */
+.nav-hero-logo {
+  height: 30px;
+  width: auto;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 0.4rem;
+  animation: logo-pulse 3.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes logo-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 215, 0, 0.2), 0 0 20px rgba(255, 215, 0, 0.06); }
+  50%       { box-shadow: 0 0 16px rgba(255, 215, 0, 0.5), 0 0 36px rgba(255, 215, 0, 0.18); }
+}
+
+/* ── Tag yellow ──────────────────────────────────────────────────────────────── */
+.tag-yellow { background: var(--yellow-glow); color: var(--yellow); border: 1px solid rgba(255,215,0,0.4); }
+
+/* ── Terminal link ───────────────────────────────────────────────────────────── */
+.term-link {
+  color: var(--cyan);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--cyan-dim);
+  transition: color var(--transition), border-color var(--transition);
+}
+.term-link:hover { color: var(--green); border-color: var(--green-dim); }
+
+/* ── Founder quote / slogan ──────────────────────────────────────────────────── */
+.slogan-section {
+  padding: 3.5rem 0;
+  background: var(--bg-dark);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+
+.founder-quote {
+  max-width: 760px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 0 1rem;
+}
+.quote-mark {
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--green);
+  opacity: 0.35;
+  font-family: Georgia, serif;
+  margin-bottom: -1rem;
+}
+.quote-text {
+  font-size: clamp(0.88rem, 1.8vw, 1.05rem);
+  color: var(--text-bright);
+  font-style: italic;
+  line-height: 1.8;
+  margin-bottom: 1.25rem;
+  font-weight: 300;
+}
+.quote-author {
+  font-size: 0.75rem;
+  color: var(--green);
+  letter-spacing: 0.1em;
+}
+
+/* ── Why Grin ────────────────────────────────────────────────────────────────── */
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.why-card {
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+.why-card:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 255, 65, 0.05);
+}
+.why-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+.why-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+.why-desc {
+  font-size: 0.76rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ── Talents ─────────────────────────────────────────────────────────────────── */
+.talents-terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+.talents-cta {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
+}
+.talents-cta-text {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+/* ── Ecosystem grid ──────────────────────────────────────────────────────────── */
+/*
+ * Two card variants share the same base .eco-card shell:
+ *   <a class="eco-card">       — single-link card; entire surface is clickable.
+ *                                Hover lifts (+translateY) and glows cyan.
+ *   <div class="eco-card eco-card-multi"> — multi-link card; card itself is not
+ *                                clickable (cursor:default, no lift) — each child
+ *                                .eco-sublink handles its own hover state instead.
+ */
+.eco-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.eco-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.4rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  cursor: pointer;
+}
+.eco-card:hover {
+  border-color: var(--cyan-dim);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 229, 255, 0.08);
+  color: var(--text);
+}
+.eco-card-multi { cursor: default; }
+.eco-card-multi:hover { transform: none; }
+
+.eco-number {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  margin-bottom: 0.6rem;
+}
+.eco-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 0.4rem;
+}
+.eco-desc {
+  font-size: 0.75rem;
+  color: var(--text);
+  line-height: 1.5;
+  flex: 1;
+  margin-bottom: 0.75rem;
+}
+.eco-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+.eco-tag {
+  font-size: 0.62rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
+  background: rgba(0,229,255,0.06);
+  color: var(--cyan-dim);
+  border: 1px solid rgba(0,229,255,0.15);
+  letter-spacing: 0.05em;
+}
+.eco-tag-recommended {
+  background: var(--green-glow);
+  color: var(--green);
+  border-color: var(--green-dim);
+}
+.eco-url {
+  font-size: 0.68rem;
+  color: var(--cyan-dim);
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+.eco-card:hover .eco-url { color: var(--cyan); }
+
+.eco-multi-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.eco-sublink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  color: var(--text);
+  background: rgba(255,255,255,0.02);
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: all var(--transition);
+}
+.eco-sublink:hover { color: var(--green); border-color: var(--green-dim); background: var(--green-glow); }
+.eco-sublink-name { flex: 1; }
+.eco-badge {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 500;
+}
+.eco-badge-green { background: var(--green-glow); color: var(--green); border: 1px solid var(--green-dim); }
+.eco-badge-dim   { background: rgba(255,255,255,0.03); color: var(--text-dim); border: 1px solid var(--border); }
+.eco-sublink-sm {
+  font-size: 0.73rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* ── Global stats — live API cards ───────────────────────────────────────────── */
+/*
+ * Six cards in a 3×2 grid; each is populated by initGlobalStats() in main.js
+ * via three parallel fetches to the world.grin.money public REST API.
+ * Colour-modifier classes (.ls-green / .ls-cyan / .ls-yellow) only set the
+ * .ls-value colour — the card layout itself is identical for all six cards.
+ * .ls-change.up / .ls-change.down colour the 24 h price-delta directionally.
+ * .stats-footer-links sits below the grid with a live timestamp and source link.
+ */
+.live-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.live-stat-card {
+  padding: 1.5rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.live-stat-card:hover { border-color: var(--border-bright); }
+
+.ls-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+}
+.ls-value {
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--text-bright);
+}
+.ls-unit {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ls-change {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.ls-change.up   { color: var(--green); }
+.ls-change.down { color: var(--magenta); }
+
+.ls-green  .ls-value { color: var(--green); }
+.ls-cyan   .ls-value { color: var(--cyan); }
+.ls-yellow .ls-value { color: var(--yellow); }
+
+.stats-footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  padding: 0 0.25rem;
+}
+.stats-footer-links a {
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.stats-footer-links a:hover { color: var(--green); }
+.stats-updated { font-size: 0.65rem; color: var(--text-dim); }
+
+/* ── HoF — two-column layout ────────────────────────────────────────────────── */
+/*
+ * .hof-cols: 2-col grid — donors (left) vs contributors (right).
+ * Each column has a .hof-col-label, then a .hof-terminal card.
+ * .hof-col overrides .hof-terminal's standalone max-width so both columns
+ * share equal width inside the grid.
+ */
+.hof-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: stretch; /* both columns grow to the taller side's height */
+}
+.hof-col {
+  display: flex;
+  flex-direction: column;
+}
+.hof-col-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  margin-bottom: 0.5rem;
+}
+/* Remove standalone centering; stretch terminal to fill the column */
+.hof-col .hof-terminal {
+  max-width: none;
+  margin: 0;
+  flex: 1; /* fills remaining height so both terminals are equal */
+}
+
+/* Donors column: 4-col header/row grid (rank / name / year / amount) */
+.hof-header,
+.hof-row {
+  grid-template-columns: 50px 1fr 60px auto;
+}
+.col-date {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+}
+
+/* Coders leaderboard (top 10): 3-col grid (rank / name / commits) */
+.hof-coder-header,
+.hof-coder-row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 1rem;
+  padding: 0.55rem 1.5rem;
+  font-size: 0.8rem;
+}
+.hof-coder-header {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.hof-coder-row {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+.hof-coder-row:hover { background: rgba(255, 255, 255, 0.02); }
+
+/* Compact name-tag cloud for contributors #11–50 */
+.hof-contrib-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+/* Default tag: faint grey — GitHub code contributors */
+.hof-contrib-tag {
+  font-size: 0.67rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+/* Cyan tint — forum & community volunteer tags */
+.hof-tag-forum {
+  background: var(--cyan-glow);
+  color: var(--cyan-dim);
+  border-color: rgba(0, 229, 255, 0.2);
+}
+/* Dim italic — "+ many anonymous volunteers" note */
+.hof-tag-dim {
+  font-style: italic;
+  color: var(--text-dim);
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Full-width forum panel that sits below the 2-col grid */
+.hof-forum-panel {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.hof-forum-panel .hof-col-label { margin-bottom: 0.75rem; }
+.hof-forum-panel .hof-contrib-tags {
+  border-top: none;
+  padding: 0;
+}
+
+/* Shared footer row used in both terminals */
+.hof-footer-row {
+  padding: 0.7rem 1.5rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+.hof-more-link {
+  font-size: 0.74rem;
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.hof-more-link:hover { color: var(--green); }
+
+/* ── Community grid — 3 up ───────────────────────────────────────────────────── */
+.community-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── Footer — simplified ─────────────────────────────────────────────────────── */
+/*
+ * Two flex children side by side: .footer-brand (logo + tagline) on the left,
+ * .footer-noobvie-quote (pull-quote) on the right, separated by a left border.
+ * At 600px the flex wraps to a column and the left border becomes a top border.
+ */
+.footer-simple {
+  display: flex;
+  align-items: flex-start;
+  gap: 4rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+.footer-brand { flex: 0 0 auto; }
+.footer-noobvie-quote {
+  flex: 1;
+  border-left: 2px solid var(--border-bright);
+  padding-left: 2rem;
+}
+.footer-quote-mark {
+  font-size: 2.5rem;
+  line-height: 1;
+  color: var(--green);
+  opacity: 0.3;
+  font-family: Georgia, serif;
+  margin-bottom: -0.5rem;
+}
+.footer-quote-text {
+  font-size: 0.82rem;
+  color: var(--text);
+  font-style: italic;
+  line-height: 1.7;
+  margin-bottom: 0.6rem;
+}
+.footer-quote-author {
+  font-size: 0.72rem;
+  color: var(--green);
+  letter-spacing: 0.08em;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────────── */

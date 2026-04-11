@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GRIN — Privacy Cryptocurrency | Mimblewimble Protocol</title>
-  <meta name="description" content="Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol. No ICO, no premine, no foundation. Confidential transactions, linear emission, fair for all since January 2019." />
-  <meta name="keywords" content="Grin, GRIN, Mimblewimble, privacy cryptocurrency, confidential transactions, no premine, no ICO, MimbleWimble, electronic cash, Grin mining, Grin wallet" />
+  <meta name="description" content="Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol. Time-backed fair emission, confidential transactions, no premine, open-source since January 2019." />
+  <meta name="keywords" content="Grin, GRIN, Mimblewimble, privacy cryptocurrency, confidential transactions, time-backed, fair launch, MimbleWimble, electronic cash, Grin mining, Grin wallet" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://grin.money/" />
   <meta name="theme-color" content="#0a0a0a" />
@@ -15,13 +15,13 @@
   <meta property="og:url"         content="https://grin.money/" />
   <meta property="og:site_name"   content="Grin" />
   <meta property="og:title"       content="GRIN — Privacy Cryptocurrency | Mimblewimble Protocol" />
-  <meta property="og:description" content="Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol. No ICO, no premine, no foundation. Confidential transactions, fair for all since 2019." />
+  <meta property="og:description" content="Grin is a privacy-focused cryptocurrency. Time-backed emission, no addresses on-chain, open-source since 2019." />
   <meta property="og:image"       content="https://grin.money/img/og-grin.png" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary_large_image" />
   <meta name="twitter:title"       content="GRIN — Privacy Cryptocurrency | Mimblewimble Protocol" />
-  <meta name="twitter:description" content="Privacy-focused cryptocurrency. No ICO, no premine, no foundation. Mimblewimble protocol. Fair for all since 2019." />
+  <meta name="twitter:description" content="Privacy-focused cryptocurrency. Time-backed fair emission. Mimblewimble protocol. Open to all since 2019." />
   <meta name="twitter:image"       content="https://grin.money/img/og-grin.png" />
 
   <!-- Structured Data -->
@@ -31,7 +31,7 @@
     "@type": "Organization",
     "name": "Grin",
     "url": "https://grin.money",
-    "description": "Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol. No ICO, no premine, community-driven since 2019.",
+    "description": "Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol. Time-backed fair emission, community-driven since 2019.",
     "foundingDate": "2019",
     "sameAs": [
       "https://github.com/mimblewimble/grin",
@@ -44,8 +44,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="https://grin.mw/assets/images/grin-logo.png" type="image/png" />
 </head>
 <body>
+
+<!-- Clock cursor -->
+<canvas id="clock-cursor"></canvas>
 
 <!-- Matrix rain canvas (background) -->
 <canvas id="matrix-canvas"></canvas>
@@ -54,14 +58,17 @@
 <nav id="nav">
   <div class="nav-inner">
     <a href="#hero" class="nav-logo">
+      <img src="https://grin.mw/assets/images/grin-logo.png" alt="Grin" class="nav-hero-logo" />
       <span class="bracket">[</span>GRIN<span class="bracket">]</span>
     </a>
+    <div class="nav-block-live">blk/<span id="nav-block">—</span></div>
     <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">☰</button>
     <ul class="nav-links" id="nav-links">
       <li><a href="#protocol">Protocol</a></li>
+      <li><a href="#why-grin">Why Grin</a></li>
       <li><a href="#how-it-works">How it works</a></li>
       <li><a href="#roadmap">Roadmap</a></li>
-      <li><a href="#toolkit">Toolkit</a></li>
+      <li><a href="#ecosystem">Ecosystem</a></li>
       <li><a href="#get-started">Get started</a></li>
       <li><a href="#community">Community</a></li>
     </ul>
@@ -89,10 +96,10 @@
     </div>
 
     <div class="hero-tags">
-      <span class="tag tag-green">No ICO</span>
-      <span class="tag tag-green">No Premine</span>
-      <span class="tag tag-cyan">Mimblewimble</span>
-      <span class="tag tag-magenta">Open Source</span>
+      <span class="tag tag-green">Time-Backed</span>
+      <span class="tag tag-yellow">Fairness</span>
+      <span class="tag tag-cyan">Privacy</span>
+      <span class="tag tag-magenta">Simplicity</span>
     </div>
 
     <div class="hero-cta">
@@ -125,6 +132,21 @@
   <div class="scroll-hint">↓ scroll down</div>
 </section>
 
+<!-- ════════════════════════════════════ FOUNDER QUOTE ══════════════════════ -->
+<section id="slogan-founder" class="slogan-section">
+  <div class="container">
+    <div class="founder-quote fade-in">
+      <div class="quote-mark">"</div>
+      <blockquote class="quote-text">
+        Grin was started with as fair of a launch as possible for what's under our control.
+        We did this for good reason: we believe in Grin's mission to enable private money
+        for everyone and open access to it.
+      </blockquote>
+      <div class="quote-author">— Ignotus Peverell, Grin Founder</div>
+    </div>
+  </div>
+</section>
+
 <!-- ════════════════════════════════════ PROTOCOL ═══════════════════════════ -->
 <section id="protocol" class="section">
   <div class="container">
@@ -140,6 +162,7 @@
           <div class="out-line"><span class="kw">Name:</span>    Mimblewimble</div>
           <div class="out-line"><span class="kw">Type:</span>    Blockchain protocol</div>
           <div class="out-line"><span class="kw">Origin:</span>  Anonymous — "Tom Elvis Jedusor" (2016)</div>
+          <div class="out-line"><span class="kw">Paper:</span>   <a href="https://github.com/mimblewimble/docs/wiki/MimbleWimble-Origin" target="_blank" rel="noopener" class="term-link">MimbleWimble Origin (2016) ↗</a></div>
           <div class="out-line"><span class="kw">Impl:</span>    "Ignotus Peverell" → Grin (2019)</div>
           <div class="out-line"><span class="kw">Status:</span>  <span class="green">ACTIVE — Mainnet since Jan 15, 2019</span></div>
           <br />
@@ -148,6 +171,7 @@
           <div class="out-line"><span class="cyan">✓</span> Confidential Transactions (CT) — amounts hidden</div>
           <div class="out-line"><span class="cyan">✓</span> Transaction cut-through — chain data shrinks</div>
           <div class="out-line"><span class="cyan">✓</span> No scripts — minimal attack surface</div>
+          <div class="out-line"><span class="green">✓</span> Linear emission — 60 GRIN/min, same rate for centuries</div>
         </div>
       </div>
 
@@ -170,7 +194,7 @@
           <div class="feature-icon magenta">⚡</div>
           <div>
             <div class="feature-title">Scalable Chain</div>
-            <div class="feature-desc">Transaction cut-through removes historical data. Blockchain stays lean forever.</div>
+            <div class="feature-desc">Transaction cut-through removes historical data. Blockchain stays lean forever (~5 GB pruned).</div>
           </div>
         </div>
         <div class="feature-card">
@@ -185,10 +209,76 @@
   </div>
 </section>
 
-<!-- ════════════════════════════════════ HOW IT WORKS ═══════════════════════ -->
-<section id="how-it-works" class="section section-dark">
+<!-- ════════════════════════════════════ WHY GRIN ═══════════════════════════ -->
+<section id="why-grin" class="section section-dark">
   <div class="container">
-    <div class="section-label">// 02 — PROCESS</div>
+    <div class="section-label">// 02 — COMPARISON</div>
+    <h2 class="section-title">Why <span class="accent-yellow">Grin</span> Over Other Assets?</h2>
+
+    <div class="why-grid">
+
+      <div class="why-card fade-in">
+        <div class="why-icon green">⏱</div>
+        <div class="why-title">Time-Backed Monetary Policy</div>
+        <div class="why-desc">60 GRIN minted every 60 seconds — forever. No halving shock, no supply cliff. Early adopters and newcomers receive equal terms. Time itself is the backing mechanism: one minute of network existence equals 60 new coins, making Grin's supply as predictable as a clock.</div>
+      </div>
+
+      <div class="why-card fade-in">
+        <div class="why-icon cyan">👁</div>
+        <div class="why-title">True On-Chain Privacy</div>
+        <div class="why-desc">No addresses, no amounts are ever written to the blockchain. Mimblewimble's Confidential Transactions and transaction cut-through guarantee that on-chain data reveals nothing about senders, receivers, or values — enforced by cryptography, not by policy.</div>
+      </div>
+
+      <div class="why-card fade-in">
+        <div class="why-icon yellow">⚖</div>
+        <div class="why-title">vs. Gold — Unverifiable in Digital Form</div>
+        <div class="why-desc">Physical gold cannot be audited at scale in digital custody. Tokenized gold requires trusted custodians who can be subpoenaed, audited, or compromised. Grin's supply is mathematically verifiable by anyone running a full node — no custodian required, ever.</div>
+      </div>
+
+      <div class="why-card fade-in">
+        <div class="why-icon magenta">$</div>
+        <div class="why-title">vs. USD-Pegged Assets — Inflationary by Design</div>
+        <div class="why-desc">Fiat-backed stablecoins import monetary policy risk by definition. When central banks expand money supply, stablecoin holders absorb the dilution. Grin's emission rate is fixed in protocol code — no committee, no decree can change it.</div>
+      </div>
+
+      <div class="why-card fade-in">
+        <div class="why-icon green">₿</div>
+        <div class="why-title">vs. Bitcoin — Finite Supply, Uncertain Future</div>
+        <div class="why-desc">Bitcoin's 21M hard cap means that once the last coin is mined, miner incentives rely entirely on transaction fees. Whether that model sustains security at scale remains an open economic question. Grin's perpetual tail emission removes this uncertainty — miners are always compensated proportionally.</div>
+      </div>
+
+      <div class="why-card fade-in">
+        <div class="why-icon cyan">🪶</div>
+        <div class="why-title">Minimal Blockchain Footprint</div>
+        <div class="why-desc">After 7+ years of live transactions, Grin's pruned node weighs ~5 GB and the full archive ~17 GB. Transaction cut-through mathematically eliminates spent outputs so the chain does not accumulate transaction history. Lightweight by protocol, not by compromise.</div>
+      </div>
+
+      <div class="why-card fade-in">
+        <div class="why-icon magenta">∞</div>
+        <div class="why-title">Century-Scale Emission — Designed for Generations</div>
+        <div class="why-desc">Grin's linear supply curve means the inflation rate asymptotically approaches zero over time — without hard stops or abrupt halvings. Future participants decades from now still receive a fair on-ramp to a network that front-loaded no wealth to early insiders.</div>
+      </div>
+
+      <div class="why-card fade-in">
+        <div class="why-icon yellow">🔓</div>
+        <div class="why-title">Auditable, Simple, Open-Source</div>
+        <div class="why-desc">Grin's protocol is deliberately minimal. No proprietary components, no hidden supply curves, no special pre-allocated addresses. The codebase is small enough for a competent engineer to read and verify independently. Full auditability is a design goal, not a marketing claim.</div>
+      </div>
+
+      <div class="why-card fade-in">
+        <div class="why-icon green">⟳</div>
+        <div class="why-title">Grin Is Unreplicable — Time Cannot Be Copied</div>
+        <div class="why-desc">Any fork resets the clock. Grin's years of accumulated proof-of-work, protocol maturity, and community trust are a function of elapsed time — fundamentally non-fungible at the chain level. You cannot copy "our time has been spent." That makes Grin genuinely unique.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ HOW IT WORKS ═══════════════════════ -->
+<section id="how-it-works" class="section">
+  <div class="container">
+    <div class="section-label">// 03 — PROCESS</div>
     <h2 class="section-title">How <span class="accent-cyan">Grin</span> Works</h2>
     <div class="process-grid">
 
@@ -229,9 +319,9 @@
 </section>
 
 <!-- ════════════════════════════════════ MISSIONS ═══════════════════════════ -->
-<section id="missions" class="section">
+<section id="missions" class="section section-dark">
   <div class="container">
-    <div class="section-label">// 03 — MISSIONS</div>
+    <div class="section-label">// 04 — MISSIONS</div>
     <h2 class="section-title">Use <span class="accent-magenta">Cases</span></h2>
     <div class="missions-terminal fade-in">
       <div class="terminal-bar">
@@ -253,9 +343,9 @@
 </section>
 
 <!-- ════════════════════════════════════ ROADMAP ════════════════════════════ -->
-<section id="roadmap" class="section section-dark">
+<section id="roadmap" class="section">
   <div class="container">
-    <div class="section-label">// 04 — ROADMAP</div>
+    <div class="section-label">// 05 — ROADMAP</div>
     <h2 class="section-title">Git <span class="accent-green">Log</span></h2>
     <div class="git-log fade-in">
       <div class="git-graph-header">
@@ -267,8 +357,16 @@
           <div class="git-dot active"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">a1f3c9e</span>
             <span class="git-tag tag-cyan">HEAD → 2026</span>
+            <span class="git-msg">v5.4.0 — new node release</span>
+          </div>
+        </div>
+
+        <div class="git-entry active">
+          <div class="git-dot active"></div>
+          <div class="git-line"></div>
+          <div class="git-info">
+            <span class="git-tag tag-cyan">2026</span>
             <span class="git-msg">Grin Node Toolkit — modular server management suite</span>
           </div>
         </div>
@@ -277,7 +375,6 @@
           <div class="git-dot"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">7d2b8f1</span>
             <span class="git-tag tag-green">2025</span>
             <span class="git-msg">Grincoin.org explorer — community block explorer launch</span>
           </div>
@@ -287,7 +384,6 @@
           <div class="git-dot"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">3e9a4d7</span>
             <span class="git-tag tag-green">2024</span>
             <span class="git-msg">Grim Wallet — new GUI wallet interface released</span>
           </div>
@@ -297,7 +393,6 @@
           <div class="git-dot"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">9c1f6b2</span>
             <span class="git-tag tag-dim">2023</span>
             <span class="git-msg">Marketing campaign — community outreach activation</span>
           </div>
@@ -307,7 +402,6 @@
           <div class="git-dot"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">5a8e3c9</span>
             <span class="git-tag tag-dim">Aug 2021</span>
             <span class="git-msg">v5.2.0 — payment proof support added</span>
           </div>
@@ -317,7 +411,6 @@
           <div class="git-dot"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">2d7f1a4</span>
             <span class="git-tag tag-dim">Nov 2020</span>
             <span class="git-msg">v5.0.0 — privacy and usability improvements</span>
           </div>
@@ -327,7 +420,6 @@
           <div class="git-dot"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">8b4c9e6</span>
             <span class="git-tag tag-dim">Jul 2020</span>
             <span class="git-msg">v4.0.0 — atomic swaps support</span>
           </div>
@@ -337,7 +429,6 @@
           <div class="git-dot"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">f1e2d3c</span>
             <span class="git-tag tag-dim">Feb 2020</span>
             <span class="git-msg">General Fund launched — community treasury</span>
           </div>
@@ -347,7 +438,6 @@
           <div class="git-dot"></div>
           <div class="git-line"></div>
           <div class="git-info">
-            <span class="git-hash">4a5b6c7</span>
             <span class="git-tag tag-dim">Oct 2019</span>
             <span class="git-msg">Security audit completed</span>
           </div>
@@ -357,9 +447,8 @@
           <div class="git-dot origin"></div>
           <div class="git-line hidden"></div>
           <div class="git-info">
-            <span class="git-hash">0000000</span>
             <span class="git-tag tag-magenta">tag: v1.0.0-mainnet</span>
-            <span class="git-msg">Jan 15, 2019 — Mainnet launch. No ICO. No premine. Fair for all.</span>
+            <span class="git-msg">Jan 15, 2019 — Mainnet launch. Fair for all. Time starts now.</span>
           </div>
         </div>
 
@@ -368,68 +457,235 @@
   </div>
 </section>
 
-<!-- ════════════════════════════════════ TOOLKIT ════════════════════════════ -->
-<section id="toolkit" class="section toolkit-section">
+<!-- ════════════════════════════════════ TALENTS ════════════════════════════ -->
+<section id="talents" class="section section-dark">
   <div class="container">
-    <div class="section-label">// 05 — ECOSYSTEM</div>
-    <h2 class="section-title">Grin <span class="accent-cyan">Node Toolkit</span></h2>
-    <p class="section-subtitle">A complete bash toolkit for running production Grin infrastructure. From node setup to wallet services — everything in modular scripts.</p>
+    <div class="section-label">// — JOIN</div>
+    <h2 class="section-title">Talents <span class="accent-magenta">Needed</span></h2>
+    <p class="section-subtitle">Grin is a small, passionate community building one of the most technically rigorous privacy protocols in existence. No foundation, no VC, no boss. Pure open-source meritocracy — every contribution counts.</p>
 
-    <div class="toolkit-grid fade-in">
-      <div class="toolkit-card">
-        <div class="tk-number">01</div>
-        <div class="tk-title">Build Grin Node</div>
-        <div class="tk-desc">Automated Grin node setup for mainnet and testnet. Full archive or pruned mode.</div>
-        <div class="tk-tag">bash</div>
+    <div class="talents-terminal fade-in">
+      <div class="terminal-bar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="terminal-title">grin --join --open-positions</span>
       </div>
-      <div class="toolkit-card">
-        <div class="tk-number">02</div>
-        <div class="tk-title">Nginx Manager</div>
-        <div class="tk-desc">Configure nginx file servers with SSL, rate limiting, fail2ban, and IP filtering.</div>
-        <div class="tk-tag">nginx · ssl</div>
-      </div>
-      <div class="toolkit-card">
-        <div class="tk-number">03</div>
-        <div class="tk-title">Chain Data Share</div>
-        <div class="tk-desc">Serve compressed chain data archives for fast node bootstrapping. HTTPS + bandwidth control.</div>
-        <div class="tk-tag">nginx · systemd</div>
-      </div>
-      <div class="toolkit-card">
-        <div class="tk-number">04</div>
-        <div class="tk-title">Foreign API</div>
-        <div class="tk-desc">Expose the Grin node foreign API securely. JSON status dashboard included.</div>
-        <div class="tk-tag">api · json</div>
-      </div>
-      <div class="toolkit-card">
-        <div class="tk-number">05</div>
-        <div class="tk-title">Wallet Services</div>
-        <div class="tk-desc">Private web wallet, public wallet, XP wallet, Grin Drop faucet — deployable in minutes.</div>
-        <div class="tk-tag">wallet · web</div>
-      </div>
-      <div class="toolkit-card">
-        <div class="tk-number">07</div>
-        <div class="tk-title">Mining Services</div>
-        <div class="tk-desc">Configure and manage Grin mining pools and solo mining with stratum support.</div>
-        <div class="tk-tag">mining · pool</div>
+      <div class="terminal-body missions-body">
+        <div class="mission-item">
+          <span class="flag">--dev [rust|c++|js|mobile]</span>
+          <span class="desc">Build wallets, improve tooling, extend protocol integrations</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">--marketing</span>
+          <span class="desc">Spread Grin's story — private money for a surveilled world</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">--ai-ml</span>
+          <span class="desc">Build analytics bots, AI-assisted tools, and ecosystem automation</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">--design</span>
+          <span class="desc">Beautiful UX, brand assets, educational graphics and infographics</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">--mining</span>
+          <span class="desc">Secure the network, contribute hashrate, run infrastructure nodes</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">--invest</span>
+          <span class="desc">Diversify into a time-backed asset with a 7+ year track record</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">--content</span>
+          <span class="desc">Write research, tutorials, translations — make Grin accessible</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">--community</span>
+          <span class="desc">Moderate, organize, onboard, and grow the global Grin network</span>
+        </div>
       </div>
     </div>
 
-    <div class="toolkit-cta fade-in">
-      <div class="terminal-inline">
-        <span class="prompt">$</span>
-        <span class="cmd-text">git clone https://github.com/noobvie/grin-node-toolkit</span>
-      </div>
-      <a href="https://github.com/noobvie/grin-node-toolkit" target="_blank" rel="noopener" class="btn btn-cyan">
-        View on GitHub →
+    <div class="talents-cta fade-in">
+      <div class="talents-cta-text">Interested? Start a thread on the forum and introduce yourself.</div>
+      <a href="https://forum.grin.mw" target="_blank" rel="noopener" class="btn btn-primary">
+        <span class="btn-prefix">$</span> join --forum
       </a>
     </div>
   </div>
 </section>
 
-<!-- ════════════════════════════════════ GET STARTED ════════════════════════ -->
-<section id="get-started" class="section section-dark">
+<!-- ════════════════════════════════════ ECOSYSTEM ══════════════════════════ -->
+<section id="ecosystem" class="section">
   <div class="container">
-    <div class="section-label">// 06 — GET STARTED</div>
+    <div class="section-label">// 06 — ECOSYSTEM</div>
+    <h2 class="section-title">Active <span class="accent-cyan">Projects</span></h2>
+    <p class="section-subtitle">Community-built tools, wallets, exchanges, and infrastructure powering the Grin network today.</p>
+
+    <div class="eco-grid fade-in">
+
+      <a href="https://gri.mw/" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">01</div>
+        <div class="eco-title">GRIM Wallet</div>
+        <div class="eco-desc">Multi-platform GUI wallet for Grin. Available on Linux, macOS and Windows. Clean interface, actively maintained.</div>
+        <div class="eco-tags"><span class="eco-tag">wallet</span><span class="eco-tag eco-tag-recommended">recommended</span></div>
+        <div class="eco-url">gri.mw ↗</div>
+      </a>
+
+      <a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">02</div>
+        <div class="eco-title">Grin Node Toolkit</div>
+        <div class="eco-desc">All-in-one bash toolkit to build and manage Grin nodes, API servers, explorers, wallets, and mining — semi-automatically.</div>
+        <div class="eco-tags"><span class="eco-tag">node</span><span class="eco-tag">bash</span><span class="eco-tag">open-source</span></div>
+        <div class="eco-url">github.com/noobvie ↗</div>
+      </a>
+
+      <a href="https://wallet.easygrin.org/" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">03</div>
+        <div class="eco-title">Web Wallet</div>
+        <div class="eco-desc">Browser-based Grin wallet hosted by the EasyGrin community. No installation required — accessible from any device.</div>
+        <div class="eco-tags"><span class="eco-tag">wallet</span><span class="eco-tag">web</span></div>
+        <div class="eco-url">wallet.easygrin.org ↗</div>
+      </a>
+
+      <a href="https://grinplusplus.github.io/" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">04</div>
+        <div class="eco-title">Grin++ Classic</div>
+        <div class="eco-desc">Classic GUI wallet with a long history in the Grin ecosystem. Full node included, simple interface for desktop users.</div>
+        <div class="eco-tags"><span class="eco-tag">wallet</span><span class="eco-tag">desktop</span></div>
+        <div class="eco-url">grinplusplus.github.io ↗</div>
+      </a>
+
+      <a href="https://ipollo.com/products/ipollo-g1-mini" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">05</div>
+        <div class="eco-title">iPollo G1 Mini</div>
+        <div class="eco-desc">Dedicated ASIC miner for Grin's Cuckatoo32 algorithm. Compact form factor, efficient hashrate for home and small-scale mining.</div>
+        <div class="eco-tags"><span class="eco-tag">mining</span><span class="eco-tag">hardware</span></div>
+        <div class="eco-url">ipollo.com ↗</div>
+      </a>
+
+      <div class="eco-card eco-card-multi">
+        <div class="eco-number">06</div>
+        <div class="eco-title">Grin Exchanges</div>
+        <div class="eco-desc">Trade GRIN on these platforms:</div>
+        <div class="eco-multi-links">
+          <a href="https://nonlogs.io/" target="_blank" rel="noopener" class="eco-sublink">
+            <span class="eco-sublink-name">Nonlogs</span>
+            <span class="eco-badge eco-badge-green">No KYC</span>
+          </a>
+          <a href="https://www.gate.io" target="_blank" rel="noopener" class="eco-sublink">
+            <span class="eco-sublink-name">Gate.io</span>
+            <span class="eco-badge eco-badge-dim">KYC</span>
+          </a>
+        </div>
+        <div class="eco-tags"><span class="eco-tag">exchange</span></div>
+      </div>
+
+      <div class="eco-card eco-card-multi">
+        <div class="eco-number">07</div>
+        <div class="eco-title">Mining Pools</div>
+        <div class="eco-desc">Join a pool to contribute hashrate and earn GRIN:</div>
+        <div class="eco-multi-links">
+          <a href="https://2miners.com" target="_blank" rel="noopener" class="eco-sublink eco-sublink-sm">2miners.com</a>
+          <a href="https://easygrin.org" target="_blank" rel="noopener" class="eco-sublink eco-sublink-sm">easygrin.org</a>
+          <a href="https://always.vip" target="_blank" rel="noopener" class="eco-sublink eco-sublink-sm">always.vip</a>
+          <a href="https://ntminerpool.com" target="_blank" rel="noopener" class="eco-sublink eco-sublink-sm">ntminerpool.com</a>
+          <a href="https://gaeapool.com" target="_blank" rel="noopener" class="eco-sublink eco-sublink-sm">gaeapool.com</a>
+        </div>
+        <div class="eco-tags"><span class="eco-tag">mining</span><span class="eco-tag">pool</span></div>
+      </div>
+
+      <a href="https://grinily.com/product-tag/grin-cryptocurrency/" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">08</div>
+        <div class="eco-title">Grin Shop</div>
+        <div class="eco-desc">Community merchandise store with Grin-branded items. Show your support for privacy money in the physical world.</div>
+        <div class="eco-tags"><span class="eco-tag">shop</span><span class="eco-tag">merch</span></div>
+        <div class="eco-url">grinily.com ↗</div>
+      </a>
+
+      <div class="eco-card eco-card-multi">
+        <div class="eco-number">09</div>
+        <div class="eco-title">Grin Node Stats</div>
+        <div class="eco-desc">Community tools to explore blocks, monitor hashrate, and track live nodes across the global Grin network:</div>
+        <div class="eco-multi-links">
+          <a href="https://grincoin.org/" target="_blank" rel="noopener" class="eco-sublink">
+            <span class="eco-sublink-name">grincoin.org</span>
+            <span class="eco-badge eco-badge-green">explorer</span>
+          </a>
+          <a href="https://grinnode.live" target="_blank" rel="noopener" class="eco-sublink">
+            <span class="eco-sublink-name">grinnode.live</span>
+            <span class="eco-badge eco-badge-green">nodes</span>
+          </a>
+          <a href="https://world.grin.money/" target="_blank" rel="noopener" class="eco-sublink">
+            <span class="eco-sublink-name">world.grin.money</span>
+            <span class="eco-badge eco-badge-green">stats</span>
+          </a>
+        </div>
+        <div class="eco-tags"><span class="eco-tag">explorer</span><span class="eco-tag">stats</span><span class="eco-tag">nodes</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ GLOBAL STATS ═══════════════════════ -->
+<section id="global-stats" class="section section-dark">
+  <div class="container">
+    <div class="section-label">// 07 — GLOBAL STATISTICS</div>
+    <h2 class="section-title">Grin <span class="accent-green">Network</span> Live</h2>
+    <p class="section-subtitle">Real-time node distribution, hashrate, and price data from the Grin network.</p>
+
+    <div class="live-stats-grid fade-in">
+
+      <div class="live-stat-card ls-green">
+        <div class="ls-label">// block height</div>
+        <div class="ls-value" id="ls-height">—</div>
+        <div class="ls-unit">blk</div>
+      </div>
+
+      <div class="live-stat-card ls-cyan">
+        <div class="ls-label">// network hashrate</div>
+        <div class="ls-value" id="ls-hashrate">—</div>
+        <div class="ls-unit">GPS (graph/sec)</div>
+      </div>
+
+      <div class="live-stat-card ls-cyan">
+        <div class="ls-label">// mining difficulty</div>
+        <div class="ls-value" id="ls-diff">—</div>
+        <div class="ls-unit">difficulty</div>
+      </div>
+
+      <div class="live-stat-card ls-yellow">
+        <div class="ls-label">// price (USD)</div>
+        <div class="ls-value" id="ls-price-usd">—</div>
+        <div class="ls-unit">GRIN/USDT · Gate.io</div>
+        <div class="ls-change" id="ls-price-change"></div>
+      </div>
+
+      <div class="live-stat-card ls-yellow">
+        <div class="ls-label">// price (BTC)</div>
+        <div class="ls-value" id="ls-price-btc">—</div>
+        <div class="ls-unit">sats per GRIN · nonlogs</div>
+      </div>
+
+      <div class="live-stat-card ls-green">
+        <div class="ls-label">// active peers</div>
+        <div class="ls-value" id="ls-peers">—</div>
+        <div class="ls-unit">mainnet nodes</div>
+      </div>
+
+    </div>
+
+    <div class="stats-footer-links">
+      <a href="https://world.grin.money/" target="_blank" rel="noopener">world.grin.money ↗</a>
+      <span class="stats-updated" id="ls-updated"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ GET STARTED ════════════════════════ -->
+<section id="get-started" class="section">
+  <div class="container">
+    <div class="section-label">// 08 — GET STARTED</div>
     <h2 class="section-title">Start Using <span class="accent-green">Grin</span></h2>
     <div class="started-grid">
 
@@ -437,14 +693,14 @@
         <div class="started-step">01</div>
         <h3>Choose a Wallet</h3>
         <div class="wallet-list">
-          <a href="https://github.com/GetGrin/grim" target="_blank" rel="noopener" class="wallet-item">
+          <a href="https://gri.mw/" target="_blank" rel="noopener" class="wallet-item">
             <span class="wallet-icon">▶</span> Grim Wallet <span class="badge">recommended</span>
           </a>
-          <a href="https://github.com/mimblewimble/grin-gui" target="_blank" rel="noopener" class="wallet-item">
-            <span class="wallet-icon">▶</span> Grin-GUI
-          </a>
-          <a href="https://github.com/GrinPlusPlus/GrinPlusPlus" target="_blank" rel="noopener" class="wallet-item">
+          <a href="https://grinplusplus.github.io/" target="_blank" rel="noopener" class="wallet-item">
             <span class="wallet-icon">▶</span> Grin++
+          </a>
+          <a href="https://wallet.easygrin.org/" target="_blank" rel="noopener" class="wallet-item">
+            <span class="wallet-icon">▶</span> Web Wallet <span class="badge badge-dim">browser</span>
           </a>
           <a href="https://github.com/mimblewimble/grin-wallet" target="_blank" rel="noopener" class="wallet-item">
             <span class="wallet-icon">▶</span> grin-wallet <span class="badge badge-dim">official CLI</span>
@@ -456,24 +712,27 @@
         <div class="started-step">02</div>
         <h3>Get GRIN</h3>
         <div class="wallet-list">
+          <a href="https://drop.grin.money" target="_blank" rel="noopener" class="wallet-item">
+            <span class="wallet-icon green">🎁</span> drop.grin.money <span class="badge">free Grin</span>
+          </a>
           <a href="https://nonlogs.io/" target="_blank" rel="noopener" class="wallet-item">
             <span class="wallet-icon cyan">◆</span> Nonlogs <span class="badge badge-cyan">no KYC</span>
           </a>
           <a href="https://noirtrade.com/" target="_blank" rel="noopener" class="wallet-item">
             <span class="wallet-icon cyan">◆</span> NoirTrade <span class="badge badge-cyan">no KYC</span>
           </a>
-          <a href="https://gate.io" target="_blank" rel="noopener" class="wallet-item">
-            <span class="wallet-icon cyan">◆</span> Gate.io <span class="badge badge-dim">KYC</span>
+          <a href="https://ipollo.com/products/ipollo-g1-mini" target="_blank" rel="noopener" class="wallet-item">
+            <span class="wallet-icon green">⛏</span> Mine it — iPollo G1 Mini <span class="badge badge-dim">ASIC</span>
           </a>
           <span class="wallet-item subtle">
-            <span class="wallet-icon green">⛏</span> Mine it — iPollo G1, GPU (8GB+ VRAM)
+            <span class="wallet-icon green">⛏</span> Mine it — GPU (8GB+ VRAM)
           </span>
         </div>
       </div>
 
       <div class="started-card fade-in">
         <div class="started-step">03</div>
-        <h3>Run a Node</h3>
+        <h3>Contribute Node to Grin Network</h3>
         <div class="terminal-mini">
           <div class="mini-line"><span class="prompt-mini">$</span> git clone https://github.com/noobvie/grin-node-toolkit</div>
           <div class="mini-line"><span class="prompt-mini">$</span> cd grin-node-toolkit</div>
@@ -487,112 +746,245 @@
 </section>
 
 <!-- ════════════════════════════════════ HALL OF FAME ═══════════════════════ -->
-<section id="hall-of-fame" class="section">
+<section id="hall-of-fame" class="section section-dark">
   <div class="container">
-    <div class="section-label">// 07 — SUPPORTERS</div>
+    <div class="section-label">// 09 — SUPPORTERS</div>
     <h2 class="section-title">Hall of <span class="accent-yellow">Fame</span></h2>
-    <div class="hof-terminal fade-in">
-      <div class="terminal-bar">
-        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-        <span class="terminal-title">grin --hall-of-fame --sort=amount</span>
+    <p class="section-subtitle">Generous donors and open-source contributors who built and sustained Grin.</p>
+
+    <div class="hof-cols fade-in">
+
+      <!-- ── LEFT: Financial donors ─────────────────────────────────────── -->
+      <div class="hof-col">
+        <div class="hof-col-label">// donors</div>
+        <div class="hof-terminal">
+          <div class="terminal-bar">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <span class="terminal-title">grin --donors --sort=amount</span>
+          </div>
+          <div class="terminal-body">
+            <div class="hof-header">
+              <span class="col-rank">RANK</span>
+              <span class="col-name">CONTRIBUTOR</span>
+              <span class="col-date">YEAR</span>
+              <span class="col-amount">AMOUNT (USD)</span>
+            </div>
+            <div class="hof-row gold">
+              <span class="col-rank">01</span>
+              <span class="col-name">Anonymous II</span>
+              <span class="col-date">2021</span>
+              <span class="col-amount">$ 437,882</span>
+            </div>
+            <div class="hof-row silver">
+              <span class="col-rank">02</span>
+              <span class="col-name">Anonymous</span>
+              <span class="col-date">2019</span>
+              <span class="col-amount">$ 294,999</span>
+            </div>
+            <div class="hof-row bronze">
+              <span class="col-rank">03</span>
+              <span class="col-name">Nervos</span>
+              <span class="col-date">2019</span>
+              <span class="col-amount">$ 95,810</span>
+            </div>
+            <div class="hof-row">
+              <span class="col-rank">04</span>
+              <span class="col-name">SparkPool</span>
+              <span class="col-date">2019</span>
+              <span class="col-amount">$ 84,451</span>
+            </div>
+            <div class="hof-row">
+              <span class="col-rank">05</span>
+              <span class="col-name">Aurel</span>
+              <span class="col-date">2020</span>
+              <span class="col-amount">$ 65,036</span>
+            </div>
+            <div class="hof-row">
+              <span class="col-rank">06</span>
+              <span class="col-name">Qtum</span>
+              <span class="col-date">2019</span>
+              <span class="col-amount">$ 50,265</span>
+            </div>
+            <div class="hof-row">
+              <span class="col-rank">07</span>
+              <span class="col-name">Gate.io</span>
+              <span class="col-date">2019</span>
+              <span class="col-amount">$ 40,729</span>
+            </div>
+            <div class="hof-row">
+              <span class="col-rank">08</span>
+              <span class="col-name">bminer</span>
+              <span class="col-date">2019</span>
+              <span class="col-amount">$ 28,294</span>
+            </div>
+            <div class="hof-footer-row">
+              <a href="https://grin.mw/friends.html" target="_blank" rel="noopener" class="hof-more-link">
+                See full donor list at grin.mw/friends.html ↗
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="terminal-body">
-        <div class="hof-header">
-          <span class="col-rank">RANK</span>
-          <span class="col-name">CONTRIBUTOR</span>
-          <span class="col-amount">AMOUNT (USD)</span>
+
+      <!-- ── RIGHT: GitHub contributors + forum volunteers ─────────────── -->
+      <div class="hof-col">
+        <div class="hof-col-label">// contributors</div>
+        <div class="hof-terminal">
+          <div class="terminal-bar">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <span class="terminal-title">$ git shortlog -sn --no-merges | head -50</span>
+          </div>
+
+          <!-- Top 10 by commit count (github.com/mimblewimble/grin) -->
+          <div class="hof-coder-header">
+            <span class="col-rank">RANK</span>
+            <span class="col-name">CONTRIBUTOR</span>
+            <span class="col-amount">COMMITS</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank green">01</span>
+            <span class="col-name">ignopeverell</span>
+            <span class="col-amount">603</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank green">02</span>
+            <span class="col-name">antiochp</span>
+            <span class="col-amount">574</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank">03</span>
+            <span class="col-name">quentinlesceller</span>
+            <span class="col-amount">185</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank">04</span>
+            <span class="col-name">hashmap</span>
+            <span class="col-amount">161</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank">05</span>
+            <span class="col-name">garyyu</span>
+            <span class="col-amount">151</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank">06</span>
+            <span class="col-name">sesam</span>
+            <span class="col-amount">52</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank">07</span>
+            <span class="col-name">tromp</span>
+            <span class="col-amount">39</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank">08</span>
+            <span class="col-name">jaspervdm</span>
+            <span class="col-amount">32</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank">09</span>
+            <span class="col-name">eupn</span>
+            <span class="col-amount">29</span>
+          </div>
+          <div class="hof-coder-row">
+            <span class="col-rank">10</span>
+            <span class="col-name">bladedoyle</span>
+            <span class="col-amount">22</span>
+          </div>
+          <div class="hof-footer-row">
+            <span class="hof-more-link">... and hundreds more contributors across all repositories</span>
+          </div>
+
         </div>
-        <div class="hof-row gold">
-          <span class="col-rank">01</span>
-          <span class="col-name">Anonymous II</span>
-          <span class="col-amount">$ 437,882</span>
-        </div>
-        <div class="hof-row silver">
-          <span class="col-rank">02</span>
-          <span class="col-name">Anonymous</span>
-          <span class="col-amount">$ 294,999</span>
-        </div>
-        <div class="hof-row bronze">
-          <span class="col-rank">03</span>
-          <span class="col-name">Nervos</span>
-          <span class="col-amount">$ 95,810</span>
-        </div>
-        <div class="hof-row">
-          <span class="col-rank">04</span>
-          <span class="col-name">SparkPool</span>
-          <span class="col-amount">$ 84,451</span>
-        </div>
-        <div class="hof-row">
-          <span class="col-rank">05</span>
-          <span class="col-name">Aurel</span>
-          <span class="col-amount">$ 65,036</span>
-        </div>
-        <div class="hof-row">
-          <span class="col-rank">06</span>
-          <span class="col-name">Qtum</span>
-          <span class="col-amount">$ 50,265</span>
-        </div>
-        <div class="hof-row">
-          <span class="col-rank">07</span>
-          <span class="col-name">Gate.io</span>
-          <span class="col-amount">$ 40,729</span>
-        </div>
-        <div class="hof-row">
-          <span class="col-rank">08</span>
-          <span class="col-name">bminer</span>
-          <span class="col-amount">$ 28,294</span>
-        </div>
+      </div>
+
+    </div><!-- .hof-cols -->
+
+    <!-- ── BELOW: Forum & community (full width) ──────────────────────────── -->
+    <div class="hof-forum-panel fade-in">
+      <div class="hof-col-label">// forum &amp; community — top contributors by posts</div>
+      <div class="hof-contrib-tags">
+        <span class="hof-contrib-tag hof-tag-forum">Anynomous</span>
+        <span class="hof-contrib-tag hof-tag-forum">tromp</span>
+        <span class="hof-contrib-tag hof-tag-forum">oryhp</span>
+        <span class="hof-contrib-tag hof-tag-forum">monkyyy</span>
+        <span class="hof-contrib-tag hof-tag-forum">trab</span>
+        <span class="hof-contrib-tag hof-tag-forum">Cobragrin</span>
+        <span class="hof-contrib-tag hof-tag-forum">vegycslol</span>
+        <span class="hof-contrib-tag hof-tag-forum">ardocrat</span>
+        <span class="hof-contrib-tag hof-tag-forum">davidtavarez</span>
+        <span class="hof-contrib-tag hof-tag-forum">david</span>
+        <span class="hof-contrib-tag hof-tag-forum">0xb100d</span>
+        <span class="hof-contrib-tag hof-tag-forum">Chronos</span>
+        <span class="hof-contrib-tag hof-tag-forum">Kurt</span>
+        <span class="hof-contrib-tag hof-tag-forum">Grumpy</span>
+        <span class="hof-contrib-tag hof-tag-forum">noobvie</span>
+        <span class="hof-contrib-tag hof-tag-forum">transatoshi</span>
+        <span class="hof-contrib-tag hof-tag-forum">johndavies24</span>
+        <span class="hof-contrib-tag hof-tag-forum">Trinitron</span>
+        <span class="hof-contrib-tag hof-tag-forum">Neo</span>
+        <span class="hof-contrib-tag hof-tag-forum">MerlinsBeard</span>
+        <span class="hof-contrib-tag hof-tag-forum">mcm-mike</span>
+        <span class="hof-contrib-tag hof-tag-forum">Paouky</span>
+        <span class="hof-contrib-tag hof-tag-forum">syntaxjak</span>
+        <span class="hof-contrib-tag hof-tag-forum">kargakis</span>
+        <span class="hof-contrib-tag hof-tag-forum">BOBO</span>
+        <span class="hof-contrib-tag hof-tag-forum">nirg</span>
+        <span class="hof-contrib-tag hof-tag-forum">renzokuken</span>
+        <span class="hof-contrib-tag hof-tag-forum">Rabinovitch</span>
+        <span class="hof-contrib-tag hof-tag-forum">antioch</span>
+        <span class="hof-contrib-tag hof-tag-forum">Neo-Geo</span>
+        <span class="hof-contrib-tag hof-tag-forum">grn</span>
+        <span class="hof-contrib-tag hof-tag-forum">Yeastplume</span>
+        <span class="hof-contrib-tag hof-tag-forum">Alice</span>
+        <span class="hof-contrib-tag hof-tag-forum">FirsArgentum</span>
+        <span class="hof-contrib-tag hof-tag-forum">igno.peverell</span>
+        <span class="hof-contrib-tag hof-tag-forum">Doogevol</span>
+        <span class="hof-contrib-tag hof-tag-forum">SiriusB</span>
+        <span class="hof-contrib-tag hof-tag-forum">satoshocrat</span>
+        <span class="hof-contrib-tag hof-tag-forum">shush</span>
+        <span class="hof-contrib-tag hof-tag-forum">AceKaplin</span>
+        <span class="hof-contrib-tag hof-tag-forum">gig</span>
+        <span class="hof-contrib-tag hof-tag-forum">minexpert</span>
+        <span class="hof-contrib-tag hof-tag-forum">Grin1</span>
+        <span class="hof-contrib-tag hof-tag-forum">Roelsmajor</span>
+        <span class="hof-contrib-tag hof-tag-forum">gary</span>
+        <span class="hof-contrib-tag hof-tag-forum">timolson</span>
+        <span class="hof-contrib-tag hof-tag-forum">bruges</span>
+        <span class="hof-contrib-tag hof-tag-forum">debilnypes</span>
+        <span class="hof-contrib-tag hof-tag-forum">Shobji</span>
+        <span class="hof-contrib-tag hof-tag-forum">hellogrin</span>
+        <span class="hof-contrib-tag hof-tag-dim">+ thousands more</span>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ════════════════════════════════════ COMMUNITY ══════════════════════════ -->
-<section id="community" class="section section-dark">
+<section id="community" class="section">
   <div class="container">
-    <div class="section-label">// 08 — COMMUNITY</div>
+    <div class="section-label">// 10 — COMMUNITY</div>
     <h2 class="section-title">Join the <span class="accent-cyan">Network</span></h2>
-    <div class="community-grid fade-in">
+    <div class="community-grid community-grid-3 fade-in">
 
       <a href="https://forum.grin.mw" target="_blank" rel="noopener" class="community-card">
         <div class="comm-icon">◉</div>
         <div class="comm-name">Grin Forum</div>
-        <div class="comm-desc">Research, mining, market, all topics</div>
+        <div class="comm-desc">Research, mining, market, governance — all discussions in one place.</div>
         <div class="comm-cmd">$ join --forum</div>
-      </a>
-
-      <a href="https://github.com/mimblewimble" target="_blank" rel="noopener" class="community-card">
-        <div class="comm-icon">◈</div>
-        <div class="comm-name">GitHub</div>
-        <div class="comm-desc">Core development, issues, PRs</div>
-        <div class="comm-cmd">$ git clone mimblewimble</div>
-      </a>
-
-      <a href="https://t.me/grincoin" target="_blank" rel="noopener" class="community-card">
-        <div class="comm-icon">▲</div>
-        <div class="comm-name">Telegram</div>
-        <div class="comm-desc">Grin Privacy community chat</div>
-        <div class="comm-cmd">$ connect --telegram</div>
-      </a>
-
-      <a href="https://www.reddit.com/r/grincoin" target="_blank" rel="noopener" class="community-card">
-        <div class="comm-icon">◇</div>
-        <div class="comm-name">Reddit</div>
-        <div class="comm-desc">/r/grincoin — growing community</div>
-        <div class="comm-cmd">$ subscribe --reddit</div>
       </a>
 
       <a href="https://t.me/Grin_Governance" target="_blank" rel="noopener" class="community-card">
         <div class="comm-icon">⬡</div>
         <div class="comm-name">Governance</div>
-        <div class="comm-desc">Dev meetings, governance discussions</div>
-        <div class="comm-cmd">$ join --governance</div>
+        <div class="comm-desc">Dev meetings and governance discussions on Telegram — @Grin_Governance.</div>
+        <div class="comm-cmd">$ connect --telegram</div>
       </a>
 
       <a href="https://github.com/mimblewimble/grin/blob/master/CONTRIBUTING.md" target="_blank" rel="noopener" class="community-card accent-card">
         <div class="comm-icon magenta">+</div>
         <div class="comm-name">Contribute</div>
-        <div class="comm-desc">Write code, docs, or run a node</div>
+        <div class="comm-desc">Write code, documentation, or simply run a node. Every bit helps.</div>
         <div class="comm-cmd">$ git checkout -b my-contribution</div>
       </a>
 
@@ -603,42 +995,24 @@
 <!-- ════════════════════════════════════ FOOTER ═════════════════════════════ -->
 <footer id="footer">
   <div class="container">
-    <div class="footer-grid">
-      <div class="footer-col">
+
+    <div class="footer-simple">
+      <div class="footer-brand">
         <div class="footer-logo"><span class="bracket">[</span>GRIN<span class="bracket">]</span></div>
         <p class="footer-tagline">Electronic cash for all.<br/>Private by default.</p>
       </div>
-      <div class="footer-col">
-        <div class="footer-heading">Get Started</div>
-        <ul>
-          <li><a href="https://github.com/GetGrin/grim" target="_blank" rel="noopener">Grim Wallet</a></li>
-          <li><a href="https://github.com/GrinPlusPlus/GrinPlusPlus" target="_blank" rel="noopener">Grin++</a></li>
-          <li><a href="https://nonlogs.io/" target="_blank" rel="noopener">Nonlogs</a></li>
-          <li><a href="https://noirtrade.com/" target="_blank" rel="noopener">NoirTrade</a></li>
-          <li><a href="https://grincoin.org" target="_blank" rel="noopener">Block Explorer</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <div class="footer-heading">Community</div>
-        <ul>
-          <li><a href="https://forum.grin.mw" target="_blank" rel="noopener">Forum</a></li>
-          <li><a href="https://www.reddit.com/r/grincoin" target="_blank" rel="noopener">Reddit</a></li>
-          <li><a href="https://t.me/grincoin" target="_blank" rel="noopener">Telegram</a></li>
-          <li><a href="https://t.me/Grin_Governance" target="_blank" rel="noopener">Governance</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <div class="footer-heading">Projects</div>
-        <ul>
-          <li><a href="https://github.com/mimblewimble/grin" target="_blank" rel="noopener">Grin Core</a></li>
-          <li><a href="https://github.com/noobvie/grin-node-toolkit" target="_blank" rel="noopener">Node Toolkit</a></li>
-          <li><a href="https://grincoin.org" target="_blank" rel="noopener">Coin Explorer</a></li>
-          <li><a href="https://github.com/mimblewimble/grin-pm" target="_blank" rel="noopener">Community Council</a></li>
-        </ul>
+      <div class="footer-noobvie-quote">
+        <div class="footer-quote-mark">"</div>
+        <div class="footer-quote-text">
+          I've been trying BTC / Zcash / Monero / USDT...<br/>
+          but Grin is the place where I find interesting.
+        </div>
+        <div class="footer-quote-author">— Noobvie</div>
       </div>
     </div>
+
     <div class="footer-bottom">
-      <span>©2019–2026 Made by Grin fans · MIT License</span>
+      <span>©2019–2026 Made by Noobvie</span>
       <span class="footer-hash">block#<span id="footer-block">—</span></span>
     </div>
   </div>
