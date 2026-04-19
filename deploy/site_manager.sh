@@ -60,7 +60,7 @@ REMOTE_USER=""               # SSH user@host for rsync (e.g., ubuntu@1.2.3.4)
 REMOTE_PATH=""               # Remote path for rsync (e.g., /var/www/grin.money/public)
 GIT_REPO=""                  # Git repo URL for git deploy mode
 GIT_BRANCH=""                # Git branch (default: from custom_repo.conf or "main")
-SITE_NAME=""                 # Site subdirectory name under web/ (e.g. "grin-money")
+SITE_NAME=""                 # Site subdirectory name under web/ (e.g. "grin-money-2026")
 SPARSE_CHECKOUT=""           # "yes" to sparse-clone only web/<SITE_NAME>/
 
 # Removal configuration

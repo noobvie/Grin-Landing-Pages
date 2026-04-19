@@ -12,8 +12,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Site to deploy ────────────────────────────────────────────────────────────
-# Must match a subdirectory under web/ in this repo (e.g. "grin-money")
-SITE_NAME="grin-money"
+# Must match a subdirectory under web/ in this repo (e.g. "grin-money-2026")
+SITE_NAME="grin-money-2026"
 
 # ── Git repository ────────────────────────────────────────────────────────────
 GIT_REPO="https://github.com/youruser/Grin-Landing-Page.git"

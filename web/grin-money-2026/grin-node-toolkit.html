@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grin Node Toolkit — Master Node Infrastructure for Grin</title>
+  <meta name="description" content="Grin Node Toolkit: a unified bash toolkit to deploy and manage Grin nodes, public APIs, block explorers, mining pools, and wallet portals — semi-automatically on any Linux VPS." />
+  <meta name="keywords" content="Grin Node Toolkit, grin node, grin infrastructure, grin mining, bash toolkit, grin API, grin explorer, grin wallet, VPS setup" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://grin.money/grin-node-toolkit.html" />
+  <meta name="theme-color" content="#0a0a0a" />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://grin.money/grin-node-toolkit.html" />
+  <meta property="og:site_name"   content="Grin" />
+  <meta property="og:title"       content="Grin Node Toolkit — Master Node Infrastructure" />
+  <meta property="og:description" content="One bash toolkit. Full node, pruned node, explorer, public API, mining pool, wallet portal — all semi-automated. 8 live demo sites built with it." />
+  <meta property="og:image"       content="https://grin.money/img/og-grin.png" />
+
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Grin Node Toolkit — Master Node Infrastructure" />
+  <meta name="twitter:description" content="Pruned node in ~15 min via snapshot. Full archive ~1 hr. Testnet + mainnet on same server. API, explorer, mining pool — one bash menu." />
+  <meta name="twitter:image"       content="https://grin.money/img/og-grin.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="grin_black_white.svg" type="image/svg+xml" />
+
+  <style>
+    #tk-hero {
+      padding: 7rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    .tk-demo-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .tk-roadmap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    .tk-roadmap-col-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .tk-shipped-item, .tk-coming-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .tk-shipped-item:last-child, .tk-coming-item:last-child { border-bottom: none; }
+    .tk-shipped-icon { color: var(--green); flex-shrink: 0; }
+    .tk-coming-icon  { color: var(--text-dim); flex-shrink: 0; }
+    .tk-shipped-text { color: var(--text-bright); }
+    .tk-coming-text  { color: var(--text-dim); }
+    .tk-coming-badge {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border: 1px solid var(--border-bright);
+      color: var(--text-dim);
+      border-radius: 2px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    .tk-official-note {
+      margin-top: 2rem;
+      padding: 1rem 1.5rem;
+      border: 1px solid var(--border-bright);
+      border-left: 3px solid var(--cyan);
+      background: rgba(0,229,255,0.03);
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .tk-official-note a { color: var(--cyan); text-decoration: none; }
+    .tk-official-note a:hover { text-decoration: underline; }
+    @media (max-width: 900px) {
+      .tk-demo-grid { grid-template-columns: 1fr 1fr; }
+      .tk-roadmap-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .tk-demo-grid { grid-template-columns: 1fr; }
+      #tk-hero { padding: 5rem 1.5rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="clock-cursor"></canvas>
+<canvas id="matrix-canvas"></canvas>
+
+<!-- ════════════════════════════════════ NAV ════════════════════════════════ -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="index.html#hero" class="nav-logo">
+      <img src="https://grin.mw/assets/images/grin-logo.png" alt="Grin" class="nav-hero-logo" />
+      <span class="bracket">[</span>GRIN<span class="bracket">]</span>
+    </a>
+    <div class="nav-block-live">blk/<span id="nav-block">—</span></div>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu">☰</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="index.html#protocol">Protocol</a></li>
+      <li><a href="index.html#why-grin">Why Grin</a></li>
+      <li><a href="index.html#how-it-works">How it works</a></li>
+      <li><a href="index.html#roadmap">Roadmap</a></li>
+      <li><a href="index.html#ecosystem">Ecosystem</a></li>
+      <li><a href="grin-node-toolkit.html" style="color:var(--green)">Toolkit</a></li>
+      <li><a href="index.html#get-started">Get started</a></li>
+      <li><a href="index.html#community">Community</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════ HERO ═══════════════════════════════ -->
+<section id="tk-hero">
+  <div class="hero-content">
+    <div class="section-label" style="text-align:center;margin-bottom:1rem;">
+      // grin-node-toolkit — under active development
+    </div>
+
+    <div class="terminal-window">
+      <div class="terminal-bar">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+        <span class="terminal-title">root@vps:~/grin-node-toolkit$</span>
+      </div>
+      <div class="terminal-body">
+        <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">sudo ./grin-node-toolkit.sh --info</span></div>
+        <div class="terminal-line out" id="tk-line-1"></div>
+        <div class="terminal-line out" id="tk-line-2"></div>
+        <div class="terminal-line out" id="tk-line-3"></div>
+        <div class="terminal-line out" id="tk-line-4"></div>
+        <div class="terminal-line"><span class="prompt">$</span> <span class="cursor-blink">█</span></div>
+      </div>
+    </div>
+
+    <div class="hero-tags" style="margin-top:1.5rem;">
+      <span class="tag tag-green">Node Setup</span>
+      <span class="tag tag-cyan">Public API</span>
+      <span class="tag tag-magenta">Explorer</span>
+      <span class="tag tag-yellow">Mining Pool</span>
+      <span class="tag tag-green">Wallet Portal</span>
+    </div>
+
+    <div class="hero-cta">
+      <a href="#tk-demo-sites" class="btn btn-primary">
+        <span class="btn-prefix">$</span> view --demo-sites
+      </a>
+      <a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener" class="btn btn-ghost">
+        <span class="btn-prefix">$</span> git clone toolkit
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <span class="stat-value green">8</span>
+      <span class="stat-label">Live Demo Sites</span>
+    </div>
+    <div class="stat-divider">|</div>
+    <div class="stat-item">
+      <span class="stat-value cyan">~15min</span>
+      <span class="stat-label">Pruned node (snapshot, US VPS)</span>
+    </div>
+    <div class="stat-divider">|</div>
+    <div class="stat-item">
+      <span class="stat-value magenta">~1hr</span>
+      <span class="stat-label">Full archive node (snapshot)</span>
+    </div>
+  </div>
+
+  <div class="scroll-hint">↓ scroll down</div>
+</section>
+
+<!-- ════════════════════════════════════ ORIGIN STORY ═══════════════════════ -->
+<section id="tk-origin" class="section section-dark">
+  <div class="container">
+    <div class="section-label">// 00 — WHY THIS EXISTS</div>
+    <h2 class="section-title">The Story <span class="accent-cyan">Behind</span> the Toolkit</h2>
+
+    <div class="grid-2">
+
+      <div class="terminal-block fade-in">
+        <div class="terminal-bar">
+          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+          <span class="terminal-title">$ git log --oneline --origin</span>
+        </div>
+        <div class="terminal-body">
+          <div class="out-line comment"># The problem that started everything</div>
+          <br/>
+          <div class="out-line"><span class="kw">issue:</span>   Grin PIBD sync — was broken, slow, unreliable</div>
+          <div class="out-line"><span class="kw">symptom:</span> Node stalls mid-sync for days. Sometimes loops.</div>
+          <div class="out-line"><span class="kw">context:</span> Several spare Linux VPS servers sitting idle.</div>
+          <br/>
+          <div class="out-line comment"># The initial fix</div>
+          <div class="out-line"><span class="kw">idea:</span>    Clone chain_data from a running node instead of syncing</div>
+          <div class="out-line"><span class="kw">result:</span>  Pruned node up in ~15 min (US VPS). Every time.</div>
+          <div class="out-line comment"># PIBD is now fixed in recent grin releases,</div>
+          <div class="out-line comment"># but normal pruned sync still takes 3–4 hours.</div>
+          <div class="out-line comment"># Snapshot method stays the fastest way.</div>
+          <br/>
+          <div class="out-line comment"># The master node concept</div>
+          <div class="out-line"><span class="kw">vision:</span>  Keep one server with fresh chain_data for others to clone</div>
+          <div class="out-line"><span class="kw">future:</span>  Stream chain_data from master nodes → full sync in 4–5 min</div>
+          <div class="out-line"><span class="kw">network:</span> <a href="https://github.com/noobvie/Grin-Node-Toolkit/blob/main/extensions/grinmasternodes.json" target="_blank" rel="noopener" class="term-link">grinmasternodes.json ↗</a></div>
+          <br/>
+          <div class="out-line comment"># Then the addons happened</div>
+          <div class="out-line"><span class="kw">realised:</span> Same VPS can run API, explorer, faucet, mining pool...</div>
+          <div class="out-line"><span class="kw">goal:</span>    Open source + newbie-friendly. Explore Grin magics.</div>
+          <div class="out-line"><span class="green">✓</span> status: active development</div>
+        </div>
+      </div>
+
+      <div class="fade-in" style="display:flex;flex-direction:column;gap:1.5rem;">
+
+        <div class="founder-quote" style="margin:0;">
+          <div class="quote-mark">"</div>
+          <blockquote class="quote-text">
+            I had several spare Linux VPS servers and kept running into the same wall:
+            Grin's PIBD sync was broken — nodes would stall, loop, or fail silently
+            after days of waiting. Even now that PIBD is fixed, a normal pruned node
+            sync still takes 3–4 hours. I just wanted a fast way to spin up a test
+            node on a spare VPS. So I wrote a script to clone chain_data from a
+            running node instead. Pruned node up in ~15 minutes on a US VPS.
+            Full archive in about an hour. I kept going from there.
+          </blockquote>
+          <div class="quote-author">— Noobvie</div>
+        </div>
+
+        <div class="missions-terminal" style="margin:0;">
+          <div class="terminal-bar">
+            <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            <span class="terminal-title">master node network — how it grows</span>
+          </div>
+          <div class="terminal-body missions-body">
+            <div class="mission-item">
+              <span class="flag">step-1</span>
+              <span class="desc">You run the toolkit, build a node, share chain_data</span>
+            </div>
+            <div class="mission-item">
+              <span class="flag">step-2</span>
+              <span class="desc">Register your server in <a href="https://github.com/noobvie/Grin-Node-Toolkit/blob/main/extensions/grinmasternodes.json" target="_blank" rel="noopener" class="term-link">grinmasternodes.json ↗</a></span>
+            </div>
+            <div class="mission-item">
+              <span class="flag">step-3</span>
+              <span class="desc">New nodes can pick any master node as bootstrap source</span>
+            </div>
+            <div class="mission-item">
+              <span class="flag">future</span>
+              <span class="desc">Wallet clients stream chain_data directly → 4–5 min full sync</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ WHAT IT DOES ═══════════════════════ -->
+<section id="tk-what" class="section">
+  <div class="container">
+    <div class="section-label">// 01 — WHAT IT DOES</div>
+    <h2 class="section-title">One Tool. <span class="accent-green">Everything</span> You Need.</h2>
+
+    <div class="grid-2">
+
+      <div class="terminal-block fade-in">
+        <div class="terminal-bar">
+          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+          <span class="terminal-title">grin-node-toolkit — main menu</span>
+        </div>
+        <div class="terminal-body">
+          <div class="out-line"><span class="kw">Core Modules</span></div>
+          <div class="out-line">  <span class="cyan">1)</span> Setup Grin New Node</div>
+          <div class="out-line">  <span class="cyan">2)</span> Manage Nginx Server</div>
+          <div class="out-line">  <span class="cyan">3)</span> Share Chain Data + Schedule</div>
+          <div class="out-line">  <span class="cyan">4)</span> Publish Node API (Foreign API)</div>
+          <div class="out-line"><span class="kw">Wallet Services</span></div>
+          <div class="out-line">  <span class="cyan">5)</span> Grin Wallet Services Hub</div>
+          <div class="out-line">     <span class="comment">├ 051 Private Web Wallet</span></div>
+          <div class="out-line">     <span class="comment">├ 052 Grin Drop (faucet/donation)</span></div>
+          <div class="out-line">     <span class="comment">├ 053 WooCommerce Gateway</span></div>
+          <div class="out-line">     <span class="comment">└ 054 Payment Processor</span></div>
+          <div class="out-line"><span class="kw">Infrastructure</span></div>
+          <div class="out-line">  <span class="cyan">6)</span> Global Grin Health (stats + peer map)</div>
+          <div class="out-line">  <span class="cyan">7)</span> Mining Services (stratum + pool)</div>
+          <div class="out-line">  <span class="cyan">8)</span> Admin &amp; Maintenance Centre</div>
+          <br/>
+          <div class="out-line"><span class="green">✓</span> Ubuntu 22.04+  Rocky/Alma 10+</div>
+          <div class="out-line"><span class="green">✓</span> Mainnet + Testnet on same server</div>
+        </div>
+      </div>
+
+      <div class="feature-cards fade-in">
+        <div class="feature-card">
+          <div class="feature-icon green">⚡</div>
+          <div>
+            <div class="feature-title">Pruned Node in ~15 Minutes</div>
+            <div class="feature-desc">Snapshot download skips the 3–4 hr normal sync. Pruned node ready in ~15 min on a US VPS, ~30–45 min elsewhere. Full archive node takes ~1 hr. Both testnet and mainnet can run on the same server simultaneously.</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon cyan">⬡</div>
+          <div>
+            <div class="feature-title">Become a Community Master Node</div>
+            <div class="feature-desc">Share your chain snapshot via nginx so others can bootstrap from your server. Every master node strengthens the Grin network.</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon magenta">◆</div>
+          <div>
+            <div class="feature-title">Full Infrastructure Stack</div>
+            <div class="feature-desc">Public API, block explorer, mining stratum, pool manager, wallet faucet — each module is independent and self-contained.</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon yellow">🔒</div>
+          <div>
+            <div class="feature-title">Security Built In</div>
+            <div class="feature-desc">fail2ban, rate limiting, IP filtering, firewall audit, SSL via Let's Encrypt — all configured from the same interactive menu.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ DEMO SITES ═════════════════════════ -->
+<section id="tk-demo-sites" class="section">
+  <div class="container">
+    <div class="section-label">// 02 — LIVE DEMO SITES</div>
+    <h2 class="section-title">8 Sites Built With <span class="accent-cyan">This Toolkit</span></h2>
+    <p class="section-subtitle">Every site below was deployed semi-automatically using grin-node-toolkit on a VPS. No manual server configuration.</p>
+
+    <div class="tk-demo-grid fade-in">
+
+      <a href="https://fullmain.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">01</div>
+        <div class="eco-title">Full Node Archive</div>
+        <div class="eco-desc">Full Grin mainnet archive node — complete chain history. Serves snapshots so other nodes can bootstrap worldwide without syncing from scratch.</div>
+        <div class="eco-tags">
+          <span class="eco-tag">mainnet</span>
+          <span class="eco-tag">full-archive</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">fullmain.grin.money ↗</div>
+      </a>
+
+      <a href="https://prunemain.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">02</div>
+        <div class="eco-title">Prune Node Mainnet</div>
+        <div class="eco-desc">Pruned mainnet node — ~5 GB footprint. Provides chain snapshots in pruned mode for lightweight bootstrapping of new nodes.</div>
+        <div class="eco-tags">
+          <span class="eco-tag">mainnet</span>
+          <span class="eco-tag">pruned</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">prunemain.grin.money ↗</div>
+      </a>
+
+      <a href="https://prunetest.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">03</div>
+        <div class="eco-title">Prune Node Testnet</div>
+        <div class="eco-desc">Pruned testnet node for developers. Safe environment to test wallets, transactions, and integrations without using real GRIN.</div>
+        <div class="eco-tags">
+          <span class="eco-tag">testnet</span>
+          <span class="eco-tag">pruned</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">prunetest.grin.money ↗</div>
+      </a>
+
+      <a href="https://scan.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">04</div>
+        <div class="eco-title">Grin Explorer</div>
+        <div class="eco-desc">Block explorer cloned from grincoin.org. The toolkit automates cloning, building, and deploying a full explorer — nginx, SSL, and systemd service in one step.</div>
+        <div class="eco-tags">
+          <span class="eco-tag">explorer</span>
+          <span class="eco-tag">mainnet</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">scan.grin.money ↗</div>
+      </a>
+
+      <a href="https://api.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">05</div>
+        <div class="eco-title">Public API Mainnet</div>
+        <div class="eco-desc">Grin node Foreign API (/v2/foreign) exposed via nginx HTTPS. Free to use for wallets, explorers, and tooling queries on mainnet.</div>
+        <div class="eco-tags">
+          <span class="eco-tag">api</span>
+          <span class="eco-tag">mainnet</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">api.grin.money ↗</div>
+      </a>
+
+      <a href="https://testapi.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">06</div>
+        <div class="eco-title">Public API Testnet</div>
+        <div class="eco-desc">Testnet node Foreign API endpoint. Ideal for wallet developers who need a reliable testnet node without running their own infrastructure.</div>
+        <div class="eco-tags">
+          <span class="eco-tag">api</span>
+          <span class="eco-tag">testnet</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">testapi.grin.money ↗</div>
+      </a>
+
+      <a href="https://world.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">07</div>
+        <div class="eco-title">Grin Global Health</div>
+        <div class="eco-desc">Live peer map, network stats, hashrate/difficulty charts, node version distribution. Stats collected every 5 minutes from the global Grin network.</div>
+        <div class="eco-tags">
+          <span class="eco-tag">stats</span>
+          <span class="eco-tag">peer-map</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">world.grin.money ↗</div>
+      </a>
+
+      <a href="https://drop.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">08</div>
+        <div class="eco-title">Free Grin Coin Portal</div>
+        <div class="eco-desc">GRIN faucet and donation portal. Interactive 3-step slatepack claim flow, rate-limited per address. Try Grin for free — no registration needed.</div>
+        <div class="eco-tags">
+          <span class="eco-tag">faucet</span>
+          <span class="eco-tag">wallet</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">drop.grin.money ↗</div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ BENEFITS ═══════════════════════════ -->
+<section id="tk-features" class="section section-dark">
+  <div class="container">
+    <div class="section-label">// 03 — BENEFITS</div>
+    <h2 class="section-title">Why Use the <span class="accent-magenta">Toolkit</span>?</h2>
+
+    <div class="process-grid">
+
+      <div class="process-step fade-in">
+        <div class="step-number">01</div>
+        <div class="step-terminal">
+          <div class="step-cmd">$ node --snapshot --faster</div>
+          <div class="step-desc">PIBD is fixed in recent releases, but a normal pruned sync still takes 3–4 hrs. Snapshot from a master node gets a pruned node running in ~15 min (US VPS) or ~1 hr for full archive — SHA256 verified.</div>
+        </div>
+      </div>
+
+      <div class="process-step fade-in">
+        <div class="step-number">02</div>
+        <div class="step-terminal">
+          <div class="step-cmd">$ network --strengthen</div>
+          <div class="step-desc">Every new node you run increases Grin's decentralisation. Share your chain data and become a master node that others can bootstrap from.</div>
+        </div>
+      </div>
+
+      <div class="process-step fade-in">
+        <div class="step-number">03</div>
+        <div class="step-terminal">
+          <div class="step-cmd">$ infra --full-stack</div>
+          <div class="step-desc">From a single VPS, run a node, expose a public API, host a block explorer, manage a mining stratum, and deploy a wallet portal.</div>
+        </div>
+      </div>
+
+      <div class="process-step fade-in">
+        <div class="step-number">04</div>
+        <div class="step-terminal">
+          <div class="step-cmd">$ binaries --official-only</div>
+          <div class="step-desc">All binaries come directly from the official <a href="https://github.com/mimblewimble/grin" target="_blank" rel="noopener" class="term-link">grin ↗</a> and <a href="https://github.com/mimblewimble/grin-wallet" target="_blank" rel="noopener" class="term-link">grin-wallet ↗</a> releases. No forks, no third-party binaries.</div>
+        </div>
+      </div>
+
+      <div class="process-step fade-in">
+        <div class="step-number">05</div>
+        <div class="step-terminal">
+          <div class="step-cmd">$ security --built-in</div>
+          <div class="step-desc">fail2ban, ufw/iptables rules, per-IP rate limiting, SSL Let's Encrypt, nginx audit, and firewall review — all from the menu. No manual config.</div>
+        </div>
+      </div>
+
+      <div class="process-step fade-in">
+        <div class="step-number">06</div>
+        <div class="step-terminal">
+          <div class="step-cmd">$ personal --use-case</div>
+          <div class="step-desc">Not just for server admins. Build your own private wallet portal, personal explorer, or testnet sandbox on a $2/mo VPS — in under an hour.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ ROADMAP / ACTIVE DEV ═══════════════ -->
+<section id="tk-roadmap" class="section">
+  <div class="container">
+    <div class="section-label">// 04 — DEVELOPMENT STATUS</div>
+    <h2 class="section-title">
+      <span class="accent-green">Active</span> Development
+      <span class="tag tag-green" style="font-size:0.7rem;vertical-align:middle;margin-left:0.5rem;">ongoing</span>
+    </h2>
+    <p class="section-subtitle">New modules are being added regularly. All grin node + wallet binaries used are official releases — no forks, no third-party executables.</p>
+
+    <div class="tk-roadmap-grid fade-in">
+      <div>
+        <div class="tk-roadmap-col-label">// shipped modules</div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Setup Grin node (mainnet + testnet) from snapshot</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Nginx server manager + Let's Encrypt SSL</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Share chain data + auto-scheduled snapshots</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Publish Foreign API over HTTPS</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Grin Drop — faucet + donation portal (Node.js)</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Global Grin Health dashboard + peer map</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Mining services — stratum + pool setup</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Admin centre — backup, firewall, nginx audit</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Block explorer deploy (clone grincoin.org style)</span></div>
+      </div>
+
+      <div>
+        <div class="tk-roadmap-col-label">// coming soon</div>
+        <div class="tk-coming-item"><span class="tk-coming-icon">○</span><span class="tk-coming-text">Mining Portal — full pool + stratum web UI</span><span class="tk-coming-badge">soon</span></div>
+        <div class="tk-coming-item"><span class="tk-coming-icon">○</span><span class="tk-coming-text">Grin Web Wallet — personal self-hosted</span><span class="tk-coming-badge">soon</span></div>
+        <div class="tk-coming-item"><span class="tk-coming-icon">○</span><span class="tk-coming-text">Public WASM Web Wallet — browser-based, no install</span><span class="tk-coming-badge">soon</span></div>
+        <div class="tk-coming-item"><span class="tk-coming-icon">○</span><span class="tk-coming-text">WooCommerce Plugin — accept GRIN in your shop</span><span class="tk-coming-badge">soon</span></div>
+        <div class="tk-coming-item"><span class="tk-coming-icon">○</span><span class="tk-coming-text">Payment Processor — invoice + checkout flow</span><span class="tk-coming-badge">soon</span></div>
+        <div class="tk-coming-item"><span class="tk-coming-icon">○</span><span class="tk-coming-text">AlmaLinux 10 / Rocky Linux support improvements</span><span class="tk-coming-badge">soon</span></div>
+      </div>
+    </div>
+
+    <div class="tk-official-note fade-in">
+      <span class="cyan">ℹ</span>&nbsp;
+      All grin node and wallet binaries downloaded by this toolkit are the official releases from
+      <a href="https://github.com/mimblewimble/grin/releases" target="_blank" rel="noopener">github.com/mimblewimble/grin</a>
+      and
+      <a href="https://github.com/mimblewimble/grin-wallet/releases" target="_blank" rel="noopener">github.com/mimblewimble/grin-wallet</a>.
+      No third-party forks. SHA256 checksums are verified before installation.
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ INTERACTIVE TERMINAL ═══════════════ -->
+<section id="tk-quickstart" class="section section-dark">
+  <div class="container">
+    <div class="section-label">// 05 — TRY IT</div>
+    <h2 class="section-title">Interactive <span class="accent-green">Menu Demo</span></h2>
+    <p class="section-subtitle">Click a menu item to see what the toolkit does. This is a live simulation of the bash interface.</p>
+
+    <div class="grid-2">
+
+      <div class="missions-terminal fade-in">
+        <div class="terminal-bar">
+          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+          <span class="terminal-title">grin-node-toolkit — requirements</span>
+        </div>
+        <div class="terminal-body missions-body">
+          <div class="mission-item">
+            <span class="flag">--os</span>
+            <span class="desc">Ubuntu 22.04+ / Rocky Linux 10+ / AlmaLinux 10+</span>
+          </div>
+          <div class="mission-item">
+            <span class="flag">--disk</span>
+            <span class="desc">10 GB min (pruned) · 25 GB for full archive</span>
+          </div>
+          <div class="mission-item">
+            <span class="flag">--access</span>
+            <span class="desc">Root or sudo — required for nginx, systemd, firewall</span>
+          </div>
+          <div class="mission-item">
+            <span class="flag">--deps</span>
+            <span class="desc">curl · wget · jq · tar · tmux — auto-installed if missing</span>
+          </div>
+          <div class="mission-item">
+            <span class="flag">--vps</span>
+            <span class="desc">Any low-cost SSD VPS works — ~$2/mo is enough</span>
+          </div>
+          <div class="mission-item">
+            <span class="flag">--net</span>
+            <span class="desc">Mainnet + testnet scripted to run simultaneously on the same server — independent ports, dirs, and services</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal-window tk-interactive-terminal fade-in" id="tk-sim">
+        <div class="terminal-bar">
+          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+          <span class="terminal-title" id="tk-sim-title">root@vps:~/grin-node-toolkit$</span>
+        </div>
+        <div class="terminal-body" id="tk-sim-body">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ MASTER NODE PATH ═══════════════════ -->
+<section id="tk-master" class="section">
+  <div class="container">
+    <div class="section-label">// 06 — MASTER NODE PATH</div>
+    <h2 class="section-title">From Node to <span class="accent-yellow">Community Master Node</span></h2>
+    <p class="section-subtitle">A master node shares its chain snapshot so others can bootstrap in minutes rather than days. Here's the step-by-step path.</p>
+
+    <div class="missions-terminal fade-in">
+      <div class="terminal-bar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="terminal-title">grin-node-toolkit --become-master-node</span>
+      </div>
+      <div class="terminal-body missions-body">
+        <div class="mission-item">
+          <span class="flag">step-01 --build-node</span>
+          <span class="desc">Menu 1: Install node binary, download snapshot, launch in tmux</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">step-02 --nginx-server</span>
+          <span class="desc">Menu 2: Setup nginx fileserver, add domain, SSL via Let's Encrypt</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">step-03 --share-chain-data</span>
+          <span class="desc">Menu 3A+B: Configure nginx to serve .tar.gz chain snapshot publicly</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">step-04 --schedule-snapshots</span>
+          <span class="desc">Menu 3E: Cron job to auto-rebuild and re-share snapshot on schedule</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">step-05 --publish-api</span>
+          <span class="desc">Menu 4: Expose /v2/foreign over HTTPS for wallets and explorers</span>
+        </div>
+        <div class="mission-item">
+          <span class="flag">step-06 --register-in-community</span>
+          <span class="desc">Fork repo → add your host URL → submit pull request to join master node list</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ CTA FOOTER ═════════════════════════ -->
+<section id="tk-cta-footer" class="section section-dark">
+  <div class="container">
+
+    <div class="founder-quote fade-in" style="margin-bottom:3rem;">
+      <div class="quote-mark">"</div>
+      <blockquote class="quote-text">
+        My goal is simple: make it easy for anyone to join the Grin network and keep their node alive.
+        PIBD is now fixed in recent Grin releases — but a normal pruned sync still costs 3–4 hours,
+        and a full archive much longer. The snapshot method remains the fastest on-ramp,
+        and everything else in the toolkit keeps growing to make Grin easier for everyone.
+      </blockquote>
+      <div class="quote-author">— Noobvie, Grin Node Toolkit author</div>
+    </div>
+
+    <div class="talents-cta fade-in">
+      <div class="talents-cta-text">
+        Ready to run infrastructure for Grin? Clone the toolkit and spin up your first node.
+        Zero configuration required beyond choosing mainnet or testnet.
+      </div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener" class="btn btn-primary">
+          <span class="btn-prefix">$</span> git clone toolkit
+        </a>
+        <a href="index.html#get-started" class="btn btn-ghost">
+          <span class="btn-prefix">←</span> back to grin.money
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════ FOOTER ═════════════════════════════ -->
+<footer id="footer">
+  <div class="container">
+    <div class="footer-simple">
+      <div class="footer-brand">
+        <div class="footer-logo"><span class="bracket">[</span>GRIN<span class="bracket">]</span></div>
+        <p class="footer-tagline">Electronic cash for all.<br/>Private by default.</p>
+      </div>
+      <div class="footer-noobvie-quote">
+        <div class="footer-quote-mark">"</div>
+        <div class="footer-quote-text">
+          I've been trying BTC / Zcash / Monero / USDT...<br/>
+          but Grin is the place where I find interesting.
+        </div>
+        <div class="footer-quote-author">— Noobvie</div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>©2019–2026 Made by Noobvie</span>
+      <span class="footer-hash">block#<span id="footer-block">—</span></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+'use strict';
+
+/* ── Matrix rain ─────────────────────────────────────────────────────────── */
+(function initMatrix() {
+  const canvas = document.getElementById('matrix-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$><|[]{}#@!%^&*+=GRIN';
+  const FONT_SZ = 14;
+  let columns, drops;
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    columns = Math.floor(canvas.width / FONT_SZ);
+    drops = Array.from({ length: columns }, () => Math.floor(Math.random() * -50));
+  }
+  function draw() {
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.04)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = `${FONT_SZ}px 'JetBrains Mono', monospace`;
+    for (let i = 0; i < drops.length; i++) {
+      const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+      ctx.fillText(char, i * FONT_SZ, drops[i] * FONT_SZ);
+      if (drops[i] * FONT_SZ > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  setInterval(draw, 50);
+})();
+
+/* ── Toolkit typewriter ─────────────────────────────────────────────────── */
+(function initToolkitTypewriter() {
+  const lines = [
+    { id: 'tk-line-1', text: 'name:     Grin Node Toolkit',                         color: 'text-bright', delay: 400  },
+    { id: 'tk-line-2', text: 'type:     bash · modular · semi-automated',            color: 'cyan',        delay: 900  },
+    { id: 'tk-line-3', text: 'features: node  api  explorer  mining  wallet  drop',  color: 'green',       delay: 1400 },
+    { id: 'tk-line-4', text: 'status:   ACTIVE — 8 live infrastructure sites running', color: 'text',      delay: 1900 },
+  ];
+  lines.forEach(({ id, text, color, delay }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.color = 'var(--' + color + ')';
+    setTimeout(() => {
+      let i = 0;
+      const interval = setInterval(() => {
+        el.textContent = text.slice(0, i + 1);
+        i++;
+        if (i >= text.length) clearInterval(interval);
+      }, 22);
+    }, delay);
+  });
+})();
+
+/* ── Scroll reveal ───────────────────────────────────────────────────────── */
+(function initScrollReveal() {
+  const targets = document.querySelectorAll('.fade-in');
+  if (!targets.length) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+  );
+  targets.forEach((el) => observer.observe(el));
+})();
+
+/* ── Stagger fade-in ─────────────────────────────────────────────────────── */
+(function initStagger() {
+  const grids = [
+    '.feature-cards .feature-card',
+    '.tk-demo-grid .eco-card',
+    '.process-grid .process-step',
+    '.community-grid .community-card',
+  ];
+  grids.forEach((selector) => {
+    document.querySelectorAll(selector).forEach((el, i) => {
+      el.style.transitionDelay = `${i * 80}ms`;
+      el.classList.add('fade-in');
+    });
+  });
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.fade-in:not(.visible)').forEach((el) => observer.observe(el));
+})();
+
+/* ── Nav mobile toggle ───────────────────────────────────────────────────── */
+(function initNavToggle() {
+  const btn   = document.getElementById('nav-toggle');
+  const links = document.getElementById('nav-links');
+  if (!btn || !links) return;
+  btn.addEventListener('click', () => {
+    links.classList.toggle('open');
+    btn.textContent = links.classList.contains('open') ? '✕' : '☰';
+  });
+  links.querySelectorAll('a').forEach((a) => {
+    a.addEventListener('click', () => {
+      links.classList.remove('open');
+      btn.textContent = '☰';
+    });
+  });
+})();
+
+/* ── Nav shadow on scroll ────────────────────────────────────────────────── */
+(function initNavScroll() {
+  const nav = document.getElementById('nav');
+  if (!nav) return;
+  window.addEventListener('scroll', () => {
+    nav.style.boxShadow = window.scrollY > 20 ? '0 2px 20px rgba(0,0,0,0.5)' : 'none';
+  }, { passive: true });
+})();
+
+/* ── Block counter ───────────────────────────────────────────────────────── */
+(function initBlockCounters() {
+  const footer = document.getElementById('footer-block');
+  const nav    = document.getElementById('nav-block');
+  function set(text) {
+    if (footer) footer.textContent = text;
+    if (nav)    nav.textContent    = text;
+  }
+  async function fetchHeight() {
+    try {
+      const res  = await fetch('https://world.grin.money/api/summary', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data && data.tip_height) { set(Number(data.tip_height).toLocaleString()); return; }
+      throw new Error('tip_height missing');
+    } catch (err) {
+      console.error('[Grin] Block counter fetch failed:', err.message);
+      set('connecting...');
+    }
+  }
+  set('connecting...');
+  fetchHeight();
+  setInterval(fetchHeight, 5 * 60 * 1000);
+})();
+
+/* ── Logo glitch ─────────────────────────────────────────────────────────── */
+(function initGlitch() {
+  const logo = document.querySelector('.nav-logo');
+  if (!logo) return;
+  logo.addEventListener('mouseenter', () => {
+    logo.style.textShadow = '2px 0 var(--cyan), -2px 0 var(--magenta)';
+    setTimeout(() => { logo.style.textShadow = '1px 0 var(--cyan), -1px 0 var(--magenta)'; }, 80);
+    setTimeout(() => { logo.style.textShadow = 'none'; }, 160);
+  });
+})();
+
+/* ── Clock cursor ────────────────────────────────────────────────────────── */
+(function initClockCursor() {
+  const canvas = document.getElementById('clock-cursor');
+  if (!canvas) return;
+  document.documentElement.classList.add('js-cursor');
+  const SIZE = 34;
+  const DPR  = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width  = SIZE * DPR;
+  canvas.height = SIZE * DPR;
+  canvas.style.width  = SIZE + 'px';
+  canvas.style.height = SIZE + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  const CX = SIZE / 2, CY = SIZE / 2, R = SIZE / 2 - 2;
+  let mx = 0, my = 0, hover = false;
+  document.addEventListener('mousemove', (e) => {
+    mx = e.clientX; my = e.clientY;
+    canvas.style.left = mx + 'px';
+    canvas.style.top  = my + 'px';
+  });
+  document.querySelectorAll('a, button').forEach((el) => {
+    el.addEventListener('mouseenter', () => { hover = true;  canvas.classList.add('hover'); });
+    el.addEventListener('mouseleave', () => { hover = false; canvas.classList.remove('hover'); });
+  });
+  function drawClock() {
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    const now = new Date();
+    const h = now.getHours() % 12, m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
+    ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(6, 6, 6, 0.88)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.strokeStyle = hover ? '#00e5ff' : '#00ff41'; ctx.lineWidth = 1.4; ctx.stroke();
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+      const isMajor = i % 3 === 0;
+      const inner = R - (isMajor ? 3.5 : 2);
+      ctx.beginPath();
+      ctx.moveTo(CX + Math.cos(a) * inner, CY + Math.sin(a) * inner);
+      ctx.lineTo(CX + Math.cos(a) * (R - 0.5), CY + Math.sin(a) * (R - 0.5));
+      ctx.strokeStyle = isMajor ? 'rgba(0,255,65,0.6)' : 'rgba(0,255,65,0.25)';
+      ctx.lineWidth = isMajor ? 1.2 : 0.8; ctx.stroke();
+    }
+    const hAngle = ((h + m / 60) / 12) * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath(); ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + Math.cos(hAngle) * R * 0.48, CY + Math.sin(hAngle) * R * 0.48);
+    ctx.strokeStyle = '#cccccc'; ctx.lineWidth = 1.8; ctx.lineCap = 'round'; ctx.stroke();
+    const mAngle = ((m + s / 60) / 60) * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath(); ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + Math.cos(mAngle) * R * 0.72, CY + Math.sin(mAngle) * R * 0.72);
+    ctx.strokeStyle = hover ? '#00e5ff' : '#88cccc'; ctx.lineWidth = 1.2; ctx.lineCap = 'round'; ctx.stroke();
+    const sAngle = ((s + ms / 1000) / 60) * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath(); ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + Math.cos(sAngle) * R * 0.88, CY + Math.sin(sAngle) * R * 0.88);
+    ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 0.9; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CX, CY);
+    ctx.lineTo(CX - Math.cos(sAngle) * R * 0.22, CY - Math.sin(sAngle) * R * 0.22);
+    ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 0.9; ctx.stroke();
+    ctx.beginPath(); ctx.arc(CX, CY, 1.8, 0, Math.PI * 2);
+    ctx.fillStyle = '#00ff41'; ctx.fill();
+    requestAnimationFrame(drawClock);
+  }
+  drawClock();
+})();
+
+/* ── Interactive terminal simulation ─────────────────────────────────────── */
+(function initInteractiveTerminal() {
+  const body  = document.getElementById('tk-sim-body');
+  const title = document.getElementById('tk-sim-title');
+  if (!body) return;
+
+  const menu = [
+    { num: '1', label: 'Setup Grin New Node', output: [
+      { text: '> Detecting OS... Ubuntu 22.04 ✓', cls: 'info' },
+      { text: '> Available binaries from github.com/mimblewimble/grin ↓', cls: 'info' },
+      { text: '> Downloading grin v5.4.0 (official release)...', cls: '' },
+      { text: '> Mode: pruned mainnet  (full archive also available)', cls: 'info' },
+      { text: '> Selecting nearest master node... prunemain.grin.money (US)', cls: '' },
+      { text: '> Note: PIBD fixed in v5.4.0 — but normal sync = 3–4 hrs', cls: 'info' },
+      { text: '> Downloading snapshot.tar.gz (~4.8 GB) via snapshot method...', cls: '' },
+      { text: '> Estimated time: ~15 min (US VPS) · ~30–45 min (Asia/EU)', cls: 'info' },
+      { text: '> Verifying SHA256 checksum... ✓', cls: 'success' },
+      { text: '> Extracting to /opt/grin/node/mainnet-prune/', cls: '' },
+      { text: '> Creating systemd service grin-node-mainnet...', cls: '' },
+      { text: '> Node started in tmux session "grin-mainnet"', cls: '' },
+      { text: '> Testnet can also run on this same server (menu 1 again)', cls: 'info' },
+      { text: '✓ Pruned mainnet node running. Catching up to chain tip...', cls: 'success' },
+    ]},
+    { num: '2', label: 'Manage Nginx Server', output: [
+      { text: '> Checking nginx status... active ✓', cls: 'info' },
+      { text: '> Options: [A] Add vhost  [B] SSL cert  [C] File server  [D] Remove', cls: '' },
+      { text: '> Selected: A — Add new vhost for domain', cls: '' },
+      { text: '> Enter domain: prunemain.grin.money', cls: '' },
+      { text: '> Generating nginx config at /etc/nginx/sites-available/...', cls: '' },
+      { text: '> Running certbot for Let\'s Encrypt SSL...', cls: '' },
+      { text: '✓ SSL certificate issued. HTTPS live on prunemain.grin.money', cls: 'success' },
+    ]},
+    { num: '3', label: 'Share Chain Data', output: [
+      { text: '> Options: [A] Setup fileserver  [B] Create snapshot  [E] Schedule', cls: '' },
+      { text: '> Selected: E — Schedule auto-snapshot', cls: '' },
+      { text: '> Cron job: rebuild + compress chain snapshot every Monday + Thursday', cls: '' },
+      { text: '> Snapshot served at: https://prunemain.grin.money/snapshot/', cls: 'info' },
+      { text: '✓ Master node snapshot sharing configured.', cls: 'success' },
+    ]},
+    { num: '4', label: 'Publish Node API', output: [
+      { text: '> Exposing Grin Foreign API (/v2/foreign) via nginx reverse proxy', cls: '' },
+      { text: '> Rate limiting: 10 req/s per IP, burst 30', cls: '' },
+      { text: '> SSL: Let\'s Encrypt on api.grin.money', cls: '' },
+      { text: '> Basic Auth: secret from /opt/grin/node/mainnet-prune/.foreign_api_secret', cls: '' },
+      { text: '✓ Public API live at https://api.grin.money/v2/foreign', cls: 'success' },
+    ]},
+    { num: '5', label: 'Wallet Services Hub', output: [
+      { text: '> Sub-menu: wallet services', cls: 'info' },
+      { text: '  051) Private Web Wallet', cls: '' },
+      { text: '  052) Grin Drop (faucet + donation portal)    ← drop.grin.money', cls: '' },
+      { text: '  053) WooCommerce Payment Gateway             ← coming soon', cls: '' },
+      { text: '  054) Payment Processor                       ← coming soon', cls: '' },
+      { text: '  055) Public WASM Web Wallet                  ← coming soon', cls: '' },
+      { text: '> Select a sub-module to continue...', cls: 'info' },
+    ]},
+    { num: '6', label: 'Global Grin Health', output: [
+      { text: '> Installing Python3 + collector scripts...', cls: '' },
+      { text: '> Peer map: scanning mainnet P2P network (port 3414)', cls: '' },
+      { text: '> Stats collector: fetches node data every 5 min via cron', cls: '' },
+      { text: '> Dashboard deployed at https://world.grin.money', cls: '' },
+      { text: '✓ Grin Global Health dashboard running.', cls: 'success' },
+    ]},
+    { num: '7', label: 'Mining Services', output: [
+      { text: '> Options: [A] Stratum server  [B] Mining pool  [C] Pool admin UI', cls: '' },
+      { text: '> Selected: B — Mining pool setup', cls: '' },
+      { text: '> Configuring grin-pool with JWT auth + share accounting...', cls: '' },
+      { text: '> Slatepack withdrawal support: enabled', cls: '' },
+      { text: '> Pool admin dashboard: 5 CSS themes included', cls: '' },
+      { text: '✓ Grin mining pool running. Stratum port 3416.', cls: 'success' },
+    ]},
+    { num: '8', label: 'Admin & Maintenance', output: [
+      { text: '> Options: [A] Backup  [B] Firewall audit  [C] Nginx audit  [D] Update', cls: '' },
+      { text: '> Selected: B — Firewall audit', cls: '' },
+      { text: '> Checking ufw rules...', cls: '' },
+      { text: '  3414/tcp ALLOW (node P2P)', cls: 'success' },
+      { text: '  3413/tcp DENY  (node API — nginx proxied only)', cls: 'success' },
+      { text: '  22/tcp   ALLOW (SSH)', cls: 'success' },
+      { text: '  443/tcp  ALLOW (HTTPS)', cls: 'success' },
+      { text: '✓ Firewall rules look good.', cls: 'success' },
+    ]},
+  ];
+
+  function renderMenu() {
+    title.textContent = 'root@vps:~/grin-node-toolkit$';
+    body.innerHTML = '';
+    const intro = document.createElement('div');
+    intro.className = 'out-line';
+    intro.textContent = '$ sudo ./grin-node-toolkit.sh';
+    body.appendChild(intro);
+    const br = document.createElement('br');
+    body.appendChild(br);
+    menu.forEach(({ num, label }) => {
+      const btn = document.createElement('button');
+      btn.className = 'tk-menu-btn';
+      btn.textContent = `  ${num})  ${label}`;
+      btn.addEventListener('click', () => runModule(num, label));
+      body.appendChild(btn);
+    });
+    const hint = document.createElement('div');
+    hint.className = 'out-line comment';
+    hint.style.marginTop = '0.75rem';
+    hint.textContent = '# Click any option above to simulate it';
+    body.appendChild(hint);
+  }
+
+  function runModule(num, label) {
+    const item = menu.find(m => m.num === num);
+    if (!item) return;
+
+    title.textContent = `module ${num} — ${label}`;
+    body.innerHTML = '';
+
+    const heading = document.createElement('div');
+    heading.className = 'out-line';
+    heading.innerHTML = `<span class="prompt">$</span> <span class="cmd">./grin-node-toolkit.sh --module ${num}</span>`;
+    body.appendChild(heading);
+
+    item.output.forEach((line, i) => {
+      setTimeout(() => {
+        const div = document.createElement('div');
+        div.className = 'tk-output-line' + (line.cls ? ` ${line.cls}` : '');
+        div.textContent = line.text;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
+
+        if (i === item.output.length - 1) {
+          setTimeout(() => {
+            const back = document.createElement('button');
+            back.className = 'tk-back-btn';
+            back.textContent = '← back to menu';
+            back.addEventListener('click', renderMenu);
+            body.appendChild(back);
+            body.scrollTop = body.scrollHeight;
+          }, 300);
+        }
+      }, i * 180);
+    });
+  }
+
+  renderMenu();
+})();
+</script>
+</body>
+</html>
