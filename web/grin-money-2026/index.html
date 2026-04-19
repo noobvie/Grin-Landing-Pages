@@ -45,6 +45,49 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" href="grin_black_white.svg" type="image/svg+xml" />
+  <style>
+    /* ── Mobile responsive overrides ────────────────────────────────────────────
+     * Defined here (after the external stylesheet) so they always win the
+     * cascade, regardless of where grid classes appear in style.css.
+     * Same pattern used in grin-node-toolkit.html.
+     * ─────────────────────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .why-grid         { grid-template-columns: 1fr 1fr; }
+      .eco-grid         { grid-template-columns: 1fr 1fr; }
+      .live-stats-grid  { grid-template-columns: 1fr 1fr; }
+      .hof-cols         { grid-template-columns: 1fr; }
+      .community-grid-3 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      /* All multi-column sections → single column */
+      .why-grid,
+      .eco-grid,
+      .live-stats-grid,
+      .hof-cols,
+      .community-grid,
+      .community-grid-3 { grid-template-columns: 1fr; }
+
+      /* Why Grin — center each card */
+      .why-card         { text-align: center; }
+      .why-icon         { display: block; margin: 0 auto 0.75rem; }
+
+      /* Active Projects — center each card */
+      .eco-card         { text-align: center; align-items: center; }
+      .eco-tags         { justify-content: center; }
+      .eco-multi-links  { align-items: center; }
+
+      /* Grin Network Live — center each stat card */
+      .live-stat-card   { align-items: center; text-align: center; }
+
+      /* Join the Network — center each card */
+      .community-card   { align-items: center; text-align: center; }
+      .comm-icon        { margin: 0 auto; }
+
+      /* Hall of Fame */
+      .hof-col-label    { text-align: center; }
+      .hof-col .hof-terminal { max-width: 100%; }
+    }
+  </style>
 </head>
 <body>
 
