@@ -1297,11 +1297,21 @@ action_self_update() {
         return 1
     fi
 
-    print_info "Pulling latest changes from GitHub..."
-    print_cmd "git -C $SCRIPT_DIR pull origin main"
+    # Detect the actual default branch from the remote (handles main/master/etc.)
+    local branch
+    branch=$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
+    if [[ -z "$branch" || "$branch" == "HEAD" ]]; then
+        # Detached HEAD or unknown — ask remote
+        branch=$(git -C "$SCRIPT_DIR" ls-remote --symref origin HEAD 2>/dev/null \
+            | awk '/^ref:/ {sub("refs/heads/",""); print $2; exit}')
+    fi
+    branch="${branch:-master}"
+
+    print_info "Pulling latest changes from GitHub... (branch: $branch)"
+    print_cmd "git -C $SCRIPT_DIR pull origin $branch"
     echo ""
 
-    if git -C "$SCRIPT_DIR" pull origin main; then
+    if git -C "$SCRIPT_DIR" pull origin "$branch"; then
         echo ""
         print_info "Update complete."
         echo -e "  ${YELLOW}Exiting now — re-run the script to use the latest version:${NC}"
