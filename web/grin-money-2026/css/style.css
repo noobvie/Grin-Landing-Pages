@@ -849,35 +849,99 @@ a.wallet-item:hover {
   .nav-links.open      { display: flex; }
   .nav-links a         { padding: 0.75rem 1rem; font-size: 0.875rem; }
   .nav-toggle          { display: block; padding: 0.75rem 1rem; }
-  .eco-grid            { grid-template-columns: 1fr; }
-  .community-grid      { grid-template-columns: 1fr; }
-  .community-grid-3    { grid-template-columns: 1fr; }
-  .why-grid            { grid-template-columns: 1fr; }
-  .live-stats-grid     { grid-template-columns: 1fr; }
+
+  /* All grids collapse to single column */
+  .why-grid,
+  .eco-grid,
+  .live-stats-grid,
+  .community-grid,
+  .community-grid-3,
+  .hof-cols            { grid-template-columns: 1fr; }
+
+  /* Hero */
   .hero-stats          { flex-direction: column; gap: 1rem; }
   .stat-divider        { display: none; }
   .hero-cta            { flex-direction: column; align-items: center; }
-  .talents-cta         { flex-direction: column; align-items: center; text-align: center; }
-  .hof-col-label       { text-align: center; }
-  .hof-header,
-  .hof-row             { grid-template-columns: 40px 1fr auto; padding: 0.6rem 1rem; }
-  .col-date            { display: none; }
-  .mission-item:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
-  .mission-item:last-child           { border-bottom: none; }
+
+  /* Terminals: prevent long lines from blowing out the viewport */
+  .terminal-window,
+  .terminal-block,
+  .missions-terminal,
+  .talents-terminal,
+  .git-log,
+  .hof-terminal,
+  .terminal-mini       { overflow-x: auto; }
+
   .terminal-body,
-  .out-line            { font-size: 0.8125rem; }
+  .out-line            { font-size: 0.8125rem; overflow-wrap: break-word; word-break: break-word; }
+
+  /* Flag / command text in mission & talent panels */
+  .flag                { font-size: 0.8125rem; white-space: normal; word-break: break-word; }
+  .mini-line           { font-size: 0.8125rem; white-space: normal; word-break: break-all; }
+  .step-cmd            { white-space: normal; word-break: break-word; }
+
+  /* Card text */
   .desc,
   .eco-desc,
   .comm-desc,
   .feature-desc,
   .step-desc,
   .why-desc            { font-size: 0.875rem; }
-  .flag                { font-size: 0.8125rem; }
-  .mini-line           { font-size: 0.8125rem; }
+
+  /* Hall of Fame tables */
+  .hof-header,
+  .hof-row             { grid-template-columns: 40px 1fr auto; padding: 0.6rem 1rem; }
+  .col-date            { display: none; }
+  .hof-col-label       { text-align: center; }
+  .hof-coder-header,
+  .hof-coder-row       { padding: 0.55rem 1rem; }
+
+  /* Missions border cleanup for single column */
+  .mission-item:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
+  .mission-item:last-child           { border-bottom: none; }
+
+  /* Talents CTA */
+  .talents-cta         { flex-direction: column; align-items: center; text-align: center; }
+
+  /* Footer */
   .footer-bottom       { flex-direction: column; gap: 0.5rem; text-align: center; }
   .footer-simple       { flex-direction: column; gap: 2rem; align-items: center; text-align: center; }
   .footer-noobvie-quote{ border-left: none; border-top: 1px solid var(--border-bright); padding-left: 0; padding-top: 1.5rem; }
+
+  /* Hide canvas clock cursor on touch devices */
   #clock-cursor        { display: none; }
+}
+
+/* Extra small phones (≤430px — iPhone 16 Pro and similar) */
+@media (max-width: 430px) {
+  .container           { padding: 0 1rem; }
+  .section             { padding: 3rem 0; }
+
+  /* Reinforce 1-column for all grids at very small widths */
+  .why-grid,
+  .eco-grid,
+  .live-stats-grid,
+  .community-grid,
+  .community-grid-3,
+  .hof-cols,
+  .process-grid,
+  .started-grid        { grid-template-columns: 1fr; }
+
+  /* Scale down large text values in stat cards */
+  .ls-value            { font-size: 1.35rem; }
+  .stat-value          { font-size: 1.3rem; }
+
+  /* Keep terminal content from overflowing */
+  .terminal-body       { padding: 1rem; }
+  .hof-header,
+  .hof-row             { font-size: 0.72rem; padding: 0.5rem 0.75rem; }
+  .hof-coder-header,
+  .hof-coder-row       { padding: 0.5rem 0.75rem; font-size: 0.72rem; }
+
+  /* Eco & why cards: more breathing room vertically */
+  .eco-card,
+  .why-card            { padding: 1.1rem; }
+  .live-stat-card      { padding: 1.1rem 1rem; }
 }
 
 /* ── Clock cursor ────────────────────────────────────────────────────────────── */

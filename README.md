@@ -11,9 +11,9 @@ The deployment script is **domain-agnostic** — it works for any static site on
 ## Repo Structure
 
 ```
-Grin-Landing-Page/
+Grin-Landing-Pages/
+├── site_manager.sh              # nginx, SSL, security, and deploy management
 ├── deploy/
-│   ├── site_manager.sh          # nginx, SSL, security, and deploy management
 │   ├── custom_repo.conf         # your local deploy config (git-ignored)
 │   └── custom_repo.conf.example # template — copy and fill in
 └── web/
@@ -23,16 +23,23 @@ Grin-Landing-Page/
         └── js/main.js
 ```
 
-Each site lives in its own `web/<site-name>/` directory. The deploy script reads `custom_repo.conf` to know which site to pull and where to put it.
+Each site lives in its own `web/<site-name>/` directory. The deploy script reads `deploy/custom_repo.conf` to know which site to pull and where to put it.
 
 ---
 
 ## Quick Start
 
+```bash
+git clone https://github.com/noobvie/Grin-Landing-Pages.git
+cd Grin-Landing-Pages
+chmod 775 site_manager.sh
+sudo ./site_manager.sh
+```
+
 ### 1. Add a domain on your server (nginx + SSL)
 
 ```bash
-sudo ./deploy/site_manager.sh --action add \
+sudo ./site_manager.sh --action add \
     --domain grin.money \
     --email admin@grin.money
 ```
@@ -46,12 +53,14 @@ cp deploy/custom_repo.conf.example deploy/custom_repo.conf
 
 ### 3. Deploy
 
+When deploying, the script will prompt you for a user:group to set ownership on deployed files (e.g. `www-data:www-data`).
+
 ```bash
-# Git pull on the server (interactive — prompts to confirm branch)
-sudo ./deploy/site_manager.sh --action deploy --deploy-mode git
+# Git pull on the server (interactive — prompts to confirm branch + ownership)
+sudo ./site_manager.sh --action deploy --deploy-mode git
 
 # rsync push from your local machine
-./deploy/site_manager.sh --action deploy --deploy-mode rsync \
+./site_manager.sh --action deploy --deploy-mode rsync \
     --remote ubuntu@your-server --remote-path /var/www/grin.money/public \
     --src ./web/grin-money-2026
 ```
@@ -72,7 +81,7 @@ GIT_BRANCH="main"
 Or pass it directly:
 
 ```bash
-sudo ./deploy/site_manager.sh --action deploy --deploy-mode git \
+sudo ./site_manager.sh --action deploy --deploy-mode git \
     --site-name another-site \
     --dir /var/www/another-domain.com/public
 ```

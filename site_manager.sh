@@ -67,11 +67,16 @@ SPARSE_CHECKOUT=""           # "yes" to sparse-clone only web/<SITE_NAME>/
 DOMAIN_TO_REMOVE=""          # Domain to remove
 DELETE_FILES=""              # "yes" to also delete web files
 
+# Deploy state
+DEPLOY_OWNER=""              # user:group for chown after deploy (saved/loaded from state file)
+DEPLOY_STATE_FILE=""         # Set after SCRIPT_DIR is known (see bottom of system vars block)
+
 #############################################################################
 # System Variables — DO NOT EDIT
 #############################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEPLOY_STATE_FILE="$SCRIPT_DIR/deploy/deploy_state.conf"
 LOG_DIR="/opt/grin-landing/logs"
 LOG_FILE=""
 
@@ -312,6 +317,8 @@ EOF
     echo "  7) fail2ban Mgmt      — Status, ban/unban IPs"
     echo "  8) IP Filtering       — Block / Unblock IPs"
     echo ""
+    echo "  9) Update Script      — git pull latest site_manager.sh from GitHub"
+    echo ""
     echo "  0) Exit"
     echo ""
 }
@@ -321,7 +328,7 @@ get_action() {
 
     while true; do
         show_main_menu
-        read -r -p "Enter choice [0-8]: " choice
+        read -r -p "Enter choice [0-9]: " choice
         case "$choice" in
             1) ACTION="add"              ; break ;;
             2) ACTION="remove"           ; break ;;
@@ -331,9 +338,10 @@ get_action() {
             6) ACTION="fail2ban_install" ; break ;;
             7) ACTION="fail2ban_mgmt"    ; break ;;
             8) ACTION="ip_filter"        ; break ;;
+            9) ACTION="self_update"      ; break ;;
             0) print_info "Exiting."; exit 0 ;;
             "") ;;
-            *) print_error "Invalid choice. Please enter 0-8." ; sleep 1 ;;
+            *) print_error "Invalid choice. Please enter 0-9." ; sleep 1 ;;
         esac
     done
 }
@@ -645,6 +653,8 @@ action_remove_domain() {
 action_deploy() {
     print_section "Deploy Site"
 
+    _load_deploy_state
+
     echo ""
     echo "Deploy modes:"
     echo "  1) local  — Copy files on this machine to a local nginx web dir"
@@ -671,11 +681,84 @@ action_deploy() {
     esac
 }
 
+_prompt_ownership() {
+    local target_dir="$1"
+    echo ""
+    local prompt_hint="e.g. www-data:www-data"
+    [[ -n "$DEPLOY_OWNER" ]] && prompt_hint="last used: $DEPLOY_OWNER"
+    read -r -p "  Set ownership of deployed files ($prompt_hint, Enter to skip): " _owner
+    _owner="${_owner:-$DEPLOY_OWNER}"
+    if [[ -n "$_owner" ]]; then
+        chown -R "$_owner" "$target_dir"
+        DEPLOY_OWNER="$_owner"
+        print_info "Ownership set to ${_owner} on ${target_dir}"
+    fi
+}
+
+_load_deploy_state() {
+    [[ -f "$DEPLOY_STATE_FILE" ]] || return 0
+    local _mode _src _remote _rpath _repo _branch _site _dir _sparse _owner
+    _mode=$(   grep -E '^DEPLOY_MODE='       "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _src=$(    grep -E '^LOCAL_SRC='         "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _remote=$( grep -E '^REMOTE_USER='       "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _rpath=$(  grep -E '^REMOTE_PATH='       "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _repo=$(   grep -E '^GIT_REPO='          "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _branch=$( grep -E '^GIT_BRANCH='        "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _site=$(   grep -E '^SITE_NAME='         "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _dir=$(    grep -E '^WEB_DIR='           "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _sparse=$( grep -E '^SPARSE_CHECKOUT='   "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _owner=$(  grep -E '^DEPLOY_OWNER='      "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+
+    echo ""
+    echo -e "  ${BLUE}[SAVED]${NC} Last deploy settings:"
+    [[ -n "$_mode"   ]] && echo "    Mode:    $_mode"
+    [[ -n "$_src"    ]] && echo "    Source:  $_src"
+    [[ -n "$_remote" ]] && echo "    Remote:  $_remote"
+    [[ -n "$_rpath"  ]] && echo "    R.path:  $_rpath"
+    [[ -n "$_repo"   ]] && echo "    Repo:    $_repo"
+    [[ -n "$_branch" ]] && echo "    Branch:  $_branch"
+    [[ -n "$_site"   ]] && echo "    Site:    $_site"
+    [[ -n "$_dir"    ]] && echo "    Web dir: $_dir"
+    [[ -n "$_owner"  ]] && echo "    Owner:   $_owner"
+    echo ""
+    read -r -p "  Use saved settings? (Y/n) " _use
+    [[ "${_use,,}" == "n" ]] && return 0
+
+    [[ -n "$_mode"   && -z "$DEPLOY_MODE"   ]] && DEPLOY_MODE="$_mode"
+    [[ -n "$_src"    && -z "$LOCAL_SRC"     ]] && LOCAL_SRC="$_src"
+    [[ -n "$_remote" && -z "$REMOTE_USER"   ]] && REMOTE_USER="$_remote"
+    [[ -n "$_rpath"  && -z "$REMOTE_PATH"   ]] && REMOTE_PATH="$_rpath"
+    [[ -n "$_repo"   && -z "$GIT_REPO"      ]] && GIT_REPO="$_repo"
+    [[ -n "$_branch" && -z "$GIT_BRANCH"    ]] && GIT_BRANCH="$_branch"
+    [[ -n "$_site"   && -z "$SITE_NAME"     ]] && SITE_NAME="$_site"
+    [[ -n "$_dir"    && -z "$WEB_DIR"       ]] && WEB_DIR="$_dir"
+    [[ -n "$_sparse"                        ]] && SPARSE_CHECKOUT="$_sparse"
+    [[ -n "$_owner"                         ]] && DEPLOY_OWNER="$_owner"
+    print_info "Saved settings loaded."
+}
+
+_save_deploy_state() {
+    mkdir -p "$(dirname "$DEPLOY_STATE_FILE")"
+    cat > "$DEPLOY_STATE_FILE" << EOF
+DEPLOY_MODE="$DEPLOY_MODE"
+LOCAL_SRC="$LOCAL_SRC"
+REMOTE_USER="$REMOTE_USER"
+REMOTE_PATH="$REMOTE_PATH"
+GIT_REPO="$GIT_REPO"
+GIT_BRANCH="$GIT_BRANCH"
+SITE_NAME="$SITE_NAME"
+WEB_DIR="$WEB_DIR"
+SPARSE_CHECKOUT="${SPARSE_CHECKOUT:-no}"
+DEPLOY_OWNER="$DEPLOY_OWNER"
+EOF
+    print_info "Deploy settings saved → $DEPLOY_STATE_FILE"
+}
+
 _deploy_local() {
-    # Default source: sibling web/ directory relative to this script
+    # Default source: web/ directory at the repo root
     if [[ -z "$LOCAL_SRC" ]]; then
         local default_src
-        default_src="$(dirname "$SCRIPT_DIR")/web"
+        default_src="$SCRIPT_DIR/web"
         read -r -p "Source directory [default: $default_src]: " LOCAL_SRC
         LOCAL_SRC="${LOCAL_SRC:-$default_src}"
     fi
@@ -690,14 +773,16 @@ _deploy_local() {
     print_info "Copying $LOCAL_SRC → $WEB_DIR"
     mkdir -p "$WEB_DIR"
     rsync -av --delete "$LOCAL_SRC/" "$WEB_DIR/"
+    _prompt_ownership "$WEB_DIR"
+    _save_deploy_state
     print_info "Deploy complete."
 }
 
 _deploy_rsync() {
-    # Default source: sibling web/ directory
+    # Default source: web/ directory at the repo root
     if [[ -z "$LOCAL_SRC" ]]; then
         local default_src
-        default_src="$(dirname "$SCRIPT_DIR")/web"
+        default_src="$SCRIPT_DIR/web"
         read -r -p "Source directory [default: $default_src]: " LOCAL_SRC
         LOCAL_SRC="${LOCAL_SRC:-$default_src}"
     fi
@@ -718,13 +803,14 @@ _deploy_rsync() {
     print_info "Pushing $LOCAL_SRC → $REMOTE_USER:$REMOTE_PATH"
     print_cmd "rsync -avz --delete $LOCAL_SRC/ $REMOTE_USER:$REMOTE_PATH/"
     rsync -avz --delete "$LOCAL_SRC/" "$REMOTE_USER:$REMOTE_PATH/"
+    _save_deploy_state
     print_info "rsync deploy complete."
 }
 
 _deploy_git() {
     # ── Load custom_repo.conf if it exists ────────────────────────────────────
     local conf_file
-    conf_file="$SCRIPT_DIR/custom_repo.conf"
+    conf_file="$SCRIPT_DIR/deploy/custom_repo.conf"
     if [[ -f "$conf_file" ]]; then
         print_info "Loading deploy config: $conf_file"
         # Source safely — only read known variables
@@ -812,6 +898,8 @@ _deploy_git() {
         git clone --depth 1 --branch "$GIT_BRANCH" "$GIT_REPO" "$WEB_DIR"
     fi
 
+    _prompt_ownership "$WEB_DIR"
+    _save_deploy_state
     print_info "Git deploy complete  →  $WEB_DIR  [branch: $GIT_BRANCH]"
 }
 
@@ -1196,6 +1284,38 @@ HELP_EOF
 }
 
 #############################################################################
+# 9. Self-Update
+#############################################################################
+
+action_self_update() {
+    print_section "Update site_manager.sh from GitHub"
+
+    if [[ ! -d "$SCRIPT_DIR/.git" ]]; then
+        print_error "No .git directory found at: $SCRIPT_DIR"
+        print_info "Clone the repo first:"
+        print_cmd "git clone https://github.com/noobvie/Grin-Landing-Pages.git"
+        return 1
+    fi
+
+    print_info "Pulling latest changes from GitHub..."
+    print_cmd "git -C $SCRIPT_DIR pull origin main"
+    echo ""
+
+    if git -C "$SCRIPT_DIR" pull origin main; then
+        echo ""
+        print_info "Update complete."
+        echo -e "  ${YELLOW}Exiting now — re-run the script to use the latest version:${NC}"
+        echo ""
+        echo -e "    ${GREEN}sudo ./site_manager.sh${NC}"
+        echo ""
+        exit 0
+    else
+        print_error "git pull failed. Check your network connection or repo state."
+        return 1
+    fi
+}
+
+#############################################################################
 # Main
 #############################################################################
 
@@ -1204,8 +1324,8 @@ main() {
     detect_os
     detect_nginx_paths
 
-    # Deploy and list don't require root (rsync runs as current user)
-    if [[ "$ACTION" != "deploy" && "$ACTION" != "list" && "$ACTION" != "" ]]; then
+    # Deploy, list, and self_update don't require root
+    if [[ "$ACTION" != "deploy" && "$ACTION" != "list" && "$ACTION" != "self_update" && "$ACTION" != "" ]]; then
         check_root
     fi
 
@@ -1225,6 +1345,7 @@ main() {
         fail2ban_install) action_fail2ban_install ;;
         fail2ban_mgmt)    action_fail2ban_mgmt   ;;
         ip_filter)        action_ip_filter       ;;
+        self_update)      action_self_update     ;;
         *)
             print_error "Unknown ACTION: $ACTION"
             show_help
