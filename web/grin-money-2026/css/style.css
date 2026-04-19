@@ -1550,3 +1550,58 @@ a.wallet-item:hover {
   transition: color 0.15s, border-color 0.15s;
 }
 .tk-back-btn:hover { color: var(--green); border-color: var(--green); }
+
+/* ── Mobile overrides — must stay at EOF so they win the cascade ──────────────
+ * Several grid classes (.why-grid, .eco-grid, .live-stats-grid, .hof-cols,
+ * .community-grid-3) are declared AFTER the main @media blocks in this file,
+ * so their desktop column counts override the responsive rules above.
+ * Repeating the overrides here — after every base style — ensures 1-column
+ * layout on phones regardless of declaration order.
+ * ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .why-grid            { grid-template-columns: 1fr 1fr; }
+  .eco-grid            { grid-template-columns: 1fr 1fr; }
+  .live-stats-grid     { grid-template-columns: 1fr 1fr; }
+  .hof-cols            { grid-template-columns: 1fr; }
+  .community-grid-3    { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  /* Force single column on every multi-col section */
+  .why-grid,
+  .eco-grid,
+  .live-stats-grid,
+  .hof-cols,
+  .community-grid,
+  .community-grid-3    { grid-template-columns: 1fr; }
+
+  /* Why Grin cards — center content */
+  .why-card            { text-align: center; }
+  .why-icon            { display: block; margin: 0 auto 0.75rem; }
+
+  /* Active Projects cards — center content */
+  .eco-card            { text-align: center; align-items: center; }
+  .eco-tags            { justify-content: center; }
+  .eco-multi-links     { align-items: center; }
+
+  /* Grin Network Live cards — center content */
+  .live-stat-card      { align-items: center; text-align: center; }
+
+  /* Join the Network cards — center content */
+  .community-card      { align-items: center; text-align: center; }
+  .comm-icon           { margin: 0 auto; }
+
+  /* Hall of Fame — center column labels */
+  .hof-col-label       { text-align: center; }
+  .hof-col .hof-terminal { max-width: 100%; }
+}
+
+@media (max-width: 430px) {
+  /* Reinforce 1-column at iPhone 16 Pro width */
+  .why-grid,
+  .eco-grid,
+  .live-stats-grid,
+  .hof-cols,
+  .community-grid,
+  .community-grid-3    { grid-template-columns: 1fr; }
+}
