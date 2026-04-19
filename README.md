@@ -1,6 +1,8 @@
-# Grin Landing Page
+# Grin Landing Pages
 
-Static landing page for [grin.money](https://grin.money) — plain HTML/CSS/JS, zero dependencies, zero build step. Cyberpunk/coder aesthetic targeting developers and the Grin community.
+This repo is a living archive of [grin.money](https://grin.money) landing pages — one new theme per year. Each edition lives in its own `web/<site-name>-<year>/` directory so every version is preserved. Future years will bring fresh designs while past ones remain browsable here.
+
+The current live site is `web/grin-money-2026/` — plain HTML/CSS/JS, zero dependencies, zero build step.
 
 The deployment script is **domain-agnostic** — it works for any static site on any domain.
 
@@ -15,12 +17,10 @@ Grin-Landing-Page/
 │   ├── custom_repo.conf         # your local deploy config (git-ignored)
 │   └── custom_repo.conf.example # template — copy and fill in
 └── web/
-    ├── grin-money/              # site: grin.money
-    │   ├── index.html
-    │   ├── css/style.css
-    │   └── js/main.js
-    └── another-site/            # future site — just create a new subdirectory
-        └── index.html
+    └── grin-money-2026/         # site: grin.money
+        ├── index.html
+        ├── css/style.css
+        └── js/main.js
 ```
 
 Each site lives in its own `web/<site-name>/` directory. The deploy script reads `custom_repo.conf` to know which site to pull and where to put it.
@@ -53,7 +53,7 @@ sudo ./deploy/site_manager.sh --action deploy --deploy-mode git
 # rsync push from your local machine
 ./deploy/site_manager.sh --action deploy --deploy-mode rsync \
     --remote ubuntu@your-server --remote-path /var/www/grin.money/public \
-    --src ./web/grin-money
+    --src ./web/grin-money-2026
 ```
 
 ---
