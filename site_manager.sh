@@ -319,6 +319,8 @@ EOF
     echo ""
     echo "  9) Update Script      — git pull latest site_manager.sh from GitHub"
     echo ""
+    echo "  A) Analytics (GA4)    — Inject GA4 tracking into a site"
+    echo ""
     echo "  0) Exit"
     echo ""
 }
@@ -328,8 +330,8 @@ get_action() {
 
     while true; do
         show_main_menu
-        read -r -p "Enter choice [0-9]: " choice
-        case "$choice" in
+        read -r -p "Enter choice [0-9 or A]: " choice
+        case "${choice,,}" in
             1) ACTION="add"              ; break ;;
             2) ACTION="remove"           ; break ;;
             3) ACTION="deploy"           ; break ;;
@@ -339,9 +341,10 @@ get_action() {
             7) ACTION="fail2ban_mgmt"    ; break ;;
             8) ACTION="ip_filter"        ; break ;;
             9) ACTION="self_update"      ; break ;;
+            a) ACTION="analytics_ga4"   ; break ;;
             0) print_info "Exiting."; exit 0 ;;
             "") ;;
-            *) print_error "Invalid choice. Please enter 0-9." ; sleep 1 ;;
+            *) print_error "Invalid choice. Please enter 0-9 or A." ; sleep 1 ;;
         esac
     done
 }
@@ -1205,6 +1208,145 @@ _firewall_unblock() {
 }
 
 #############################################################################
+# A. Analytics (GA4)
+#############################################################################
+
+action_analytics_ga4() {
+    print_section "Analytics (GA4)"
+
+    local default_ga4_id="G-98GRB5MKDT"
+    local snippets_file="$SCRIPT_DIR/snippets/ga4.html"
+
+    # Read default Measurement ID from snippets/ga4.html if available
+    if [[ -f "$snippets_file" ]]; then
+        local _id
+        _id=$(grep -oP 'G-[A-Z0-9]+' "$snippets_file" | head -1 || true)
+        [[ -n "$_id" ]] && default_ga4_id="$_id"
+    fi
+
+    # List available sites under web/
+    local web_root="$SCRIPT_DIR/web"
+    echo ""
+    echo "  Available sites under web/:"
+    local latest_site=""
+    local latest_mtime=0
+    if [[ -d "$web_root" ]]; then
+        for d in "$web_root"/*/; do
+            [[ -d "$d" ]] || continue
+            local dname; dname="$(basename "$d")"
+            local mtime
+            if [[ "$(uname -s)" == "Darwin" ]]; then
+                mtime=$(stat -f "%m" "$d" 2>/dev/null || echo 0)
+            else
+                mtime=$(stat -c "%Y" "$d" 2>/dev/null || echo 0)
+            fi
+            echo "    - $dname"
+            if (( mtime > latest_mtime )); then
+                latest_mtime=$mtime
+                latest_site="$dname"
+            fi
+        done
+    fi
+    echo ""
+
+    # Prompt for site name (use --site flag or SITE_NAME if pre-set)
+    if [[ -z "$SITE_NAME" ]]; then
+        local default_hint="${latest_site:-grin-money-2026}"
+        read -r -p "  Site name [default: $default_hint]: " SITE_NAME
+        SITE_NAME="${SITE_NAME:-$default_hint}"
+    fi
+    print_info "Site: $SITE_NAME"
+
+    # Prompt for GA4 Measurement ID
+    local ga4_id
+    read -r -p "  GA4 Measurement ID [default: $default_ga4_id]: " ga4_id
+    ga4_id="${ga4_id:-$default_ga4_id}"
+    print_info "GA4 ID: $ga4_id"
+
+    local site_dir="$web_root/$SITE_NAME"
+    local js_dir="$site_dir/js"
+
+    # Create js/ directory if missing
+    mkdir -p "$js_dir"
+
+    # Write ga4.js
+    local ga4_js="$js_dir/ga4.js"
+    cat > "$ga4_js" << GA4_EOF
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '$ga4_id');
+GA4_EOF
+    chmod 644 "$ga4_js"
+    print_info "Written: $ga4_js"
+
+    # Inject script tags into every HTML file in the site directory
+    local html_count=0
+    local skipped_count=0
+    for html_file in "$site_dir"/*.html; do
+        [[ -f "$html_file" ]] || continue
+        if grep -q "gtag" "$html_file" 2>/dev/null; then
+            print_warn "Skipped (already has gtag): $(basename "$html_file")"
+            skipped_count=$(( skipped_count + 1 ))
+            continue
+        fi
+        # Insert 3 lines before </head>
+        sed -i.bak "s|</head>|  <!-- Google tag (gtag.js) -->\n  <script async src=\"https://www.googletagmanager.com/gtag/js?id=${ga4_id}\"></script>\n  <script src=\"js/ga4.js\"></script>\n</head>|" "$html_file"
+        rm -f "${html_file}.bak"
+        print_info "Injected GA4 into: $(basename "$html_file")"
+        html_count=$(( html_count + 1 ))
+    done
+
+    # Update snippets/ga4.html if GA4 ID changed
+    if [[ "$ga4_id" != "$default_ga4_id" ]] || [[ ! -f "$snippets_file" ]]; then
+        mkdir -p "$(dirname "$snippets_file")"
+        cat > "$snippets_file" << SNIP_EOF
+<!-- Google tag (gtag.js) — ${ga4_id} -->
+<!--
+  HOW TO ADD GA4 TO A NEW LANDING PAGE
+  ─────────────────────────────────────
+  Option A (automated): run site_manager.sh → A) Analytics (GA4)
+  Option B (manual):
+    1. Copy js/ga4.js from an existing site's js/ folder into the new site's js/ folder
+    2. Add the two lines below inside <head> of every HTML file
+-->
+<script async src="https://www.googletagmanager.com/gtag/js?id=${ga4_id}"></script>
+<script src="js/ga4.js"></script>
+SNIP_EOF
+        print_info "Updated snippets reference: $snippets_file"
+    fi
+
+    # Ownership fix for already-deployed files (scenario B)
+    _load_deploy_state 2>/dev/null || true
+    if [[ -n "${DEPLOY_OWNER:-}" && -n "${WEB_DIR:-}" && -d "$WEB_DIR" ]]; then
+        echo ""
+        print_info "Saved deploy owner: $DEPLOY_OWNER  →  $WEB_DIR"
+        read -r -p "  Fix ownership on already-deployed files at $WEB_DIR? (y/N): " _fix_own
+        if [[ "${_fix_own,,}" == "y" ]]; then
+            chown "$DEPLOY_OWNER" "$WEB_DIR/js/ga4.js" 2>/dev/null || true
+            for html_file in "$WEB_DIR"/*.html; do
+                [[ -f "$html_file" ]] || continue
+                chown "$DEPLOY_OWNER" "$html_file" 2>/dev/null || true
+            done
+            print_info "Ownership fixed."
+        fi
+    elif [[ -n "${DEPLOY_OWNER:-}" ]]; then
+        print_warn "No deployed WEB_DIR found. Re-run option 3 (Deploy) to push changes with correct ownership."
+    fi
+
+    echo ""
+    print_info "GA4 setup complete."
+    echo ""
+    echo -e "  ${GREEN}Site:${NC}        $SITE_NAME"
+    echo -e "  ${GREEN}GA4 ID:${NC}      $ga4_id"
+    echo -e "  ${GREEN}ga4.js:${NC}      $ga4_js"
+    echo -e "  ${GREEN}HTML files:${NC}  $html_count injected, $skipped_count skipped"
+    echo ""
+    echo -e "  ${YELLOW}Next step:${NC} Run option 3 (Deploy) to push the changes to your server."
+    echo ""
+}
+
+#############################################################################
 # Argument Parsing
 #############################################################################
 
@@ -1221,6 +1363,7 @@ parse_arguments() {
             --remote-path) REMOTE_PATH="$2";      shift 2 ;;
             --git-repo)    GIT_REPO="$2";         shift 2 ;;
             --git-branch)  GIT_BRANCH="$2";       shift 2 ;;
+            --site)        SITE_NAME="$2";        shift 2 ;;
             --delete-files) DELETE_FILES="yes";   shift   ;;
             -h|--help)     show_help; exit 0      ;;
             *) print_error "Unknown option: $1"; show_help; exit 1 ;;
@@ -1243,6 +1386,7 @@ ACTIONS:
     --action fail2ban_install Install fail2ban
     --action fail2ban_mgmt    Manage fail2ban
     --action ip_filter        Block / unblock IPs
+    --action analytics_ga4    Inject GA4 tracking into a site
 
 ADD OPTIONS:
     --domain DOMAIN           Domain (e.g. grin.money)
@@ -1260,6 +1404,9 @@ DEPLOY OPTIONS:
 REMOVE OPTIONS:
     --domain DOMAIN           Domain to remove
     --delete-files            Also delete web files
+
+ANALYTICS OPTIONS:
+    --site SITE_NAME          Site subdirectory under web/ (e.g. grin-money-2027)
 
 EXAMPLES:
     # Interactive menu:
@@ -1335,7 +1482,7 @@ main() {
     detect_nginx_paths
 
     # Deploy, list, and self_update don't require root
-    if [[ "$ACTION" != "deploy" && "$ACTION" != "list" && "$ACTION" != "self_update" && "$ACTION" != "" ]]; then
+    if [[ "$ACTION" != "deploy" && "$ACTION" != "list" && "$ACTION" != "self_update" && "$ACTION" != "analytics_ga4" && "$ACTION" != "" ]]; then
         check_root
     fi
 
@@ -1356,6 +1503,7 @@ main() {
         fail2ban_mgmt)    action_fail2ban_mgmt   ;;
         ip_filter)        action_ip_filter       ;;
         self_update)      action_self_update     ;;
+        analytics_ga4)    action_analytics_ga4   ;;
         *)
             print_error "Unknown ACTION: $ACTION"
             show_help
