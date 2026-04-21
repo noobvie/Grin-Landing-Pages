@@ -1444,21 +1444,55 @@ action_self_update() {
         return 1
     fi
 
-    # Detect the actual default branch from the remote (handles main/master/etc.)
+    # Detect the current branch (handles main/master/etc.)
     local branch
     branch=$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
     if [[ -z "$branch" || "$branch" == "HEAD" ]]; then
-        # Detached HEAD or unknown — ask remote
         branch=$(git -C "$SCRIPT_DIR" ls-remote --symref origin HEAD 2>/dev/null \
             | awk '/^ref:/ {sub("refs/heads/",""); print $2; exit}')
     fi
     branch="${branch:-master}"
+    print_info "Branch: $branch"
 
-    print_info "Pulling latest changes from GitHub... (branch: $branch)"
-    print_cmd "git -C $SCRIPT_DIR pull origin $branch"
-    echo ""
+    # Check for local modifications — stash them so pull doesn't fail
+    local stashed=false
+    local dirty
+    dirty=$(git -C "$SCRIPT_DIR" status --porcelain 2>/dev/null)
+    if [[ -n "$dirty" ]]; then
+        print_warn "Local modifications detected:"
+        echo "$dirty" | while IFS= read -r line; do echo "    $line"; done
+        echo ""
+        read -r -p "  Stash local changes before pulling? (Y/n): " _st
+        if [[ "${_st,,}" != "n" ]]; then
+            git -C "$SCRIPT_DIR" stash push -m "site_manager auto-stash before self-update" || {
+                print_error "git stash failed. Resolve local changes manually and retry."
+                return 1
+            }
+            stashed=true
+            print_info "Changes stashed."
+        else
+            print_warn "Proceeding without stash — pull may fail if files conflict."
+        fi
+    fi
 
-    if git -C "$SCRIPT_DIR" pull origin "$branch"; then
+    # Test connectivity before attempting pull
+    print_info "Checking connectivity to GitHub..."
+    if ! git -C "$SCRIPT_DIR" fetch origin "$branch" 2>&1; then
+        print_error "Cannot reach GitHub. Check network connection or SSH/HTTPS credentials."
+        if $stashed; then
+            git -C "$SCRIPT_DIR" stash pop 2>/dev/null || true
+            print_info "Stash restored."
+        fi
+        return 1
+    fi
+
+    # Merge fetched changes (fast-forward only — no surprise merges)
+    print_info "Merging..."
+    if git -C "$SCRIPT_DIR" merge --ff-only "origin/$branch" 2>&1; then
+        if $stashed; then
+            git -C "$SCRIPT_DIR" stash pop 2>/dev/null && print_info "Stash re-applied." || \
+                print_warn "Stash pop had conflicts — check: git stash list"
+        fi
         echo ""
         print_info "Update complete."
         echo -e "  ${YELLOW}Exiting now — re-run the script to use the latest version:${NC}"
@@ -1467,7 +1501,11 @@ action_self_update() {
         echo ""
         exit 0
     else
-        print_error "git pull failed. Check your network connection or repo state."
+        print_error "Merge failed (branch may have diverged). Try manually:"
+        print_cmd "git -C $SCRIPT_DIR reset --hard origin/$branch"
+        if $stashed; then
+            git -C "$SCRIPT_DIR" stash pop 2>/dev/null || true
+        fi
         return 1
     fi
 }
