@@ -71,6 +71,11 @@ DELETE_FILES=""              # "yes" to also delete web files
 DEPLOY_OWNER=""              # user:group for chown after deploy (saved/loaded from state file)
 DEPLOY_STATE_FILE=""         # Set after SCRIPT_DIR is known (see bottom of system vars block)
 
+# Auto-confirm — for use by cron / unattended invocations of deploy-installer.
+# When "yes": skip the y/N confirmation prompt and exit cleanly if upstream
+# has no new commits since the last deploy. Set via --auto-confirm.
+AUTO_CONFIRM=""
+
 #############################################################################
 # System Variables — DO NOT EDIT
 #############################################################################
@@ -1367,6 +1372,7 @@ parse_arguments() {
             --git-branch)  GIT_BRANCH="$2";       shift 2 ;;
             --site)        SITE_NAME="$2";        shift 2 ;;
             --delete-files) DELETE_FILES="yes";   shift   ;;
+            --auto-confirm) AUTO_CONFIRM="yes";   shift   ;;
             -h|--help)     show_help; exit 0      ;;
             *) print_error "Unknown option: $1"; show_help; exit 1 ;;
         esac
@@ -1394,6 +1400,13 @@ ACTIONS:
     --action analytics_ga4    Inject GA4 tracking into a site
     --action deploy-installer Deploy Grin-Money Desktop install.ps1 to <domain>/install
                               (reads deploy/installer.conf)
+
+DEPLOY-INSTALLER OPTIONS:
+    --auto-confirm            Skip the y/N prompt and exit cleanly when nothing
+                              has changed. Use from cron during development:
+                              0 * * * * /path/to/site_manager.sh \
+                                  --action deploy-installer --auto-confirm \
+                                  >> /var/log/grin-installer-deploy.log 2>&1
 
 ADD OPTIONS:
     --domain DOMAIN           Domain (e.g. grin.money)
@@ -1538,6 +1551,11 @@ action_deploy_installer() {
     # ── 1. Load (or prompt to create) config ────────────────────────────────
     if [[ ! -f "$conf" ]]; then
         print_warn "No installer.conf found at: $conf"
+        if [[ "$AUTO_CONFIRM" == "yes" ]]; then
+            print_error "Refusing to create config in --auto-confirm mode (would need an interactive editor)."
+            print_info "Run option G interactively once first to bootstrap installer.conf."
+            return 1
+        fi
         if [[ -f "$conf_example" ]]; then
             read -r -p "  Copy installer.conf.example to installer.conf and edit? (Y/n): " _c
             if [[ "${_c,,}" != "n" ]]; then
@@ -1587,10 +1605,12 @@ action_deploy_installer() {
     echo ""
 
     # ── 4. Clone or fetch the source repo into cache ────────────────────────
+    # Full clone (no --depth 1) — we want history available so step 4a can
+    # show the operator (or the cron log) what's actually changing.
     if [[ ! -d "$INSTALLER_CACHE_DIR/.git" ]]; then
         print_info "Cloning source repo to $INSTALLER_CACHE_DIR …"
         mkdir -p "$(dirname "$INSTALLER_CACHE_DIR")"
-        git clone --branch "$INSTALLER_SOURCE_BRANCH" --depth 1 \
+        git clone --branch "$INSTALLER_SOURCE_BRANCH" \
             "$INSTALLER_SOURCE_REPO" "$INSTALLER_CACHE_DIR" || {
             print_error "git clone failed."
             return 1
@@ -1611,6 +1631,52 @@ action_deploy_installer() {
     new_ref=$(git -C "$INSTALLER_CACHE_DIR" rev-parse HEAD)
     print_info "Source commit: ${new_ref:0:12}"
 
+    # ── 4a. Compare against last deployed ref ───────────────────────────────
+    local deployed_ref=""
+    if [[ -f "$current_ref_file" ]]; then
+        deployed_ref=$(awk '/^ref:/ {print $2}' "$current_ref_file" 2>/dev/null)
+    fi
+
+    if [[ -n "$deployed_ref" && "$deployed_ref" == "$new_ref" ]]; then
+        print_info "Already up to date (deployed = upstream = ${new_ref:0:12})."
+        if [[ "$AUTO_CONFIRM" == "yes" ]]; then
+            return 0                                       # cron-quiet: nothing to do
+        fi
+        read -r -p "  Redeploy anyway? (y/N): " _re
+        if [[ "${_re,,}" != "y" ]]; then
+            print_info "Nothing to deploy. Done."
+            return 0
+        fi
+    elif [[ -n "$deployed_ref" ]] && \
+         git -C "$INSTALLER_CACHE_DIR" cat-file -e "$deployed_ref^{commit}" 2>/dev/null; then
+        # Upstream has new commits AND the deployed commit is reachable in our
+        # cache — show the actual diff.
+        local count
+        count=$(git -C "$INSTALLER_CACHE_DIR" rev-list --count "${deployed_ref}..${new_ref}" 2>/dev/null || echo "?")
+        echo ""
+        print_info "Upstream is $count commit(s) ahead of currently deployed."
+        echo ""
+        echo "  Commits since last deploy:"
+        git -C "$INSTALLER_CACHE_DIR" log --oneline --no-decorate \
+            "${deployed_ref}..${new_ref}" 2>/dev/null | head -20 | sed 's/^/    /'
+        echo ""
+    elif [[ -n "$deployed_ref" ]]; then
+        # Deployed ref isn't in our cache (force-pushed branch, perhaps).
+        print_warn "Last deployed ref ${deployed_ref:0:12} not reachable from upstream."
+        print_warn "Branch may have been force-pushed. Showing recent upstream history:"
+        echo ""
+        git -C "$INSTALLER_CACHE_DIR" log --oneline --no-decorate -n 10 \
+            "$new_ref" 2>/dev/null | sed 's/^/    /'
+        echo ""
+    else
+        # First deploy.
+        print_info "First deploy — showing 10 most recent upstream commits for context:"
+        echo ""
+        git -C "$INSTALLER_CACHE_DIR" log --oneline --no-decorate -n 10 \
+            "$new_ref" 2>/dev/null | sed 's/^/    /'
+        echo ""
+    fi
+
     # ── 5. Locate + verify install.ps1 ──────────────────────────────────────
     local src="$INSTALLER_CACHE_DIR/$INSTALLER_SOURCE_FILE"
     if [[ ! -f "$src" ]]; then
@@ -1630,11 +1696,15 @@ action_deploy_installer() {
     print_info "Signature line OK."
 
     # ── 6. Confirm before write ─────────────────────────────────────────────
-    echo ""
-    read -r -p "  Deploy this commit to $current_target? (y/N): " _go
-    if [[ "${_go,,}" != "y" ]]; then
-        print_info "Aborted by user."
-        return 0
+    if [[ "$AUTO_CONFIRM" != "yes" ]]; then
+        echo ""
+        read -r -p "  Deploy this commit to $current_target? (y/N): " _go
+        if [[ "${_go,,}" != "y" ]]; then
+            print_info "Aborted by user."
+            return 0
+        fi
+    else
+        print_info "--auto-confirm set — proceeding without prompt."
     fi
 
     # ── 7. Atomic copy ──────────────────────────────────────────────────────
@@ -1670,6 +1740,18 @@ action_deploy_installer() {
         echo ""
         echo -e "    ${GREEN}irm https://$INSTALLER_SERVING_DOMAIN/install | iex${NC}"
         echo ""
+
+        # In manual mode, suggest a cron line if one isn't already set up.
+        # Skip the hint when --auto-confirm is in effect (we ARE the cron).
+        if [[ "$AUTO_CONFIRM" != "yes" ]] && \
+           ! crontab -l 2>/dev/null | grep -q 'site_manager.sh.*deploy-installer.*--auto-confirm'; then
+            print_info "Tip — to auto-pull every hour during development, add to root's crontab:"
+            echo -e "    ${DIM}# crontab -e${NC}"
+            echo -e "    ${GREEN}0 * * * * $SCRIPT_DIR/site_manager.sh --action deploy-installer --auto-confirm >> /var/log/grin-installer-deploy.log 2>&1${NC}"
+            echo ""
+            print_info "Remove the line once you're back to gating every deploy manually."
+            echo ""
+        fi
     else
         print_warn "Smoke test failed — the file is on disk but the URL"
         print_warn "doesn't return it. Likely missing nginx location block."
