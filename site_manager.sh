@@ -1352,177 +1352,6 @@ SNIP_EOF
 # Argument Parsing
 #############################################################################
 
-#############################################################################
-# G. Deploy Grin-Money Desktop installer (install.ps1)
-#
-# Pulls install.ps1 from the Grin-Money-Desktop GitHub repo, verifies the
-# signature line, atomically copies to the nginx-served path, and smoke
-# tests the URL. Kept SEPARATE from action_deploy() so the installer's
-# weekly cadence and the landing-page's yearly cadence never collide.
-#
-# Reads config from deploy/installer.conf (created from
-# deploy/installer.conf.example on first run).
-#############################################################################
-
-action_deploy_installer() {
-    print_section "Deploy Grin-Money Desktop Installer"
-
-    local conf="$SCRIPT_DIR/deploy/installer.conf"
-    local conf_example="$SCRIPT_DIR/deploy/installer.conf.example"
-
-    # ── 1. Load (or prompt to create) config ────────────────────────────────
-    if [[ ! -f "$conf" ]]; then
-        print_warn "No installer.conf found at: $conf"
-        if [[ -f "$conf_example" ]]; then
-            read -r -p "  Copy installer.conf.example to installer.conf and edit? (Y/n): " _c
-            if [[ "${_c,,}" != "n" ]]; then
-                cp "$conf_example" "$conf"
-                print_info "Created $conf — edit it, then re-run this action."
-                print_cmd "nano $conf"
-            fi
-        else
-            print_error "Template missing: $conf_example"
-            print_info "Re-run self_update (option 9) to refresh the repo."
-        fi
-        return 1
-    fi
-
-    # shellcheck source=/dev/null
-    source "$conf"
-
-    # ── 2. Validate config ──────────────────────────────────────────────────
-    local required=(INSTALLER_SOURCE_REPO INSTALLER_SOURCE_BRANCH \
-                    INSTALLER_SOURCE_FILE INSTALLER_CACHE_DIR \
-                    INSTALLER_TARGET_DIR INSTALLER_TARGET_FILE \
-                    INSTALLER_SERVING_DOMAIN INSTALLER_OWNER \
-                    INSTALLER_PERMS INSTALLER_SIGNATURE_LINE)
-    local missing=()
-    for v in "${required[@]}"; do
-        [[ -z "${!v:-}" ]] && missing+=("$v")
-    done
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        print_error "installer.conf missing keys: ${missing[*]}"
-        return 1
-    fi
-
-    # ── 3. Show current state ───────────────────────────────────────────────
-    local current_target="$INSTALLER_TARGET_DIR/$INSTALLER_TARGET_FILE"
-    local current_ref_file="$INSTALLER_TARGET_DIR/.deployed_ref"
-    print_info "Source: $INSTALLER_SOURCE_REPO ($INSTALLER_SOURCE_BRANCH)"
-    print_info "Target: $current_target"
-    print_info "URL:    https://$INSTALLER_SERVING_DOMAIN/install"
-    if [[ -f "$current_ref_file" ]]; then
-        local deployed_ref deployed_at
-        deployed_ref=$(awk '/^ref:/  {print $2}' "$current_ref_file" 2>/dev/null)
-        deployed_at=$(awk  '/^when:/ {print $2}' "$current_ref_file" 2>/dev/null)
-        print_info "Currently deployed: ${deployed_ref:0:12} (at $deployed_at)"
-    else
-        print_info "No prior deployment recorded."
-    fi
-    echo ""
-
-    # ── 4. Clone or fetch the source repo into cache ────────────────────────
-    if [[ ! -d "$INSTALLER_CACHE_DIR/.git" ]]; then
-        print_info "Cloning source repo to $INSTALLER_CACHE_DIR …"
-        mkdir -p "$(dirname "$INSTALLER_CACHE_DIR")"
-        git clone --branch "$INSTALLER_SOURCE_BRANCH" --depth 1 \
-            "$INSTALLER_SOURCE_REPO" "$INSTALLER_CACHE_DIR" || {
-            print_error "git clone failed."
-            return 1
-        }
-    else
-        print_info "Fetching latest in $INSTALLER_CACHE_DIR …"
-        git -C "$INSTALLER_CACHE_DIR" fetch origin "$INSTALLER_SOURCE_BRANCH" || {
-            print_error "git fetch failed."
-            return 1
-        }
-        git -C "$INSTALLER_CACHE_DIR" reset --hard "origin/$INSTALLER_SOURCE_BRANCH" || {
-            print_error "git reset failed."
-            return 1
-        }
-    fi
-
-    local new_ref
-    new_ref=$(git -C "$INSTALLER_CACHE_DIR" rev-parse HEAD)
-    print_info "Source commit: ${new_ref:0:12}"
-
-    # ── 5. Locate + verify install.ps1 ──────────────────────────────────────
-    local src="$INSTALLER_CACHE_DIR/$INSTALLER_SOURCE_FILE"
-    if [[ ! -f "$src" ]]; then
-        print_error "Source file not found: $src"
-        return 1
-    fi
-
-    local first_line
-    first_line=$(head -n 1 "$src")
-    if [[ "$first_line" != "$INSTALLER_SIGNATURE_LINE"* ]]; then
-        print_error "Signature line mismatch."
-        print_error "  Expected: $INSTALLER_SIGNATURE_LINE"
-        print_error "  Got     : $first_line"
-        print_error "Refusing to deploy — wrong file or corrupted repo?"
-        return 1
-    fi
-    print_info "Signature line OK."
-
-    # ── 6. Confirm before write ─────────────────────────────────────────────
-    echo ""
-    read -r -p "  Deploy this commit to $current_target? (y/N): " _go
-    if [[ "${_go,,}" != "y" ]]; then
-        print_info "Aborted by user."
-        return 0
-    fi
-
-    # ── 7. Atomic copy ──────────────────────────────────────────────────────
-    mkdir -p "$INSTALLER_TARGET_DIR"
-    local tmp="$current_target.new"
-    cp "$src" "$tmp"
-    chown "$INSTALLER_OWNER" "$tmp"
-    chmod "$INSTALLER_PERMS" "$tmp"
-    mv -f "$tmp" "$current_target"
-    print_info "Wrote $current_target"
-
-    # Record the deployed ref for next time
-    {
-        echo "ref:  $new_ref"
-        echo "when: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-        echo "by:   ${SUDO_USER:-$(whoami)}"
-    } > "$current_ref_file"
-    chown "$INSTALLER_OWNER" "$current_ref_file"
-
-    # ── 8. Check that the nginx vhost serves it ─────────────────────────────
-    echo ""
-    print_info "Smoke testing https://$INSTALLER_SERVING_DOMAIN/install …"
-    local probe
-    probe=$(curl -fsS --max-time 10 "https://$INSTALLER_SERVING_DOMAIN/install" 2>/dev/null | head -n 1)
-    if [[ "$probe" == "$INSTALLER_SIGNATURE_LINE"* ]]; then
-        print_info "Smoke test OK — irm | iex one-liner is live."
-        echo ""
-        echo -e "    ${GREEN}irm https://$INSTALLER_SERVING_DOMAIN/install | iex${NC}"
-        echo ""
-    else
-        print_warn "Smoke test failed — the file is on disk but the URL"
-        print_warn "doesn't return it. Likely missing nginx location block."
-        print_warn ""
-        print_warn "Add this to your $INSTALLER_SERVING_DOMAIN vhost:"
-        echo ""
-        cat <<NGINX_EOF
-    location = /install {
-        default_type text/plain;
-        alias $current_target;
-        add_header Cache-Control "public, max-age=300";
-        add_header X-Content-Type-Options "nosniff";
-    }
-    location = /install.ps1 {
-        default_type text/plain;
-        alias $current_target;
-    }
-NGINX_EOF
-        echo ""
-        print_warn "Then: sudo nginx -t && sudo systemctl reload nginx"
-        print_warn "Then re-run this action (G) to re-test."
-    fi
-}
-
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -1685,6 +1514,183 @@ action_self_update() {
             git -C "$SCRIPT_DIR" stash pop 2>/dev/null || true
         fi
         return 1
+    fi
+}
+
+#############################################################################
+# G. Deploy Grin-Money Desktop installer (install.ps1)
+#
+# Pulls install.ps1 from the Grin-Money-Desktop GitHub repo, verifies the
+# signature line, atomically copies to the nginx-served path, and smoke
+# tests the URL. Kept SEPARATE from action_deploy() so the installer's
+# weekly cadence and the landing-page's yearly cadence never collide.
+#
+# Reads config from deploy/installer.conf (created from
+# deploy/installer.conf.example on first run).
+#############################################################################
+
+action_deploy_installer() {
+    print_section "Deploy Grin-Money Desktop Installer"
+
+    local conf="$SCRIPT_DIR/deploy/installer.conf"
+    local conf_example="$SCRIPT_DIR/deploy/installer.conf.example"
+
+    # ── 1. Load (or prompt to create) config ────────────────────────────────
+    if [[ ! -f "$conf" ]]; then
+        print_warn "No installer.conf found at: $conf"
+        if [[ -f "$conf_example" ]]; then
+            read -r -p "  Copy installer.conf.example to installer.conf and edit? (Y/n): " _c
+            if [[ "${_c,,}" != "n" ]]; then
+                cp "$conf_example" "$conf"
+                print_info "Created $conf — edit it, then re-run this action."
+                print_cmd "nano $conf"
+            fi
+        else
+            print_error "Template missing: $conf_example"
+            print_info "Re-run self_update (option 9) to refresh the repo."
+        fi
+        return 1
+    fi
+
+    # shellcheck source=/dev/null
+    source "$conf"
+
+    # ── 2. Validate config ──────────────────────────────────────────────────
+    local required=(INSTALLER_SOURCE_REPO INSTALLER_SOURCE_BRANCH \
+                    INSTALLER_SOURCE_FILE INSTALLER_CACHE_DIR \
+                    INSTALLER_TARGET_DIR INSTALLER_TARGET_FILE \
+                    INSTALLER_SERVING_DOMAIN INSTALLER_OWNER \
+                    INSTALLER_PERMS INSTALLER_SIGNATURE_LINE)
+    local missing=()
+    for v in "${required[@]}"; do
+        [[ -z "${!v:-}" ]] && missing+=("$v")
+    done
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        print_error "installer.conf missing keys: ${missing[*]}"
+        return 1
+    fi
+
+    # ── 3. Show current state ───────────────────────────────────────────────
+    local current_target="$INSTALLER_TARGET_DIR/$INSTALLER_TARGET_FILE"
+    local current_ref_file="$INSTALLER_TARGET_DIR/.deployed_ref"
+    print_info "Source: $INSTALLER_SOURCE_REPO ($INSTALLER_SOURCE_BRANCH)"
+    print_info "Target: $current_target"
+    print_info "URL:    https://$INSTALLER_SERVING_DOMAIN/install"
+    if [[ -f "$current_ref_file" ]]; then
+        local deployed_ref deployed_at
+        deployed_ref=$(awk '/^ref:/  {print $2}' "$current_ref_file" 2>/dev/null)
+        deployed_at=$(awk  '/^when:/ {print $2}' "$current_ref_file" 2>/dev/null)
+        print_info "Currently deployed: ${deployed_ref:0:12} (at $deployed_at)"
+    else
+        print_info "No prior deployment recorded."
+    fi
+    echo ""
+
+    # ── 4. Clone or fetch the source repo into cache ────────────────────────
+    if [[ ! -d "$INSTALLER_CACHE_DIR/.git" ]]; then
+        print_info "Cloning source repo to $INSTALLER_CACHE_DIR …"
+        mkdir -p "$(dirname "$INSTALLER_CACHE_DIR")"
+        git clone --branch "$INSTALLER_SOURCE_BRANCH" --depth 1 \
+            "$INSTALLER_SOURCE_REPO" "$INSTALLER_CACHE_DIR" || {
+            print_error "git clone failed."
+            return 1
+        }
+    else
+        print_info "Fetching latest in $INSTALLER_CACHE_DIR …"
+        git -C "$INSTALLER_CACHE_DIR" fetch origin "$INSTALLER_SOURCE_BRANCH" || {
+            print_error "git fetch failed."
+            return 1
+        }
+        git -C "$INSTALLER_CACHE_DIR" reset --hard "origin/$INSTALLER_SOURCE_BRANCH" || {
+            print_error "git reset failed."
+            return 1
+        }
+    fi
+
+    local new_ref
+    new_ref=$(git -C "$INSTALLER_CACHE_DIR" rev-parse HEAD)
+    print_info "Source commit: ${new_ref:0:12}"
+
+    # ── 5. Locate + verify install.ps1 ──────────────────────────────────────
+    local src="$INSTALLER_CACHE_DIR/$INSTALLER_SOURCE_FILE"
+    if [[ ! -f "$src" ]]; then
+        print_error "Source file not found: $src"
+        return 1
+    fi
+
+    local first_line
+    first_line=$(head -n 1 "$src")
+    if [[ "$first_line" != "$INSTALLER_SIGNATURE_LINE"* ]]; then
+        print_error "Signature line mismatch."
+        print_error "  Expected: $INSTALLER_SIGNATURE_LINE"
+        print_error "  Got     : $first_line"
+        print_error "Refusing to deploy — wrong file or corrupted repo?"
+        return 1
+    fi
+    print_info "Signature line OK."
+
+    # ── 6. Confirm before write ─────────────────────────────────────────────
+    echo ""
+    read -r -p "  Deploy this commit to $current_target? (y/N): " _go
+    if [[ "${_go,,}" != "y" ]]; then
+        print_info "Aborted by user."
+        return 0
+    fi
+
+    # ── 7. Atomic copy ──────────────────────────────────────────────────────
+    # chown/chmod failures are surfaced as warnings (not fatal). The smoke
+    # test in §8 will catch any nginx-serving fallout downstream and tell
+    # the operator what to fix.
+    mkdir -p "$INSTALLER_TARGET_DIR"
+    local tmp="$current_target.new"
+    cp "$src" "$tmp"
+    chown "$INSTALLER_OWNER" "$tmp" || \
+        print_warn "chown $INSTALLER_OWNER on $tmp failed — user/group may not exist"
+    chmod "$INSTALLER_PERMS" "$tmp" || \
+        print_warn "chmod $INSTALLER_PERMS on $tmp failed — invalid mode?"
+    mv -f "$tmp" "$current_target"
+    print_info "Wrote $current_target"
+
+    # Record the deployed ref for next time
+    {
+        echo "ref:  $new_ref"
+        echo "when: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo "by:   ${SUDO_USER:-$(whoami)}"
+    } > "$current_ref_file"
+    chown "$INSTALLER_OWNER" "$current_ref_file" || \
+        print_warn "chown $INSTALLER_OWNER on $current_ref_file failed"
+
+    # ── 8. Check that the nginx vhost serves it ─────────────────────────────
+    echo ""
+    print_info "Smoke testing https://$INSTALLER_SERVING_DOMAIN/install …"
+    local probe
+    probe=$(curl -fsS --max-time 10 "https://$INSTALLER_SERVING_DOMAIN/install" 2>/dev/null | head -n 1)
+    if [[ "$probe" == "$INSTALLER_SIGNATURE_LINE"* ]]; then
+        print_info "Smoke test OK — irm | iex one-liner is live."
+        echo ""
+        echo -e "    ${GREEN}irm https://$INSTALLER_SERVING_DOMAIN/install | iex${NC}"
+        echo ""
+    else
+        print_warn "Smoke test failed — the file is on disk but the URL"
+        print_warn "doesn't return it. Likely missing nginx location block."
+        print_warn ""
+        print_warn "Add this to your $INSTALLER_SERVING_DOMAIN vhost:"
+        echo ""
+        cat <<NGINX_EOF
+    location = /install {
+        default_type text/plain;
+        alias $current_target;
+        add_header Cache-Control "public, max-age=300";
+        add_header X-Content-Type-Options "nosniff";
+    }
+    location = /install.ps1 {
+        default_type text/plain;
+        alias $current_target;
+    }
+NGINX_EOF
+        echo ""
+        print_warn "Then: sudo nginx -t && sudo systemctl reload nginx"
+        print_warn "Then re-run this action (G) to re-test."
     fi
 }
 
