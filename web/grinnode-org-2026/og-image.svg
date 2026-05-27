@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <title>GrinNode.org — Run Grin. Own the network.</title>
+  <defs>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M56 0L0 0 0 56" fill="none" stroke="rgba(144,255,180,0.09)" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3dffa0" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#3dffa0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#38c8ff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#38c8ff" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clip">
+      <rect width="1200" height="630"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#060e0a"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Glow blobs -->
+  <ellipse clip-path="url(#clip)" cx="300" cy="200" rx="380" ry="260" fill="url(#glow1)"/>
+  <ellipse clip-path="url(#clip)" cx="950" cy="460" rx="300" ry="200" fill="url(#glow2)"/>
+
+  <!-- Border -->
+  <rect x="1" y="1" width="1198" height="628" fill="none" stroke="rgba(61,255,160,0.22)" stroke-width="2"/>
+
+  <!-- Grin logo — left side, vertically centered -->
+  <!-- outer ring -->
+  <g transform="translate(100,190) scale(1.025) translate(-19.17,-16.06)">
+    <circle cx="136" cy="133" r="92" fill="#000"/>
+  </g>
+  <!-- inner circle green -->
+  <g transform="translate(100,190) scale(1.056) translate(-29.73,-25.25)">
+    <circle cx="141.75" cy="137.75" r="79.75" fill="#3dffa0"/>
+  </g>
+  <!-- face -->
+  <g transform="translate(100.21,188)">
+    <path fill-rule="nonzero" d="M162,92C159.966,87.434 158.071,78.413 152.855,76.407C146.14,73.825 141.989,90.729 141,95L140,95C138.307,87.682 136.035,77.31 128,75C124.28,90.624 131.886,107.479 139,121C146.596,117.37 150.297,106.002 151,98L152,98L160,122C166.436,120.15 168.675,113.781 170.999,108C175.988,95.592 180.174,80.332 177,67C167.395,69.72 164.473,83.455 162,92M66,124C74.595,119.896 78.685,106.906 80,98L81,98C82.017,102.293 84.736,113.368 90.1,114.079C96.934,114.983 100.517,99.819 101,95L102,95C104.179,102.529 106.475,112.32 114,116C116.776,104.34 113.452,91.905 109.188,81C108.092,78.196 105.841,70.636 101.975,70.636C95.641,70.636 92.08,87.332 91,92L90,92L82,68C67.928,74.72 60.284,110.453 66,124M51,136C61.443,181.551 109.612,207.374 153,188.138C168.791,181.137 181.317,168.663 188.539,153C190.405,148.953 194.07,141.628 191.933,136.318C189.805,131.029 169.166,139.671 164.009,141.928C163.285,142.25 162.774,142.918 162.655,143.702C162.486,144.811 162.786,145.941 163.485,146.82C164.183,147.699 165.216,148.247 166.335,148.333C170.116,148.624 175,149 175,149C159.313,179.365 116.899,192.791 87,168.532C80.308,163.103 74.338,156.652 70.32,149C68.377,145.3 66.575,140.568 63.272,138.029C60.099,135.589 55.285,134.753 51,136Z"/>
+  </g>
+
+  <!-- Divider line -->
+  <line x1="398" y1="160" x2="398" y2="470" stroke="rgba(144,255,180,0.18)" stroke-width="1"/>
+
+  <!-- Right-side text block -->
+  <!-- Site name -->
+  <text x="450" y="250" font-family="system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="26" font-weight="600" letter-spacing="3" fill="#3dffa0" opacity="0.9">GRINNODE.ORG</text>
+
+  <!-- Main headline -->
+  <text x="450" y="322" font-family="system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="66" font-weight="900" letter-spacing="-1" fill="#edfff5">Run Grin.</text>
+  <text x="450" y="400" font-family="system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="66" font-weight="900" letter-spacing="-1">
+    <tspan fill="#3dffa0">Own the</tspan>
+    <tspan fill="#00dfc4"> network.</tspan>
+  </text>
+
+  <!-- Subtitle -->
+  <text x="450" y="455" font-family="system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="22" fill="#8fb8a0" letter-spacing="0.2">Deploy a node on Linux. Use Grim wallet on any platform.</text>
+
+  <!-- Tags row -->
+  <!-- Tag 1 -->
+  <rect x="450" y="490" width="168" height="36" rx="18" fill="rgba(61,255,160,0.1)" stroke="rgba(61,255,160,0.3)" stroke-width="1"/>
+  <text x="534" y="513" text-anchor="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#3dffa0" letter-spacing="0.5">Grin Node Toolkit</text>
+
+  <!-- Tag 2 -->
+  <rect x="630" y="490" width="120" height="36" rx="18" fill="rgba(176,124,255,0.1)" stroke="rgba(176,124,255,0.3)" stroke-width="1"/>
+  <text x="690" y="513" text-anchor="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#b07cff" letter-spacing="0.5">Grim wallet</text>
+
+  <!-- Tag 3 -->
+  <rect x="762" y="490" width="148" height="36" rx="18" fill="rgba(56,200,255,0.1)" stroke="rgba(56,200,255,0.3)" stroke-width="1"/>
+  <text x="836" y="513" text-anchor="middle" font-family="system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="14" fill="#38c8ff" letter-spacing="0.5">Linux · Win · Mac</text>
+
+  <!-- Decorative dots (peer nodes visual) -->
+  <circle cx="1100" cy="120" r="4" fill="#3dffa0" opacity="0.7"/>
+  <circle cx="1050" cy="80" r="2.5" fill="#38c8ff" opacity="0.6"/>
+  <circle cx="1140" cy="95" r="3" fill="#3dffa0" opacity="0.5"/>
+  <circle cx="1080" cy="150" r="2" fill="#00dfc4" opacity="0.6"/>
+  <line x1="1100" y1="120" x2="1050" y2="80" stroke="rgba(61,255,160,0.25)" stroke-width="1"/>
+  <line x1="1100" y1="120" x2="1140" y2="95" stroke="rgba(61,255,160,0.2)" stroke-width="1"/>
+  <line x1="1100" y1="120" x2="1080" y2="150" stroke="rgba(61,255,160,0.2)" stroke-width="1"/>
+  <line x1="1050" y1="80" x2="1140" y2="95" stroke="rgba(56,200,255,0.15)" stroke-width="1"/>
+</svg>

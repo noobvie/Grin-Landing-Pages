@@ -1,0 +1,588 @@
+﻿<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Deploy a Grin node on Linux with Grin Node Toolkit, or use Grim wallet on Windows, macOS, and Linux. MimbleWimble privacy, 60 GRIN/min linear emission, no premine, no ICO.">
+  <meta name="keywords" content="Grin node, run Grin, Grin cryptocurrency, MimbleWimble, Grin Node Toolkit, Grim wallet, Grin privacy, GRIN">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="GrinNode.org — Run Grin. Own the network.">
+  <meta property="og:description" content="Practical home for Grin node operators. Linux toolkit, Grim wallet for all platforms, and why Grin matters for newcomers.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GrinNode.org — Run Grin. Own the network.">
+  <meta name="twitter:description" content="Deploy a Grin node on Linux with Grin Node Toolkit, or use Grim wallet on Windows, macOS, or Linux. MimbleWimble privacy, 60 GRIN/min emission, no premine.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://grinnode.org/">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="GrinNode.org — Run Grin. Own the network.">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <title>GrinNode.org — Run Grin. Own the network.</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#060e0a;--bg2:#0a1510;--panel:rgba(11,24,18,.82);
+      --panel2:rgba(20,38,30,.76);--solid:#0e1e17;--line:rgba(144,255,180,.16);
+      --line2:rgba(144,255,180,.32);--text:#edfff5;--muted:#8fb8a0;
+      --soft:#cce9d8;--green:#3dffa0;--blue:#38c8ff;--gold:#ffd36a;
+      --red:#ff7070;--purple:#b07cff;--teal:#00dfc4;
+      --shadow:rgba(0,0,0,.42);--button:#e8fff2;--buttonText:#050e09;
+      --radius:10px;--max:1200px;
+      --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+      --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    html[data-theme="light"] {
+      color-scheme:light;
+      --bg:#f3faf5;--bg2:#e7f2eb;--panel:rgba(255,255,255,.84);
+      --panel2:rgba(226,243,233,.88);--solid:#fff;--line:rgba(18,80,50,.16);
+      --line2:rgba(18,80,50,.32);--text:#081410;--muted:#4c6a5a;
+      --soft:#1a3828;--green:#027a42;--blue:#005f8a;--gold:#9a6000;
+      --red:#ae1f1f;--purple:#6a28c8;--teal:#007a6a;
+      --shadow:rgba(8,34,22,.12);--button:#081a10;--buttonText:#f0fff6;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:var(--sans);color:var(--text);line-height:1.6;overflow-x:hidden;
+      background:radial-gradient(ellipse 80% 60% at 10% 0%,color-mix(in srgb,var(--green) 10%,transparent),transparent),
+        radial-gradient(ellipse 60% 50% at 92% 4%,color-mix(in srgb,var(--blue) 9%,transparent),transparent),
+        radial-gradient(ellipse 40% 30% at 50% 90%,color-mix(in srgb,var(--purple) 6%,transparent),transparent),
+        linear-gradient(180deg,var(--bg),var(--bg2) 52%,var(--bg));}
+    a{color:inherit;text-decoration:none}
+    button{font:inherit;cursor:pointer}
+    .skip{position:absolute;left:14px;top:-80px;z-index:50;background:var(--button);color:var(--buttonText);padding:10px 16px;border-radius:var(--radius);font-weight:700}
+    .skip:focus{top:14px}
+    .header{position:sticky;top:0;z-index:30;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(22px)}
+    .nav{width:min(100% - 32px,var(--max));min-height:72px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{display:inline-flex;align-items:center;gap:12px;font-weight:850;white-space:nowrap}
+    .brand-logo{width:36px;height:36px;display:block;flex-shrink:0;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--green) 40%,transparent))}
+    .links{display:flex;gap:4px;color:var(--muted);font-size:14px}
+    .links a{padding:8px 11px;border-radius:var(--radius);transition:color .14s,background .14s}
+    .links a:hover{color:var(--text);background:var(--panel2)}
+    .actions{display:flex;align-items:center;gap:10px}
+    .theme,.btn{min-height:40px;border-radius:var(--radius);border:1px solid var(--line2);transition:transform .16s ease,border-color .2s ease,background .16s ease,box-shadow .2s ease}
+    .theme{width:44px;min-height:44px;display:grid;place-items:center;color:var(--text);background:var(--panel)}
+    .theme:hover{border-color:var(--green);box-shadow:0 0 12px color-mix(in srgb,var(--green) 22%,transparent)}
+    .btn:hover{transform:translateY(-2px);border-color:var(--green);box-shadow:0 8px 24px var(--shadow)}
+    .sun{width:18px;height:18px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 18%,transparent);position:relative}
+    html[data-theme="light"] .sun:after{content:"";position:absolute;width:12px;height:12px;right:-1px;top:-1px;border-radius:50%;background:var(--solid)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:10px 16px;font-weight:760;white-space:nowrap}
+    .primary{background:var(--button);color:var(--buttonText);border-color:transparent;box-shadow:0 12px 32px var(--shadow)}
+    .primary:hover{box-shadow:0 16px 44px var(--shadow),0 0 0 1px var(--green)}
+    .ghost{background:var(--panel);color:var(--text)}
+    .hero{min-height:calc(100vh - 72px);position:relative;display:grid;align-items:center;border-bottom:1px solid var(--line);overflow:hidden}
+    #mesh{position:absolute;inset:0;width:100%;height:100%;opacity:.9}
+    .gridbg{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;mask-image:linear-gradient(to bottom,black,transparent 84%);opacity:.28}
+    .heroInner{width:min(100% - 32px,var(--max));margin:0 auto;position:relative;z-index:2;padding:72px 0 48px;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(340px,.72fr);gap:48px;align-items:center}
+    .eyebrow{display:inline-flex;align-items:center;gap:9px;width:fit-content;padding:7px 12px;border:1px solid var(--line2);border-radius:999px;color:var(--soft);background:var(--panel);font-size:13px;font-family:var(--mono);backdrop-filter:blur(8px)}
+    .pulse{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 50%,transparent);animation:pulse 2s infinite;flex-shrink:0}
+    @keyframes pulse{70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+    h1{max-width:940px;margin:22px 0 18px;font-size:clamp(48px,8.5vw,102px);line-height:.9;letter-spacing:-.02em}
+    .grad-text{background:linear-gradient(135deg,var(--green) 0%,var(--teal) 50%,var(--blue) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero p{max-width:700px;color:var(--soft);font-size:clamp(17px,2vw,21px);margin:0 0 30px}
+    .heroActions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:30px}
+    .metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:740px}
+    .metric{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:14px;backdrop-filter:blur(12px)}
+    .metric b{display:block;font-size:20px;color:var(--green)}
+    .metric span{color:var(--muted);font-size:13px}
+    .console{border:1px solid var(--line2);background:color-mix(in srgb,var(--solid) 72%,transparent);box-shadow:0 32px 90px var(--shadow),0 0 0 1px var(--line);border-radius:14px;overflow:hidden;backdrop-filter:blur(20px)}
+    .bar{min-height:42px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);color:var(--muted);font-family:var(--mono);font-size:12px}
+    .dots{display:inline-flex;gap:6px}
+    .dots i{width:10px;height:10px;border-radius:50%;background:var(--line2)}
+    .dots i:nth-child(1){background:var(--red)}.dots i:nth-child(2){background:var(--gold)}.dots i:nth-child(3){background:var(--green)}
+    .terminal{padding:18px;font-family:var(--mono);font-size:13px;min-height:440px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+    .row:last-child{border-bottom:0}
+    .key{color:var(--muted)}.value{text-align:right}
+    .ok{color:var(--green)}.blue{color:var(--blue)}.gold{color:var(--gold)}.teal{color:var(--teal)}
+    .live-stats{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;display:grid;gap:2px}
+    .live-row{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;padding:3px 0}
+    .live-label{color:var(--muted)}.live-val{font-weight:600}
+    .section{width:min(100% - 32px,var(--max));margin:0 auto;padding:88px 0}
+    section[id]{scroll-margin-top:72px}
+    .head{display:grid;grid-template-columns:minmax(0,.72fr) minmax(280px,.48fr);gap:36px;align-items:end;margin-bottom:32px}
+    .kicker{color:var(--green);font-family:var(--mono);font-size:13px;margin-bottom:10px;letter-spacing:.06em}
+    h2{margin:0;font-size:clamp(32px,5vw,56px);line-height:1;letter-spacing:-.02em}
+    .head p,.lead{color:var(--muted);font-size:17px;margin:0;line-height:1.65}
+    .band{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--panel2) 36%,transparent)}
+    .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .card,.project,.step,.status{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:22px;box-shadow:0 18px 60px var(--shadow);min-width:0;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+    .card:hover{transform:translateY(-4px);border-color:var(--line2);box-shadow:0 28px 80px var(--shadow),0 0 0 1px var(--line2)}
+    .icon{width:44px;height:44px;border-radius:var(--radius);border:1px solid var(--line2);display:grid;place-items:center;color:var(--green);font-family:var(--mono);font-weight:800;margin-bottom:18px;background:var(--panel2)}
+    h3{margin:0 0 8px;font-size:19px;letter-spacing:-.01em}
+    .card p,.project p,.step p,.status p{margin:0;color:var(--muted);line-height:1.65}
+    .route{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch}
+    .routePanel{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:24px;transition:border-color .2s}
+    .routePanel:hover{border-color:var(--line2)}
+    .routePanel h3{font-size:24px}
+    .routeList{display:grid;gap:12px;margin:18px 0 0;padding:0;list-style:none}
+    .routeList li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;color:var(--soft)}
+    .routeList span{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line2);border-radius:50%;color:var(--green);font-family:var(--mono);font-size:12px;flex-shrink:0}
+    .project{padding:0;overflow:hidden}
+    .projectTop{min-height:172px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;border-bottom:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--green) 18%,transparent),transparent 58%),var(--panel2)}
+    .grim .projectTop{background:linear-gradient(135deg,color-mix(in srgb,var(--purple) 20%,transparent),color-mix(in srgb,var(--blue) 10%,transparent) 60%,transparent),var(--panel2)}
+    .docker .projectTop{background:linear-gradient(135deg,color-mix(in srgb,var(--teal) 22%,transparent),color-mix(in srgb,var(--blue) 12%,transparent) 60%,transparent),var(--panel2)}
+    .label{font-family:var(--mono);color:var(--muted);font-size:13px}
+    .title{font-size:clamp(28px,4vw,42px);line-height:1;font-weight:850}
+    .projectBody{padding:22px}
+    .tags{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 18px}
+    .tag{border:1px solid var(--line);background:var(--panel2);color:var(--soft);border-radius:999px;padding:6px 10px;font-family:var(--mono);font-size:12px}
+    .grim-why{background:linear-gradient(135deg,color-mix(in srgb,var(--purple) 8%,transparent),transparent),var(--panel)}
+    .grim-why-label{font-family:var(--mono);font-size:13px;color:var(--muted);margin-bottom:10px}
+    .grim-why-list{margin:0;padding:0 0 0 18px;color:var(--soft);font-size:14px;line-height:1.8}
+    .code{border:1px solid var(--line);border-radius:var(--radius);background:#050e08;color:#cdffd9;padding:18px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.7}
+    .code pre{margin:0;white-space:pre-wrap}.code--mb{margin-bottom:14px}
+    .steps{counter-reset:steps;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+    .step{position:relative;padding-top:56px}
+    .step:before{counter-increment:steps;content:counter(steps,decimal-leading-zero);position:absolute;left:22px;top:18px;color:var(--green);font-family:var(--mono);font-weight:800;font-size:14px}
+    .why-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+    .why-card{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:22px;box-shadow:0 12px 40px var(--shadow);min-width:0;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+    .why-card:hover{transform:translateY(-4px);border-color:var(--line2);box-shadow:0 24px 64px var(--shadow),0 0 0 1px var(--line2)}
+    .why-card--featured{grid-column:1 / -1;display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:start;border-color:color-mix(in srgb,var(--green) 40%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--green) 18%,transparent),0 20px 60px var(--shadow);background:linear-gradient(135deg,color-mix(in srgb,var(--green) 6%,transparent),transparent 60%),var(--panel)}
+    .why-icon{font-size:28px;line-height:1;flex-shrink:0}
+    .why-card--featured .why-icon{font-size:36px;padding-top:2px}
+    .why-title{font-size:16px;font-weight:700;margin-bottom:8px;color:var(--text)}
+    .why-card--featured .why-title{font-size:20px;color:var(--green)}
+    .why-desc{font-size:14px;color:var(--muted);line-height:1.65}
+    .why-card--featured .why-desc{font-size:15px}
+    .statusGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:24px}
+    .status strong{display:block;font-family:var(--mono);font-size:26px;margin-bottom:5px}
+    .status small{color:var(--muted)}
+    .cta{padding:90px 0;text-align:center;border-top:1px solid var(--line)}
+    .ctaInner{width:min(100% - 32px,940px);margin:0 auto}
+    .cta h2{margin-bottom:18px}
+    .cta p{color:var(--soft);font-size:18px;margin:0 auto 28px;max-width:740px}
+    .ctaActions{display:flex;justify-content:center;flex-wrap:wrap;gap:12px}
+    .footer{border-top:1px solid var(--line);padding:28px 0;color:var(--muted);font-size:14px}
+    .footerInner{width:min(100% - 32px,var(--max));margin:0 auto;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+    .footer a{color:var(--soft)}
+    .footer a:hover{color:var(--green)}
+    @media (max-width:1040px){
+      .links{display:none}.hero{min-height:auto}
+      .heroInner,.head,.route{grid-template-columns:1fr}
+      .console{max-width:640px}
+      .grid3,.steps,.statusGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .why-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .why-card--featured{grid-column:1 / -1}
+    }
+    @media (max-width:640px){
+      .nav{width:min(100% - 22px,var(--max));min-height:64px}
+      .brand span:last-child,.actions .ghost{display:none}
+      .heroInner,.section{width:min(100% - 22px,var(--max))}
+      .heroInner{padding-top:52px;gap:28px}
+      .metrics,.grid2,.grid3,.steps,.statusGrid,.why-grid{grid-template-columns:1fr}
+      .why-card--featured{grid-template-columns:1fr}
+      h1{font-size:clamp(42px,16vw,64px)}
+      .section{padding:64px 0}section[id]{scroll-margin-top:64px}
+      .terminal{min-height:auto}
+      .row{align-items:flex-start;flex-direction:column}
+      .value{text-align:left}
+      .btn{width:100%;justify-content:center}
+    }
+    @media (prefers-reduced-motion:reduce){
+      *,*:before,*:after{animation-duration:.001ms !important;scroll-behavior:auto !important}
+      #mesh{display:none}
+      .card:hover,.why-card:hover{transform:none}
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "GrinNode.org",
+    "url": "https://grinnode.org/",
+    "description": "Deploy a Grin node on Linux or use Grim wallet on any platform. Grin Node Toolkit for Linux VPS operators, Grim wallet for Windows, macOS, and Linux.",
+    "potentialAction": { "@type": "SearchAction", "target": "https://grinnode.org/" }
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="GrinNode.org home"><img src="favicon.svg" width="36" height="36" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a>
+      <div class="links">
+        <a href="#why-nodes">Why nodes</a><a href="#run">Run a node</a><a href="#toolkit">Toolkit</a><a href="#grim">Grim wallet &amp; Docker</a><a href="#why-grin">Why Grin</a><a href="#status">Status</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit">GitHub</a>
+        <a class="btn primary" href="#run">Get started &rarr;</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-label="GrinNode.org introduction">
+      <canvas id="mesh" aria-hidden="true"></canvas>
+      <div class="gridbg" aria-hidden="true"></div>
+      <div class="heroInner">
+        <div>
+          <div class="eyebrow"><span class="pulse" aria-hidden="true"></span> independent nodes make Grin stronger</div>
+          <h1>Run Grin.<br><span class="grad-text">Own the network.</span></h1>
+          <p>GrinNode.org is a practical home for Grin node operators. Deploy a Linux server node with Grin Node Toolkit, or use Grim wallet on Windows, macOS, or Linux for a full-featured desktop experience.</p>
+          <div class="heroActions">
+            <a class="btn primary" href="#run">Start running a node &rarr;</a>
+            <a class="btn ghost" href="https://gri.mw">Get Grim wallet</a>
+            <a class="btn ghost" href="https://github.com/wiesche89/umbrel-community-app-store" target="_blank" rel="noopener">Umbrel OS</a>
+            <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit">Node Toolkit</a>
+          </div>
+          <div class="metrics" aria-label="Project highlights">
+            <div class="metric"><b>&lt; 1 hour</b><span>target setup with chain snapshots</span></div>
+            <div class="metric"><b>3414</b><span>mainnet inbound P2P port</span></div>
+            <div class="metric"><b>Linux &middot; Docker &middot; Desktop</b><span>three paths, one network</span></div>
+          </div>
+        </div>
+        <aside class="console" aria-label="Node control room preview">
+          <div class="bar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span>node-control / mainnet + testnet</span></div>
+          <div class="terminal">
+            <div class="row"><span class="key">chain</span><span class="value ok">synced &middot; ~5 GB pruned</span></div>
+            <div class="row"><span class="key">networks</span><span class="value teal">mainnet + testnet &middot; same VPS</span></div>
+            <div class="row"><span class="key">foreign api</span><span class="value blue">HTTPS &middot; port 3413 &middot; CORS open</span></div>
+            <div class="row"><span class="key">p2p inbound</span><span class="value ok">port 3414 &middot; accepting peers</span></div>
+            <div class="row"><span class="key">tor onion</span><span class="value" style="color:var(--purple)">.onion published &middot; private relay</span></div>
+            <div class="row"><span class="key">wallet svc</span><span class="value gold">slatepack listener &middot; Tor-ready</span></div>
+            <div class="live-stats">
+              <div class="live-row"><span class="live-label">block height</span><span class="live-val ok" id="lv-height">—</span></div>
+              <div class="live-row"><span class="live-label">circulating supply</span><span class="live-val teal" id="lv-supply">—</span></div>
+              <div class="live-row"><span class="live-label">active peers</span><span class="live-val blue" id="lv-peers">—</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="why-nodes">
+      <div class="head">
+        <div><div class="kicker">01 / Why run a node</div><h2>A node is how you verify Grin for yourself.</h2></div>
+        <p>Wallets are useful, but reachable full nodes are the network's public backbone. They validate chain history, relay blocks and transactions, and give new users more peers to connect to.</p>
+      </div>
+      <div class="grid3">
+        <article class="card"><div class="icon">&#x2714;&#xFE0F;</div><h3>Verify independently</h3><p>Your node checks chain rules directly instead of trusting another server's view of the network.</p></article>
+        <article class="card"><div class="icon">&#x1F310;</div><h3>Accept inbound peers</h3><p>A reachable Grin node helps other nodes discover, sync, and stay connected to the chain.</p></article>
+        <article class="card"><div class="icon">&#x1F6E1;&#xFE0F;</div><h3>Improve resilience</h3><p>More independent operators means fewer fragile points and a healthier privacy-focused network.</p></article>
+      </div>
+    </section>
+
+    <section class="band" id="run"><div class="section">
+      <div class="head">
+        <div><div class="kicker">02 / Operator route</div><h2>Pick the path that matches your setup.</h2></div>
+        <p>Linux for always-on public infrastructure, Docker or Umbrel for home servers and Raspberry Pi, or any desktop OS for a full-featured wallet with Grim &mdash; three paths, one network.</p>
+      </div>
+      <div class="route">
+        <div class="routePanel">
+          <h3>Linux server path</h3>
+          <p class="lead">Best for VPS operators, public services, snapshots, monitoring, and community infrastructure.</p>
+          <ul class="routeList">
+            <li><span>1</span><div>Clone Grin Node Toolkit and run the interactive Bash menu.</div></li>
+            <li><span>2</span><div>Build or install a node, then bootstrap chain data from a trusted snapshot.</div></li>
+            <li><span>3</span><div>Publish API, file server, explorer, stats, mining, or wallet services as needed.</div></li>
+          </ul>
+        </div>
+        <div class="routePanel">
+          <h3>Docker / Umbrel</h3>
+          <p class="lead">Best for home servers, Raspberry Pi, NAS, and anyone who wants container-based deployment without a full VPS.</p>
+          <ul class="routeList">
+            <li><span>1</span><div>Install Docker on your device, or set up Umbrel on a home server or Raspberry Pi.</div></li>
+            <li><span>2</span><div>Install Grin via the <a href="https://github.com/wiesche89/umbrel-community-app-store" target="_blank" rel="noopener" style="color:var(--teal)">Umbrel community app store</a> or use Docker Compose to pull the image.</div></li>
+            <li><span>3</span><div>Node starts, syncs the chain, and runs fully containerised with no manual binary management.</div></li>
+          </ul>
+        </div>
+        <div class="routePanel">
+          <h3>Desktop path (any OS)</h3>
+          <p class="lead">Best for people who want no VPS, a familiar GUI, and a full wallet with Tor-backed slatepack flows.</p>
+          <ul class="routeList">
+            <li><span>1</span><div>Download Grim wallet from <a href="https://gri.mw" style="color:var(--green)">gri.mw</a> &mdash; Windows, macOS, and Linux.</div></li>
+            <li><span>2</span><div>Create or restore a wallet. Grim connects to the Grin network automatically.</div></li>
+            <li><span>3</span><div>Send and receive via Slatepack, explore history, manage multiple wallets.</div></li>
+          </ul>
+        </div>
+      </div>
+    </div></section>
+
+    <section class="section" id="toolkit">
+      <div class="head">
+        <div><div class="kicker">03 / Linux</div><h2>Grin Node Toolkit turns setup into an operator menu.</h2></div>
+        <p>A unified Bash toolkit for deploying and managing Grin nodes and related infrastructure from a single interactive menu.</p>
+      </div>
+      <div class="grid2">
+        <article class="project">
+          <div class="projectTop"><span class="label">noobvie/Grin-Node-Toolkit</span><div class="title">Linux node infrastructure</div></div>
+          <div class="projectBody">
+            <p>Reduce the painful first-sync bottleneck with pre-synced chain snapshots, then keep the node useful with API publishing, snapshot sharing, health views, admin tasks, and service setup.</p>
+            <div class="tags"><span class="tag">Ubuntu 22.04+</span><span class="tag">Rocky 10+</span><span class="tag">AlmaLinux 10+</span><span class="tag">Nginx</span><span class="tag">Tor / API</span><span class="tag">Snapshots</span></div>
+            <a class="btn primary" href="https://github.com/noobvie/Grin-Node-Toolkit">Node Toolkit repo &rarr;</a>
+          </div>
+        </article>
+        <div class="code"><pre>git clone https://github.com/noobvie/Grin-Node-Toolkit.git
+cd Grin-Node-Toolkit
+chmod +x grin-node-toolkit.sh scripts/*.sh
+sudo ./grin-node-toolkit.sh</pre></div>
+      </div>
+    </section>
+
+    <section class="band" id="grim"><div class="section">
+      <div class="head">
+        <div><div class="kicker">04 / Windows &amp; Umbrel platform</div><h2>Grim wallet &amp; Docker &mdash; Grin on any platform.</h2></div>
+        <p>Grim is an open-source Grin wallet for Windows, macOS, and Linux. Prefer containers? Run Grin in Docker or install it directly from the Umbrel community app store.</p>
+      </div>
+      <div class="grid3">
+        <article class="project grim">
+          <div class="projectTop"><span class="label">GetGrin/grim &nbsp;&middot;&nbsp; gri.mw</span><div class="title">Grim wallet</div></div>
+          <div class="projectBody">
+            <p>A modern Grin wallet with a clean GUI. Create or restore wallets, send and receive via Slatepack, view transaction history, and manage multiple wallets across mainnet and testnet. No terminal needed.</p>
+            <div class="tags"><span class="tag">Windows 10/11</span><span class="tag">macOS</span><span class="tag">Linux</span><span class="tag">Slatepack</span><span class="tag">Multi-wallet</span><span class="tag">Open source</span></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <a class="btn primary" href="https://gri.mw">Download Grim &rarr;</a>
+              <a class="btn ghost" href="https://github.com/GetGrin/grim">View on GitHub</a>
+            </div>
+          </div>
+        </article>
+        <article class="project docker">
+          <div class="projectTop"><span class="label">wiesche89/umbrel-community-app-store</span><div class="title">Docker / Umbrel</div></div>
+          <div class="projectBody">
+            <p>Run Grin in a container on any host &mdash; home server, Raspberry Pi, NAS, or cloud VM. Install via the Umbrel community app store or pull the image directly with Docker Compose.</p>
+            <div class="tags"><span class="tag">Docker</span><span class="tag">Umbrel</span><span class="tag">Home server</span><span class="tag">Raspberry Pi</span><span class="tag">Community app</span></div>
+            <a class="btn primary" href="https://github.com/wiesche89/umbrel-community-app-store" target="_blank" rel="noopener">View on GitHub &rarr;</a>
+          </div>
+        </article>
+        <div>
+          <div class="code code--mb"><pre># Windows &mdash; download installer from gri.mw
+# Then launch Grim.exe and follow the setup wizard
+
+# macOS &mdash; download .dmg from gri.mw
+# Drag Grim.app to Applications and open
+
+# Linux &mdash; download AppImage or .deb from gri.mw
+chmod +x Grim-*.AppImage && ./Grim-*.AppImage</pre></div>
+          <div class="card grim-why">
+            <div class="grim-why-label">Why Grim?</div>
+            <ul class="grim-why-list">
+              <li>GUI-first &mdash; no terminal knowledge required</li>
+              <li>Native binaries, no Electron bloat</li>
+              <li>Works on all three major desktop platforms</li>
+              <li>Connects to your own node or public nodes</li>
+              <li>Full Slatepack send / receive support</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div></section>
+
+    <section class="section">
+      <div class="head">
+        <div><div class="kicker">05 / Getting started</div><h2>Four steps from zero to running.</h2></div>
+        <p>Whether you start with a VPS or just want a wallet, these four steps cover the full onboarding journey.</p>
+      </div>
+      <div class="steps">
+        <article class="step"><h3>Understand</h3><p>Learn what Grin is, why it is different from other cryptocurrencies, and why running a node matters.</p></article>
+        <article class="step"><h3>Choose</h3><p>Pick your path: Linux server node via Grin Node Toolkit, or desktop wallet via Grim on any platform.</p></article>
+        <article class="step"><h3>Install</h3><p>Follow the quick start &mdash; copy the commands, point at your VPS or download the installer.</p></article>
+        <article class="step"><h3>Operate</h3><p>Check status, API endpoints, snapshots, wallet services, backups, and monitoring after setup.</p></article>
+      </div>
+    </section>
+
+    <section class="band" id="why-grin"><div class="section">
+      <div class="head">
+        <div><div class="kicker">06 / Why Grin</div><h2>New to crypto? Here is what makes Grin different.</h2></div>
+        <p>Nine plain-language reasons &mdash; no jargon, no hype, just the things that make Grin a genuinely new idea.</p>
+      </div>
+      <div class="why-grid">
+
+        <div class="why-card why-card--featured">
+          <div class="why-icon">&#x23F1;</div>
+          <div>
+            <div class="why-title">The first money where nobody decided how much to make</div>
+            <div class="why-desc">Pick any point in the last hundred years and ask: who decided how much new money was created that year? The answer is always a person or institution &mdash; a central bank setting rates, a mining company capping gold output, a developer choosing 21&nbsp;million as Bitcoin&rsquo;s limit. Grin is the first monetary system where the correct answer is <em>nobody</em>. The emission rate &mdash; 60&nbsp;GRIN per minute &mdash; is not a policy choice. It is a mathematical side-effect of mining one block every 60&nbsp;seconds. Nobody tuned it to attract investors. Nobody can vote to change it. No committee can pause it. Time passes, blocks get mined, coins appear. The rule is enforced by every node on the network, verified by anyone who runs one, and has no off switch.</div>
+          </div>
+        </div>
+
+        <div class="why-card">
+          <div class="why-icon">&#x1F441;&#xFE0F;</div>
+          <div class="why-title">Your balance is invisible &mdash; to everyone</div>
+          <div class="why-desc">On Bitcoin, anyone can paste an address into a website and read its full balance and history. On Grin, amounts are hidden inside the math of each transaction. There are no reusable addresses, and spent records are deleted from the chain. Nobody can look up what you hold or trace who paid you &mdash; not an explorer, not a data broker, not a government request.</div>
+        </div>
+
+        <div class="why-card">
+          <div class="why-icon">&#x1F512;</div>
+          <div class="why-title">You can&rsquo;t accidentally send a public transaction</div>
+          <div class="why-desc">Some privacy coins have a &ldquo;shielded&rdquo; mode users have to remember to enable &mdash; and most forget. Grin has no transparent mode at all. Every transaction, whether you are a developer testing on testnet or a person paying a friend, uses the same privacy-preserving math. Private is not a checkbox. It is the only way Grin works.</div>
+        </div>
+
+        <div class="why-card">
+          <div class="why-icon">&#x1F5D1;&#xFE0F;</div>
+          <div class="why-title">The blockchain trims its own history</div>
+          <div class="why-desc">When you spend a Grin coin, the old record is cut from the chain automatically &mdash; a technique called cut-through. Bitcoin&rsquo;s full history weighs over 600&nbsp;GB and grows forever. Grin&rsquo;s full chain is around 5&nbsp;GB after seven years. A cheap VPS (around $20/year) or a home computer can run a full node. You do not need a data center to verify your own transactions.</div>
+        </div>
+
+        <div class="why-card">
+          <div class="why-icon">&#x23F0;</div>
+          <div class="why-title">60 coins per minute &mdash; no halving, no cliff</div>
+          <div class="why-desc">Many cryptocurrencies halve the mining reward every few years, creating scheduled shocks and speculation cycles. Grin pays exactly 60 GRIN every 60 seconds, forever. The rule is in the code, not controlled by a foundation or a vote. Miners who secure the network are always compensated, and the supply curve has no surprises baked in.</div>
+        </div>
+
+        <div class="why-card">
+          <div class="why-icon">&#x1F4AC;</div>
+          <div class="why-title">Send to someone who is offline</div>
+          <div class="why-desc">Grin uses Slatepack: a block of text you exchange to complete a transaction. Paste it in a chat message, email it, copy it to a USB drive. Neither party needs to be online at the same time, and there is no public address to look up or share. It works like passing a signed note &mdash; only the two of you know what it says.</div>
+        </div>
+
+        <div class="why-card">
+          <div class="why-icon">&#x1F4C9;</div>
+          <div class="why-title">Inflation shrinks every year &mdash; automatically</div>
+          <div class="why-desc">Because a fixed 60 GRIN per minute is added to a growing total supply, the percentage inflation rate falls every year on its own &mdash; no committee vote, no scheduled upgrade. Pure division. By the time someone discovers Grin decades from now, inflation will be a small fraction of what it was at launch, driven entirely by math and time.</div>
+        </div>
+
+        <div class="why-card">
+          <div class="why-icon">&#x1F4C4;</div>
+          <div class="why-title">The whole protocol fits in a research paper</div>
+          <div class="why-desc">MimbleWimble was first described in a nine-page anonymous document. Grin&rsquo;s core design is compact enough to read over a weekend. No complex tokenomics. No governance tokens. No multi-year roadmap of scheduled forks. An engineer can audit the critical code in days. What you read is what it does &mdash; nothing hidden, nothing promised for later.</div>
+        </div>
+
+        <div class="why-card">
+          <div class="why-icon">&#x23F3;</div>
+          <div class="why-title">Copy the code. You can&rsquo;t copy the clock.</div>
+          <div class="why-desc">Anyone can fork Grin&rsquo;s codebase tomorrow. But a fork starts at block 1 with zero history. Grin has seven years of solved puzzles behind it. That accumulated proof-of-work cannot be duplicated &mdash; you cannot re-mine blocks that have already been mined, just as you cannot re-live time that has already passed.</div>
+        </div>
+
+      </div>
+    </div></section>
+
+    <section class="section" id="status">
+      <div class="head">
+        <div><div class="kicker">07 / Live network stats</div><h2>Grin network, right now.</h2></div>
+        <p>Live data from <a href="https://world.grin.money" target="_blank" rel="noopener" style="color:var(--green)">world.grin.money</a> &mdash; height, supply, hashrate, difficulty, peers, price, and annual inflation rate, all updated every 5 minutes.</p>
+      </div>
+      <div class="statusGrid">
+        <div class="status"><strong class="ok" id="stat-height">—</strong><small>block height</small></div>
+        <div class="status"><strong class="teal" id="stat-supply">—</strong><small>circulating supply</small></div>
+        <div class="status"><strong class="gold" id="stat-hashrate">—</strong><small>network hashrate</small></div>
+        <div class="status"><strong class="blue" id="stat-difficulty">—</strong><small>mining difficulty</small></div>
+        <div class="status"><strong class="ok" id="stat-peers">—</strong><small>active peers</small></div>
+        <div class="status"><strong class="gold" id="stat-price-usd">—</strong><small>GRIN / USD</small></div>
+        <div class="status"><strong id="stat-price-btc" style="color:var(--muted)">—</strong><small>GRIN / BTC (sats)</small></div>
+        <div class="status"><strong class="teal" id="stat-inflation">—</strong><small>annual inflation</small></div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="ctaInner">
+        <div class="kicker">GrinNode.org</div>
+        <h2>A node today makes Grin stronger tomorrow.</h2>
+        <p>Run Linux infrastructure with Grin Node Toolkit, or download Grim wallet on any platform and start transacting privately. The network grows one node at a time.</p>
+        <div class="ctaActions">
+          <a class="btn primary" href="https://github.com/noobvie/Grin-Node-Toolkit">Linux Toolkit &rarr;</a>
+          <a class="btn ghost" href="https://gri.mw">Get Grim wallet</a>
+          <a class="btn ghost" href="https://grin.mw">Official Grin</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>GrinNode.org &mdash; 2026</span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://gri.mw">Grim wallet</a> &nbsp;/&nbsp; <a href="https://grin.mw">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    const root = document.documentElement;
+    const saved = localStorage.getItem("grinnode-theme");
+    if (saved === "light" || saved === "dark") root.dataset.theme = saved;
+    else if (matchMedia("(prefers-color-scheme: light)").matches) root.dataset.theme = "light";
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+      localStorage.setItem("grinnode-theme", root.dataset.theme);
+      initMesh(true);
+    });
+    const canvas = document.getElementById("mesh"), ctx = canvas.getContext("2d");
+    let pts = [], W = 0, H = 0, lastT = 0;
+    function cssVar(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
+    function initMesh(redraw) {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const rect = canvas.getBoundingClientRect();
+      W = Math.max(1, rect.width); H = Math.max(1, rect.height);
+      canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const n = Math.min(90, Math.max(36, Math.floor(W / 16)));
+      pts = Array.from({ length: n }, (_, i) => ({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .18, vy: (Math.random() - .5) * .18, r: i % 11 === 0 ? 2.6 : 1.5, hot: i % 9 === 0 }));
+      if (redraw) renderMesh(true);
+    }
+    function renderMesh(force) {
+      if (!ctx || !W || !H) return;
+      const lc = cssVar("--line2"), gc = cssVar("--green"), tc = cssVar("--teal");
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[i];
+        if (!force) { a.x += a.vx; a.y += a.vy; if (a.x < -20) a.x = W+20; if (a.x > W+20) a.x = -20; if (a.y < -20) a.y = H+20; if (a.y > H+20) a.y = -20; }
+        for (let j = i+1; j < pts.length; j++) {
+          const b = pts[j], dx = a.x-b.x, dy = a.y-b.y, d = Math.sqrt(dx*dx+dy*dy);
+          if (d < 148) { ctx.globalAlpha = (1-d/148)*.32; ctx.strokeStyle = (a.hot||b.hot)?gc:lc; ctx.lineWidth = (a.hot||b.hot)?1.2:.75; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+        }
+      }
+      pts.forEach(p => { ctx.globalAlpha = p.hot?.9:.54; ctx.fillStyle = p.hot?tc:gc; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); });
+      ctx.globalAlpha = 1;
+    }
+    function tick(t) { if (t-lastT > 22) { renderMesh(false); lastT = t; } requestAnimationFrame(tick); }
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) { initMesh(false); requestAnimationFrame(tick); addEventListener("resize", () => initMesh(false), { passive: true }); }
+    async function loadLiveStats() {
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      const fmtHR = v => {
+        if (v >= 1e6) return (v / 1e6).toFixed(2) + " MG/s";
+        if (v >= 1e3) return (v / 1e3).toFixed(2) + " kG/s";
+        return v.toFixed(2) + " G/s";
+      };
+      const fmtDiff = v => {
+        if (v >= 1e9) return (v / 1e9).toFixed(2) + "G";
+        if (v >= 1e6) return (v / 1e6).toFixed(2) + "M";
+        if (v >= 1e3) return (v / 1e3).toFixed(1) + "K";
+        return String(v);
+      };
+      try {
+        const [sumRes, peersRes, priceRes] = await Promise.allSettled([
+          fetch("https://world.grin.money/api/summary"),
+          fetch("https://world.grin.money/api/active_peers"),
+          fetch("https://world.grin.money/api/price"),
+        ]);
+        if (sumRes.status === "fulfilled" && sumRes.value.ok) {
+          const d = await sumRes.value.json();
+          if (d.tip_height) {
+            const supply = d.tip_height * 60;
+            const infl   = (31557600 / supply * 100).toFixed(1);
+            set("lv-height",      "#" + Number(d.tip_height).toLocaleString());
+            set("lv-supply",      (supply / 1e6).toFixed(2) + "M GRIN");
+            set("stat-height",    "#" + Number(d.tip_height).toLocaleString());
+            set("stat-supply",    (supply / 1e6).toFixed(2) + "M GRIN");
+            set("stat-inflation", infl + "% / yr");
+          }
+          if (d.current_hashrate  != null) set("stat-hashrate",   fmtHR(d.current_hashrate));
+          if (d.current_difficulty != null) set("stat-difficulty", fmtDiff(d.current_difficulty));
+        }
+        if (peersRes.status === "fulfilled" && peersRes.value.ok) {
+          const d     = await peersRes.value.json();
+          const recent = d?.mainnet?.recent;
+          if (Array.isArray(recent) && recent.length) {
+            const count = recent[recent.length - 1][1];
+            set("lv-peers",    count + " active");
+            set("stat-peers",  String(count));
+          }
+        }
+        if (priceRes.status === "fulfilled" && priceRes.value.ok) {
+          const d = await priceRes.value.json();
+          const usdt = d["GRIN_USDT"];
+          const btc  = d["GRIN_BTC"];
+          if (usdt?.last != null) set("stat-price-usd", "$" + Number(usdt.last).toFixed(4));
+          if (btc?.last  != null) set("stat-price-btc", Math.round(btc.last * 1e8) + " sats");
+        }
+      } catch {}
+    }
+    document.addEventListener("DOMContentLoaded", loadLiveStats);
+  </script>
+</body>
+</html>
