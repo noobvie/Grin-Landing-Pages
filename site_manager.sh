@@ -18,6 +18,11 @@
 #   6) Install fail2ban   — Install & configure fail2ban for nginx
 #   7) fail2ban Mgmt      — Status, ban/unban IPs
 #   8) IP Filtering       — Block / Unblock IPs via ufw or iptables
+#   9) Update Script      — Self-update site_manager.sh via git pull (fast-forward only)
+#
+#   A) Analytics (GA4)    — Inject / update GA4 tracking (reads deploy/analytics.conf)
+#   G) Grin-Money Desktop — Deploy install.ps1 from GitHub to <domain>/install (reads deploy/installer.conf)
+#
 #   0) Exit
 #
 # PLATFORMS
@@ -27,8 +32,10 @@
 # NON-INTERACTIVE MODE
 #   Set ACTION at the top (or use --action flag) to skip the menu.
 #   Valid ACTION values:
-#     add | remove | deploy | list | security | fail2ban_install |
-#     fail2ban_mgmt | ip_filter
+#     add | remove | deploy | list | security |
+#     fail2ban_install | fail2ban_mgmt | ip_filter |
+#     self_update | analytics_ga4 | deploy_installer
+#   Hyphen aliases also accepted: analytics-ga4 | deploy-installer
 #
 # DEPLOY MODES
 #   local  — Copy local web/ files directly to WEB_DIR (same machine)
@@ -62,6 +69,7 @@ GIT_REPO=""                  # Git repo URL for git deploy mode
 GIT_BRANCH=""                # Git branch (default: from custom_repo.conf or "main")
 SITE_NAME=""                 # Site subdirectory name under web/ (e.g. "grin-money-2026")
 SPARSE_CHECKOUT=""           # "yes" to sparse-clone only web/<SITE_NAME>/
+GA4_CLI_ID=""                # GA4 Measurement ID override (--ga4-id, single-site only)
 
 # Removal configuration
 DOMAIN_TO_REMOVE=""          # Domain to remove
@@ -84,6 +92,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_STATE_FILE="$SCRIPT_DIR/deploy/deploy_state.conf"
 LOG_DIR="/opt/grin-landing/logs"
 LOG_FILE=""
+_LOG_INIT_DONE=false    # guard — only init_log once per session
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -182,10 +191,12 @@ domain_safe() {
 }
 
 init_log() {
+    [[ "$_LOG_INIT_DONE" == "true" ]] && return 0   # never stack tee processes
     local action="$1"
     mkdir -p "$LOG_DIR"
     LOG_FILE="$LOG_DIR/site_${action}_$(date +%Y%m%d_%H%M%S).log"
     exec > >(tee -a "$LOG_FILE") 2>&1
+    _LOG_INIT_DONE=true
     print_info "Logging to: $LOG_FILE"
 }
 
@@ -764,6 +775,18 @@ EOF
     print_info "Deploy settings saved → $DEPLOY_STATE_FILE"
 }
 
+# Silent variant — reads DEPLOY_OWNER + WEB_DIR from state file without any
+# prompts.  Used by action_analytics_ga4 to fix ownership after GA4 injection
+# without re-entering the interactive "Use saved settings?" flow.
+_read_deploy_state_silent() {
+    [[ -f "$DEPLOY_STATE_FILE" ]] || return 0
+    local _owner _dir
+    _owner=$( grep -E '^DEPLOY_OWNER=' "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    _dir=$(   grep -E '^WEB_DIR='      "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
+    [[ -n "$_owner" ]] && DEPLOY_OWNER="$_owner"
+    [[ -n "$_dir"   && -z "$WEB_DIR" ]] && WEB_DIR="$_dir"
+}
+
 _deploy_local() {
     # Default source: web/ directory at the repo root
     if [[ -z "$LOCAL_SRC" ]]; then
@@ -1215,120 +1238,252 @@ _firewall_unblock() {
 }
 
 #############################################################################
-# A. Analytics (GA4)
+# A. Analytics (GA4) — config-driven, multi-site
 #############################################################################
 
-action_analytics_ga4() {
-    print_section "Analytics (GA4)"
+_GA4_SITES=()
+_GA4_IDS=()
 
-    local default_ga4_id="G-98GRB5MKDT"
-    local snippets_file="$SCRIPT_DIR/snippets/ga4.html"
+_load_analytics_conf() {
+    local conf="$SCRIPT_DIR/deploy/analytics.conf"
+    local conf_example="$SCRIPT_DIR/deploy/analytics.conf.example"
 
-    # Read default Measurement ID from snippets/ga4.html if available
-    if [[ -f "$snippets_file" ]]; then
-        local _id
-        _id=$(grep -oP 'G-[A-Z0-9]+' "$snippets_file" | head -1 || true)
-        [[ -n "$_id" ]] && default_ga4_id="$_id"
+    _GA4_SITES=()
+    _GA4_IDS=()
+
+    if [[ ! -f "$conf" ]]; then
+        print_warn "No analytics.conf found at: $conf"
+        if [[ -f "$conf_example" ]]; then
+            if [[ "$AUTO_CONFIRM" == "yes" ]]; then
+                print_info "Run option A interactively once first to bootstrap analytics.conf."
+                return 1
+            fi
+            read -r -p "  Copy analytics.conf.example to analytics.conf and edit? (Y/n): " _c
+            if [[ "${_c,,}" != "n" ]]; then
+                cp "$conf_example" "$conf"
+                print_info "Created $conf — edit it, then re-run this action."
+            fi
+        else
+            print_error "Template missing: $conf_example"
+        fi
+        return 1
     fi
 
-    # List available sites under web/
+    local _idx=0
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "${line// /}" ]] && continue
+        local _key _val
+        _key="${line%%=*}"
+        _val="${line#*=}"
+        _key="$(echo "$_key" | tr -d '[:space:]')"
+        _val="$(echo "$_val" | tr -d '"' | tr -d "'" | tr -d '[:space:]')"
+        if [[ -n "$_key" && -n "$_val" ]]; then
+            _GA4_SITES[$_idx]="$_key"
+            _GA4_IDS[$_idx]="$_val"
+            _idx=$(( _idx + 1 ))
+        fi
+    done < "$conf"
+
+    if [[ ${#_GA4_SITES[@]} -eq 0 ]]; then
+        print_warn "analytics.conf is empty (no site mappings found)."
+        return 1
+    fi
+    return 0
+}
+
+_ga4_process_site() {
+    local site_name="$1"
+    local ga4_id="$2"
     local web_root="$SCRIPT_DIR/web"
-    echo ""
-    echo "  Available sites under web/:"
-    local latest_site=""
-    local latest_mtime=0
-    if [[ -d "$web_root" ]]; then
-        for d in "$web_root"/*/; do
-            [[ -d "$d" ]] || continue
-            local dname; dname="$(basename "$d")"
-            local mtime
-            if [[ "$(uname -s)" == "Darwin" ]]; then
-                mtime=$(stat -f "%m" "$d" 2>/dev/null || echo 0)
-            else
-                mtime=$(stat -c "%Y" "$d" 2>/dev/null || echo 0)
-            fi
-            echo "    - $dname"
-            if (( mtime > latest_mtime )); then
-                latest_mtime=$mtime
-                latest_site="$dname"
-            fi
-        done
-    fi
-    echo ""
-
-    # Prompt for site name (use --site flag or SITE_NAME if pre-set)
-    if [[ -z "$SITE_NAME" ]]; then
-        local default_hint="${latest_site:-grin-money-2026}"
-        read -r -p "  Site name [default: $default_hint]: " SITE_NAME
-        SITE_NAME="${SITE_NAME:-$default_hint}"
-    fi
-    print_info "Site: $SITE_NAME"
-
-    # Prompt for GA4 Measurement ID
-    local ga4_id
-    read -r -p "  GA4 Measurement ID [default: $default_ga4_id]: " ga4_id
-    ga4_id="${ga4_id:-$default_ga4_id}"
-    print_info "GA4 ID: $ga4_id"
-
-    local site_dir="$web_root/$SITE_NAME"
+    local site_dir="$web_root/$site_name"
     local js_dir="$site_dir/js"
+    local ga4_js="$js_dir/ga4.js"
 
-    # Create js/ directory if missing
+    if [[ ! -d "$site_dir" ]]; then
+        print_error "Site directory not found: $site_dir"
+        return 1
+    fi
+
+    if [[ ! "$ga4_id" =~ ^G-[A-Z0-9]+$ ]]; then
+        print_error "Invalid GA4 ID format: $ga4_id (expected G-XXXXXXXXXX)"
+        return 1
+    fi
+
+    print_info "Processing: $site_name  ->  $ga4_id"
+
     mkdir -p "$js_dir"
 
-    # Write ga4.js
-    local ga4_js="$js_dir/ga4.js"
-    cat > "$ga4_js" << GA4_EOF
+    local old_id=""
+    if [[ -f "$ga4_js" ]]; then
+        old_id=$(grep -oP 'G-[A-Z0-9]+' "$ga4_js" | head -1 || true)
+    fi
+
+    if [[ -n "$old_id" && "$old_id" != "$ga4_id" ]]; then
+        sed -i.bak "s|$old_id|$ga4_id|g" "$ga4_js"
+        rm -f "${ga4_js}.bak"
+        print_info "Updated ga4.js: $old_id -> $ga4_id"
+    elif [[ -z "$old_id" ]]; then
+        cat > "$ga4_js" << GA4_EOF
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', '$ga4_id');
 GA4_EOF
+        print_info "Created: $ga4_js"
+    else
+        print_info "ga4.js already up to date."
+    fi
     chmod 644 "$ga4_js"
-    print_info "Written: $ga4_js"
 
-    # Inject script tags into every HTML file in the site directory
-    local html_count=0
-    local skipped_count=0
+    local html_count=0 updated_count=0 skipped_count=0
     for html_file in "$site_dir"/*.html; do
         [[ -f "$html_file" ]] || continue
+        local basename_f
+        basename_f="$(basename "$html_file")"
+
         if grep -q "gtag" "$html_file" 2>/dev/null; then
-            print_warn "Skipped (already has gtag): $(basename "$html_file")"
-            skipped_count=$(( skipped_count + 1 ))
+            if [[ -n "$old_id" && "$old_id" != "$ga4_id" ]]; then
+                sed -i.bak "s|$old_id|$ga4_id|g" "$html_file"
+                rm -f "${html_file}.bak"
+                print_info "Updated GA4 ID in: $basename_f ($old_id -> $ga4_id)"
+                updated_count=$(( updated_count + 1 ))
+            else
+                print_warn "Skipped (already has gtag): $basename_f"
+                skipped_count=$(( skipped_count + 1 ))
+            fi
             continue
         fi
-        # Insert 3 lines before </head>
+
         sed -i.bak "s|</head>|  <!-- Google tag (gtag.js) -->\n  <script async src=\"https://www.googletagmanager.com/gtag/js?id=${ga4_id}\"></script>\n  <script src=\"js/ga4.js\"></script>\n</head>|" "$html_file"
         rm -f "${html_file}.bak"
-        print_info "Injected GA4 into: $(basename "$html_file")"
+        print_info "Injected GA4 into: $basename_f"
         html_count=$(( html_count + 1 ))
     done
 
-    # Update snippets/ga4.html if GA4 ID changed
-    if [[ "$ga4_id" != "$default_ga4_id" ]] || [[ ! -f "$snippets_file" ]]; then
-        mkdir -p "$(dirname "$snippets_file")"
-        cat > "$snippets_file" << SNIP_EOF
-<!-- Google tag (gtag.js) — ${ga4_id} -->
-<!--
-  HOW TO ADD GA4 TO A NEW LANDING PAGE
-  ─────────────────────────────────────
-  Option A (automated): run site_manager.sh → A) Analytics (GA4)
-  Option B (manual):
-    1. Copy js/ga4.js from an existing site's js/ folder into the new site's js/ folder
-    2. Add the two lines below inside <head> of every HTML file
--->
-<script async src="https://www.googletagmanager.com/gtag/js?id=${ga4_id}"></script>
-<script src="js/ga4.js"></script>
-SNIP_EOF
-        print_info "Updated snippets reference: $snippets_file"
+    echo ""
+    echo -e "  ${GREEN}Site:${NC}     $site_name"
+    echo -e "  ${GREEN}GA4 ID:${NC}   $ga4_id"
+    echo -e "  ${GREEN}HTML:${NC}     $html_count injected, $updated_count updated, $skipped_count skipped"
+}
+
+action_analytics_ga4() {
+    print_section "Analytics (GA4)"
+
+    local web_root="$SCRIPT_DIR/web"
+
+    if ! _load_analytics_conf; then
+        return 1
     fi
 
-    # Ownership fix for already-deployed files (scenario B)
-    _load_deploy_state 2>/dev/null || true
+    echo ""
+    echo "  Configured sites in analytics.conf:"
+    local i
+    for (( i=0; i<${#_GA4_SITES[@]}; i++ )); do
+        local _marker="  "
+        if [[ -d "$web_root/${_GA4_SITES[$i]}" ]]; then
+            _marker="${GREEN}*${NC} "
+        fi
+        echo -e "    ${_marker}${_GA4_SITES[$i]}  ->  ${_GA4_IDS[$i]}"
+    done
+    echo ""
+
+    local process_sites=()
+    local process_ids=()
+
+    if [[ -n "$SITE_NAME" ]]; then
+        local found=false
+        for (( i=0; i<${#_GA4_SITES[@]}; i++ )); do
+            if [[ "${_GA4_SITES[$i]}" == "$SITE_NAME" ]]; then
+                process_sites+=("$SITE_NAME")
+                if [[ -n "${GA4_CLI_ID:-}" ]]; then
+                    process_ids+=("$GA4_CLI_ID")
+                else
+                    process_ids+=("${_GA4_IDS[$i]}")
+                fi
+                found=true
+                break
+            fi
+        done
+        if [[ "$found" != "true" ]]; then
+            if [[ -n "${GA4_CLI_ID:-}" ]]; then
+                print_warn "$SITE_NAME not in analytics.conf (using --ga4-id override)"
+                process_sites+=("$SITE_NAME")
+                process_ids+=("$GA4_CLI_ID")
+            else
+                print_error "Site '$SITE_NAME' not found in analytics.conf."
+                print_info "Add it:  echo '$SITE_NAME=\"G-XXXXXXXXXX\"' >> deploy/analytics.conf"
+                return 1
+            fi
+        fi
+    else
+        echo "  Options:"
+        echo "    A) Process ALL configured sites (batch)"
+        echo "    S) Process a single site"
+        echo ""
+        local _mode
+        read -r -p "  Choice [A/s]: " _mode
+        if [[ "${_mode,,}" == "s" ]]; then
+            echo ""
+            echo "  Available sites under web/:"
+            for d in "$web_root"/*/; do
+                [[ -d "$d" ]] || continue
+                echo "    - $(basename "$d")"
+            done
+            echo ""
+            read -r -p "  Site name: " SITE_NAME
+            if [[ -z "$SITE_NAME" ]]; then
+                print_error "No site name provided."
+                return 1
+            fi
+            local found=false
+            for (( i=0; i<${#_GA4_SITES[@]}; i++ )); do
+                if [[ "${_GA4_SITES[$i]}" == "$SITE_NAME" ]]; then
+                    process_sites+=("$SITE_NAME")
+                    process_ids+=("${_GA4_IDS[$i]}")
+                    found=true
+                    break
+                fi
+            done
+            if [[ "$found" != "true" ]]; then
+                print_warn "$SITE_NAME not in analytics.conf."
+                local _manual_id
+                read -r -p "  Enter GA4 ID for $SITE_NAME: " _manual_id
+                if [[ -z "$_manual_id" ]]; then
+                    print_error "No GA4 ID provided."
+                    return 1
+                fi
+                process_sites+=("$SITE_NAME")
+                process_ids+=("$_manual_id")
+                print_info "Tip: add to analytics.conf for future runs:"
+                echo -e "    ${GREEN}${SITE_NAME}=\"${_manual_id}\"${NC}"
+            fi
+        else
+            for (( i=0; i<${#_GA4_SITES[@]}; i++ )); do
+                process_sites+=("${_GA4_SITES[$i]}")
+                process_ids+=("${_GA4_IDS[$i]}")
+            done
+        fi
+    fi
+
+    local total=${#process_sites[@]}
+    echo ""
+    print_info "Processing $total site(s)..."
+    local _errors=0
+    for (( i=0; i<total; i++ )); do
+        if (( total > 1 )); then
+            echo ""
+            echo -e "  ${BOLD}── Site $(( i+1 ))/$total ──${NC}"
+        fi
+        _ga4_process_site "${process_sites[$i]}" "${process_ids[$i]}" || _errors=$(( _errors + 1 ))
+    done
+
+    # Ownership fix for already-deployed files
+    _read_deploy_state_silent
     if [[ -n "${DEPLOY_OWNER:-}" && -n "${WEB_DIR:-}" && -d "$WEB_DIR" ]]; then
         echo ""
-        print_info "Saved deploy owner: $DEPLOY_OWNER  →  $WEB_DIR"
-        read -r -p "  Fix ownership on already-deployed files at $WEB_DIR? (y/N): " _fix_own
+        print_info "Saved deploy owner: $DEPLOY_OWNER  ->  $WEB_DIR"
+        read -r -p "  Fix ownership on deployed GA4 files at $WEB_DIR? (y/N): " _fix_own
         if [[ "${_fix_own,,}" == "y" ]]; then
             chown "$DEPLOY_OWNER" "$WEB_DIR/js/ga4.js" 2>/dev/null || true
             for html_file in "$WEB_DIR"/*.html; do
@@ -1337,18 +1492,14 @@ SNIP_EOF
             done
             print_info "Ownership fixed."
         fi
-    elif [[ -n "${DEPLOY_OWNER:-}" ]]; then
-        print_warn "No deployed WEB_DIR found. Re-run option 3 (Deploy) to push changes with correct ownership."
     fi
 
     echo ""
-    print_info "GA4 setup complete."
-    echo ""
-    echo -e "  ${GREEN}Site:${NC}        $SITE_NAME"
-    echo -e "  ${GREEN}GA4 ID:${NC}      $ga4_id"
-    echo -e "  ${GREEN}ga4.js:${NC}      $ga4_js"
-    echo -e "  ${GREEN}HTML files:${NC}  $html_count injected, $skipped_count skipped"
-    echo ""
+    if (( _errors > 0 )); then
+        print_warn "GA4 setup completed with $_errors error(s) out of $total site(s)."
+    else
+        print_info "GA4 setup complete for $total site(s)."
+    fi
     echo -e "  ${YELLOW}Next step:${NC} Run option 3 (Deploy) to push the changes to your server."
     echo ""
 }
@@ -1371,6 +1522,7 @@ parse_arguments() {
             --git-repo)    GIT_REPO="$2";         shift 2 ;;
             --git-branch)  GIT_BRANCH="$2";       shift 2 ;;
             --site)        SITE_NAME="$2";        shift 2 ;;
+            --ga4-id)      GA4_CLI_ID="$2";       shift 2 ;;
             --delete-files) DELETE_FILES="yes";   shift   ;;
             --auto-confirm) AUTO_CONFIRM="yes";   shift   ;;
             -h|--help)     show_help; exit 0      ;;
@@ -1381,6 +1533,8 @@ parse_arguments() {
     # Normalise hyphenated CLI form to the internal underscore form
     if [[ "$ACTION" == "deploy-installer" ]]; then
         ACTION="deploy_installer"
+    elif [[ "$ACTION" == "analytics-ga4" ]]; then
+        ACTION="analytics_ga4"
     fi
 }
 
@@ -1399,7 +1553,7 @@ ACTIONS:
     --action fail2ban_install Install fail2ban
     --action fail2ban_mgmt    Manage fail2ban
     --action ip_filter        Block / unblock IPs
-    --action analytics_ga4    Inject GA4 tracking into a site
+    --action analytics_ga4    Inject / update GA4 tracking (reads deploy/analytics.conf)
     --action deploy-installer Deploy Grin-Money Desktop install.ps1 to <domain>/install
                               (reads deploy/installer.conf)
 
@@ -1428,7 +1582,9 @@ REMOVE OPTIONS:
     --delete-files            Also delete web files
 
 ANALYTICS OPTIONS:
-    --site SITE_NAME          Site subdirectory under web/ (e.g. grin-money-2027)
+    --site SITE_NAME          Site subdirectory under web/ (e.g. grin-money-2026)
+                              Omit to choose interactively (batch or single)
+    --ga4-id G-XXXXXXXXXX     Override the GA4 ID from analytics.conf (single-site only)
 
 EXAMPLES:
     # Interactive menu:
@@ -1448,6 +1604,15 @@ EXAMPLES:
 
     # List sites:
     sudo ./deploy/site_manager.sh --action list
+
+    # GA4: inject into all configured sites (batch):
+    ./site_manager.sh --action analytics_ga4
+
+    # GA4: single site from config:
+    ./site_manager.sh --action analytics_ga4 --site grin-money-2026
+
+    # GA4: single site with ID override:
+    ./site_manager.sh --action analytics_ga4 --site new-site --ga4-id G-NEWID12345
 
 HELP_EOF
 }
@@ -1779,6 +1944,31 @@ NGINX_EOF
 }
 
 #############################################################################
+# Action Dispatcher (shared by interactive loop and non-interactive path)
+#############################################################################
+
+_dispatch_action() {
+    case "$ACTION" in
+        add)              action_add_domain       ;;
+        remove)           action_remove_domain    ;;
+        deploy)           action_deploy           ;;
+        list)             action_list_sites       ;;
+        security)         action_security         ;;
+        fail2ban_install) action_fail2ban_install ;;
+        fail2ban_mgmt)    action_fail2ban_mgmt    ;;
+        ip_filter)        action_ip_filter        ;;
+        self_update)      action_self_update      ;;
+        analytics_ga4)    action_analytics_ga4    ;;
+        deploy_installer) action_deploy_installer ;;
+        *)
+            print_error "Unknown ACTION: $ACTION"
+            show_help
+            return 1
+            ;;
+    esac
+}
+
+#############################################################################
 # Main
 #############################################################################
 
@@ -1787,36 +1977,42 @@ main() {
     detect_os
     detect_nginx_paths
 
-    # Deploy, list, and self_update don't require root
-    if [[ "$ACTION" != "deploy" && "$ACTION" != "list" && "$ACTION" != "self_update" && "$ACTION" != "analytics_ga4" && "$ACTION" != "" ]]; then
-        check_root
+    # ── Non-interactive: --action was passed on the command line ──────────────
+    if [[ -n "$ACTION" ]]; then
+        # Root check: only skip for read-only / local-only actions
+        case "$ACTION" in
+            deploy|list|self_update|analytics_ga4) ;;
+            *) check_root ;;
+        esac
+        [[ $EUID -eq 0 ]] && { init_log "$ACTION" 2>/dev/null || true; }
+        _dispatch_action
+        exit $?
     fi
 
-    get_action
+    # ── Interactive menu loop ─────────────────────────────────────────────────
+    # Log the whole session to a single file (init_log guards against re-init).
+    [[ $EUID -eq 0 ]] && { init_log "session" 2>/dev/null || true; }
 
-    # Initialize log (requires LOG_DIR to be writable — skip if not root)
-    if [[ $EUID -eq 0 ]]; then
-        init_log "$ACTION" 2>/dev/null || true
-    fi
+    while true; do
+        # get_action shows the menu, sets ACTION, and calls exit 0 on "0".
+        get_action
 
-    case "$ACTION" in
-        add)              action_add_domain      ;;
-        remove)           action_remove_domain   ;;
-        deploy)           action_deploy          ;;
-        list)             action_list_sites      ;;
-        security)         action_security        ;;
-        fail2ban_install) action_fail2ban_install ;;
-        fail2ban_mgmt)    action_fail2ban_mgmt   ;;
-        ip_filter)        action_ip_filter       ;;
-        self_update)      action_self_update     ;;
-        analytics_ga4)    action_analytics_ga4   ;;
-        deploy_installer) action_deploy_installer ;;
-        *)
-            print_error "Unknown ACTION: $ACTION"
-            show_help
-            exit 1
-            ;;
-    esac
+        # Run the chosen action; || true prevents set -e from killing the loop
+        # when an action cancels (return 1) or encounters a non-fatal error.
+        _dispatch_action || true
+
+        echo ""
+        read -r -p "  Press Enter to return to the menu..." _pause
+
+        # Reset per-action state so each menu pick starts clean.
+        # Intentionally kept across iterations: DOMAIN, EMAIL, WEB_DIR,
+        # DEPLOY_MODE, DEPLOY_OWNER (convenient "last used" values).
+        ACTION=""             # show menu on next get_action call
+        DOMAIN_TO_REMOVE=""   # remove: always re-prompt for domain
+        DELETE_FILES=""       # remove: always re-prompt for file deletion
+        SITE_NAME=""          # analytics: always re-prompt for site / batch
+        GA4_CLI_ID=""         # analytics: re-read from conf, not stale override
+    done
 }
 
 main "$@"

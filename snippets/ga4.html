@@ -1,11 +1,21 @@
-<!-- Google tag (gtag.js) — G-98GRB5MKDT -->
+<!-- snippets/ga4.html — DOCUMENTATION ONLY (not modified by site_manager.sh) -->
 <!--
-  HOW TO ADD GA4 TO A NEW LANDING PAGE
-  ─────────────────────────────────────
-  Option A (automated): run site_manager.sh → A) Analytics (GA4)
-  Option B (manual):
-    1. Copy js/ga4.js from an existing site's js/ folder into the new site's js/ folder
-    2. Add the two lines below inside <head> of every HTML file
+  GA4 (Google Analytics 4) integration for landing pages
+  ──────────────────────────────────────────────────────
+
+  Configuration:
+    1. cp deploy/analytics.conf.example deploy/analytics.conf
+    2. Add a line per site:  your-site-name="G-XXXXXXXXXX"
+    3. Run:  ./site_manager.sh --action analytics_ga4
+
+  What the script does for each configured site:
+    - Creates/updates  web/<site>/js/ga4.js   with the Measurement ID
+    - Injects (or updates) these two tags before </head> in every .html:
+
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+        <script src="js/ga4.js"></script>
+
+  To add GA4 manually (without the script):
+    1. Copy js/ga4.js from an existing site, update the ID inside it
+    2. Add the two script tags above inside <head> of every HTML file
 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-98GRB5MKDT"></script>
-<script src="js/ga4.js"></script>
