@@ -17,9 +17,9 @@ pick a menu option, follow the prompts.
 Grin-Landing-Pages/
 ├── site_manager.sh                # interactive menu — run this
 ├── deploy/
-│   ├── analytics.conf.example     # GA4 site→ID map
-│   ├── custom_repo.conf.example   # git deploy config
-│   └── installer.conf.example     # install.ps1 publishing config
+│   ├── analytics.conf             # GA4 site→ID map
+│   ├── custom_repo.conf           # git deploy config
+│   └── installer.conf             # install.ps1 publishing config
 ├── snippets/
 │   └── ga4.html                   # GA4 reference (documentation only)
 └── web/
@@ -27,8 +27,7 @@ Grin-Landing-Pages/
     └── grinnode-org-2026/         # grinnode.org
 ```
 
-Config files in `deploy/` follow the same pattern: copy the `.example`, edit it,
-the real file is git-ignored.
+Config files in `deploy/` are committed with working defaults — edit in place.
 
 ---
 
@@ -83,13 +82,7 @@ The interactive menu handles everything from there.
 
 ## GA4 Analytics (Option A)
 
-Each site maps to its own GA4 Measurement ID via `deploy/analytics.conf`.
-
-```bash
-cp deploy/analytics.conf.example deploy/analytics.conf
-```
-
-Example config:
+Each site maps to its own GA4 Measurement ID in `deploy/analytics.conf`:
 
 ```
 grin-money-2026="G-98GRB5MKDT"
@@ -112,9 +105,9 @@ can run:
 irm https://grin.money/install | iex
 ```
 
-First run: `cp deploy/installer.conf.example deploy/installer.conf` and edit it.
-Then use menu option **G** — the script clones the repo, verifies the file, deploys
-it, and prints the nginx location block to add if needed.
+Config is in `deploy/installer.conf`. Use menu option **G** — the script clones
+the repo, verifies the file, deploys it, and prints the nginx location block to
+add if needed.
 
 For unattended hourly deploys via cron, use `--auto-confirm`:
 

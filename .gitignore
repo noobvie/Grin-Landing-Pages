@@ -1,8 +1,3 @@
-# ── Deploy config (server-specific, never commit) ────────────────────────────
-deploy/custom_repo.conf
-deploy/installer.conf
-deploy/analytics.conf
-
 # ── OS junk ───────────────────────────────────────────────────────────────────
 .DS_Store
 .DS_Store?

@@ -4,9 +4,8 @@
   ──────────────────────────────────────────────────────
 
   Configuration:
-    1. cp deploy/analytics.conf.example deploy/analytics.conf
-    2. Add a line per site:  your-site-name="G-XXXXXXXXXX"
-    3. Run:  ./site_manager.sh --action analytics_ga4
+    1. Edit deploy/analytics.conf — add a line:  your-site-name="G-XXXXXXXXXX"
+    2. Run:  ./site_manager.sh  →  option A (Analytics GA4)
 
   What the script does for each configured site:
     - Creates/updates  web/<site>/js/ga4.js   with the Measurement ID

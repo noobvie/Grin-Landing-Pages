@@ -1246,26 +1246,12 @@ _GA4_IDS=()
 
 _load_analytics_conf() {
     local conf="$SCRIPT_DIR/deploy/analytics.conf"
-    local conf_example="$SCRIPT_DIR/deploy/analytics.conf.example"
 
     _GA4_SITES=()
     _GA4_IDS=()
 
     if [[ ! -f "$conf" ]]; then
-        print_warn "No analytics.conf found at: $conf"
-        if [[ -f "$conf_example" ]]; then
-            if [[ "$AUTO_CONFIRM" == "yes" ]]; then
-                print_info "Run option A interactively once first to bootstrap analytics.conf."
-                return 1
-            fi
-            read -r -p "  Copy analytics.conf.example to analytics.conf and edit? (Y/n): " _c
-            if [[ "${_c,,}" != "n" ]]; then
-                cp "$conf_example" "$conf"
-                print_info "Created $conf — edit it, then re-run this action."
-            fi
-        else
-            print_error "Template missing: $conf_example"
-        fi
+        print_error "Missing: $conf"
         return 1
     fi
 
@@ -1705,35 +1691,17 @@ action_self_update() {
 # tests the URL. Kept SEPARATE from action_deploy() so the installer's
 # weekly cadence and the landing-page's yearly cadence never collide.
 #
-# Reads config from deploy/installer.conf (created from
-# deploy/installer.conf.example on first run).
+# Reads config from deploy/installer.conf.
 #############################################################################
 
 action_deploy_installer() {
     print_section "Deploy Grin-Money Desktop Installer"
 
     local conf="$SCRIPT_DIR/deploy/installer.conf"
-    local conf_example="$SCRIPT_DIR/deploy/installer.conf.example"
 
-    # ── 1. Load (or prompt to create) config ────────────────────────────────
+    # ── 1. Load config ─────────────────────────────────────────────────────
     if [[ ! -f "$conf" ]]; then
-        print_warn "No installer.conf found at: $conf"
-        if [[ "$AUTO_CONFIRM" == "yes" ]]; then
-            print_error "Refusing to create config in --auto-confirm mode (would need an interactive editor)."
-            print_info "Run option G interactively once first to bootstrap installer.conf."
-            return 1
-        fi
-        if [[ -f "$conf_example" ]]; then
-            read -r -p "  Copy installer.conf.example to installer.conf and edit? (Y/n): " _c
-            if [[ "${_c,,}" != "n" ]]; then
-                cp "$conf_example" "$conf"
-                print_info "Created $conf — edit it, then re-run this action."
-                print_cmd "nano $conf"
-            fi
-        else
-            print_error "Template missing: $conf_example"
-            print_info "Re-run self_update (option 9) to refresh the repo."
-        fi
+        print_error "Missing: $conf"
         return 1
     fi
 
