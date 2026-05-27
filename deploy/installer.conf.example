@@ -1,0 +1,27 @@
+# installer.conf — config for site_manager.sh option G (deploy-installer)
+#
+# Copy this file to deploy/installer.conf and edit. The real file is
+# git-ignored — never commit installer.conf with credentials in it.
+#
+# Used by action_deploy_installer() to pull install.ps1 from the
+# Grin-Money-Desktop repo and serve it at https://<domain>/install.
+
+# ── Source: where to pull install.ps1 from ─────────────────────────────────
+INSTALLER_SOURCE_REPO="https://github.com/noobvie/Grin-Money-Desktop.git"
+INSTALLER_SOURCE_BRANCH="main"
+INSTALLER_SOURCE_FILE="install.ps1"
+INSTALLER_CACHE_DIR="/opt/grin-money-desktop-cache"
+
+# ── Target: where nginx serves it ──────────────────────────────────────────
+INSTALLER_TARGET_DIR="/var/www/grin-money-desktop-installer"
+INSTALLER_TARGET_FILE="install.ps1"
+
+# ── Domain to smoke-test (must already have the /install location block) ──
+INSTALLER_SERVING_DOMAIN="grin.money"
+
+# ── File ownership + perms after deploy ────────────────────────────────────
+INSTALLER_OWNER="www-data:www-data"
+INSTALLER_PERMS="644"
+
+# ── Safety check: refuse to deploy if install.ps1 doesn't start with this ─
+INSTALLER_SIGNATURE_LINE="#Requires -Version 5.1"

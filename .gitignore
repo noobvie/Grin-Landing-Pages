@@ -1,5 +1,6 @@
 # ── Deploy config (server-specific, never commit) ────────────────────────────
 deploy/custom_repo.conf
+deploy/installer.conf
 
 # ── OS junk ───────────────────────────────────────────────────────────────────
 .DS_Store
