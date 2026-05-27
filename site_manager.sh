@@ -132,7 +132,6 @@ detect_nginx_paths() {
         # macOS Homebrew nginx uses a flat "servers/" directory
         NGINX_AVAILABLE="$NGINX_CONF_DIR/servers"
         NGINX_ENABLED="$NGINX_CONF_DIR/servers"
-        mkdir -p "$NGINX_AVAILABLE"
     else
         NGINX_CONF_DIR="/etc/nginx"
         NGINX_AVAILABLE="/etc/nginx/sites-available"
@@ -303,7 +302,7 @@ open_firewall_ports() {
 #############################################################################
 
 show_main_menu() {
-    clear
+    clear 2>/dev/null || true
     cat << "EOF"
 ╔════════════════════════════════════════════════════════════════╗
 ║                                                                ║
@@ -511,6 +510,7 @@ action_add_domain() {
 
     ensure_nginx
     ensure_certbot || true   # Non-fatal on macOS
+    [[ "$OS" == "macos" ]] && mkdir -p "$NGINX_AVAILABLE" 2>/dev/null || true
 
     # Create web directory
     mkdir -p "$WEB_DIR"
@@ -1379,7 +1379,9 @@ parse_arguments() {
     done
 
     # Normalise hyphenated CLI form to the internal underscore form
-    [[ "$ACTION" == "deploy-installer" ]] && ACTION="deploy_installer"
+    if [[ "$ACTION" == "deploy-installer" ]]; then
+        ACTION="deploy_installer"
+    fi
 }
 
 show_help() {
