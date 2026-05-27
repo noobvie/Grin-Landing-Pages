@@ -195,7 +195,15 @@ init_log() {
     local action="$1"
     mkdir -p "$LOG_DIR"
     LOG_FILE="$LOG_DIR/site_${action}_$(date +%Y%m%d_%H%M%S).log"
-    exec > >(tee -a "$LOG_FILE") 2>&1
+    # stdbuf -o0 forces tee to write to the terminal unbuffered.
+    # Without it, once stdout becomes a pipe glibc switches tee to 8 KB
+    # block-buffering, so the interactive menu never appears until the
+    # buffer fills — users have to press Enter several times to see anything.
+    if command -v stdbuf &>/dev/null; then
+        exec > >(stdbuf -o0 tee -a "$LOG_FILE") 2>&1
+    else
+        exec > >(tee -a "$LOG_FILE") 2>&1   # macOS fallback — minor display lag acceptable
+    fi
     _LOG_INIT_DONE=true
     print_info "Logging to: $LOG_FILE"
 }
@@ -317,7 +325,8 @@ show_main_menu() {
     cat << "EOF"
 ╔════════════════════════════════════════════════════════════════╗
 ║                                                                ║
-║     site_manager.sh  —  Static Site Deployment Manager        ║
+║     site_manager.sh  —  Static Site Deployment Manager         ║
+║                    V.20260527                                  ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
 EOF
