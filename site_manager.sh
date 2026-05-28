@@ -208,6 +208,17 @@ init_log() {
     print_info "Logging to: $LOG_FILE"
 }
 
+ask() {
+    # Replacement for 'read -r -p "prompt" VARNAME'.
+    # Routes the prompt text through stdout (same tee pipe as echo) so it
+    # appears AFTER preceding echo output in the correct display order.
+    # Without this, bash's readline writes prompts via /dev/tty directly,
+    # which renders on screen before the echo lines still sitting in the
+    # tee pipe buffer — prompt appears above the menu instead of below it.
+    printf "%s" "$1"
+    read -r "$2"
+}
+
 #############################################################################
 # Package Management
 #############################################################################
@@ -250,7 +261,7 @@ ensure_certbot() {
     if [[ "$OS" == "macos" ]]; then
         print_warn "On macOS, certbot is for local testing only."
         print_warn "For production SSL, run this script on your Linux VPS."
-        read -r -p "Install certbot via Homebrew anyway? (y/N) " _c
+        ask "Install certbot via Homebrew anyway? (y/N) " _c
         [[ "${_c,,}" == "y" ]] || return 1
         pkg_install certbot
         pkg_install certbot-nginx 2>/dev/null || true
@@ -355,7 +366,7 @@ get_action() {
 
     while true; do
         show_main_menu
-        read -r -p "Enter choice [0-9 / A / G]: " choice
+        ask "Enter choice [0-9 / A / G]: " choice
         case "${choice,,}" in
             1) ACTION="add"              ; break ;;
             2) ACTION="remove"           ; break ;;
@@ -386,7 +397,7 @@ get_domain_input() {
     echo ""
     while true; do
         if [[ -z "$DOMAIN" ]]; then
-            read -r -p "Enter domain (e.g. grin.money) or 0 to cancel: " DOMAIN
+            ask "Enter domain (e.g. grin.money) or 0 to cancel: " DOMAIN
             [[ "$DOMAIN" == "0" ]] && return 1
         fi
         if validate_domain "$DOMAIN"; then
@@ -402,7 +413,7 @@ get_domain_input() {
 get_email_input() {
     while true; do
         if [[ -z "$EMAIL" ]]; then
-            read -r -p "Enter email for SSL notifications or 0 to cancel: " EMAIL
+            ask "Enter email for SSL notifications or 0 to cancel: " EMAIL
             [[ "$EMAIL" == "0" ]] && return 1
         fi
         if validate_email "$EMAIL"; then
@@ -418,7 +429,7 @@ get_email_input() {
 get_web_dir() {
     if [[ -z "$WEB_DIR" ]]; then
         local default_dir="$NGINX_DEFAULT_ROOT/$DOMAIN/public"
-        read -r -p "Web directory [default: $default_dir]: " WEB_DIR
+        ask "Web directory [default: $default_dir]: " WEB_DIR
         WEB_DIR="${WEB_DIR:-$default_dir}"
     fi
     print_info "Web directory: $WEB_DIR"
@@ -524,7 +535,7 @@ action_add_domain() {
     local conf_file="$NGINX_AVAILABLE/$DOMAIN"
     if [[ -f "$conf_file" ]]; then
         print_warn "A config for '$DOMAIN' already exists at: $conf_file"
-        read -r -p "Overwrite? (y/N): " _ow
+        ask "Overwrite? (y/N): " _ow
         [[ "${_ow,,}" != "y" ]] && return 1
     fi
 
@@ -621,7 +632,7 @@ action_remove_domain() {
     if [[ -z "$DOMAIN_TO_REMOVE" ]]; then
         action_list_sites
         echo ""
-        read -r -p "Enter domain to remove or 0 to cancel: " DOMAIN_TO_REMOVE
+        ask "Enter domain to remove or 0 to cancel: " DOMAIN_TO_REMOVE
         [[ "$DOMAIN_TO_REMOVE" == "0" ]] && return 0
     fi
 
@@ -641,7 +652,7 @@ action_remove_domain() {
     echo ""
 
     if [[ -z "$DELETE_FILES" ]]; then
-        read -r -p "Also delete web files ($web_dir)? (y/N): " _df
+        ask "Also delete web files ($web_dir)? (y/N): " _df
         DELETE_FILES="${_df,,}"
     fi
 
@@ -653,7 +664,7 @@ action_remove_domain() {
     # Revoke and delete SSL cert
     if command -v certbot &>/dev/null && \
        [[ -d "/etc/letsencrypt/live/$DOMAIN_TO_REMOVE" ]]; then
-        read -r -p "Revoke and delete SSL cert for $DOMAIN_TO_REMOVE? (y/N): " _rc
+        ask "Revoke and delete SSL cert for $DOMAIN_TO_REMOVE? (y/N): " _rc
         if [[ "${_rc,,}" == "y" ]]; then
             certbot revoke --cert-name "$DOMAIN_TO_REMOVE" --non-interactive 2>/dev/null || true
             certbot delete --cert-name "$DOMAIN_TO_REMOVE" --non-interactive 2>/dev/null || true
@@ -663,7 +674,7 @@ action_remove_domain() {
 
     # Delete web files
     if [[ "${DELETE_FILES,,}" == "y" ]] && [[ -n "$web_dir" ]] && [[ -d "$web_dir" ]]; then
-        read -r -p "CONFIRM: Permanently delete $web_dir and all its contents? (yes/N): " _confirm
+        ask "CONFIRM: Permanently delete $web_dir and all its contents? (yes/N): " _confirm
         if [[ "$_confirm" == "yes" ]]; then
             rm -rf "$web_dir"
             print_info "Web files deleted: $web_dir"
@@ -693,7 +704,7 @@ action_deploy() {
     echo ""
 
     if [[ -z "$DEPLOY_MODE" ]]; then
-        read -r -p "Choose deploy mode [1-3] or 0 to cancel: " _dm
+        ask "Choose deploy mode [1-3] or 0 to cancel: " _dm
         case "$_dm" in
             1) DEPLOY_MODE="local"  ;;
             2) DEPLOY_MODE="rsync"  ;;
@@ -716,7 +727,7 @@ _prompt_ownership() {
     echo ""
     local prompt_hint="e.g. www-data:www-data"
     [[ -n "$DEPLOY_OWNER" ]] && prompt_hint="last used: $DEPLOY_OWNER"
-    read -r -p "  Set ownership of deployed files ($prompt_hint, Enter to skip): " _owner
+    ask "  Set ownership of deployed files ($prompt_hint, Enter to skip): " _owner
     _owner="${_owner:-$DEPLOY_OWNER}"
     if [[ -n "$_owner" ]]; then
         chown -R "$_owner" "$target_dir"
@@ -751,7 +762,7 @@ _load_deploy_state() {
     [[ -n "$_dir"    ]] && echo "    Web dir: $_dir"
     [[ -n "$_owner"  ]] && echo "    Owner:   $_owner"
     echo ""
-    read -r -p "  Use saved settings? (Y/n) " _use
+    ask "  Use saved settings? (Y/n) " _use
     [[ "${_use,,}" == "n" ]] && return 0
 
     [[ -n "$_mode"   && -z "$DEPLOY_MODE"   ]] && DEPLOY_MODE="$_mode"
@@ -801,7 +812,7 @@ _deploy_local() {
     if [[ -z "$LOCAL_SRC" ]]; then
         local default_src
         default_src="$SCRIPT_DIR/web"
-        read -r -p "Source directory [default: $default_src]: " LOCAL_SRC
+        ask "Source directory [default: $default_src]: " LOCAL_SRC
         LOCAL_SRC="${LOCAL_SRC:-$default_src}"
     fi
 
@@ -825,7 +836,7 @@ _deploy_rsync() {
     if [[ -z "$LOCAL_SRC" ]]; then
         local default_src
         default_src="$SCRIPT_DIR/web"
-        read -r -p "Source directory [default: $default_src]: " LOCAL_SRC
+        ask "Source directory [default: $default_src]: " LOCAL_SRC
         LOCAL_SRC="${LOCAL_SRC:-$default_src}"
     fi
 
@@ -835,11 +846,11 @@ _deploy_rsync() {
     fi
 
     if [[ -z "$REMOTE_USER" ]]; then
-        read -r -p "Remote SSH target (e.g. ubuntu@1.2.3.4): " REMOTE_USER
+        ask "Remote SSH target (e.g. ubuntu@1.2.3.4): " REMOTE_USER
     fi
 
     if [[ -z "$REMOTE_PATH" ]]; then
-        read -r -p "Remote web directory (e.g. /var/www/grin.money/public): " REMOTE_PATH
+        ask "Remote web directory (e.g. /var/www/grin.money/public): " REMOTE_PATH
     fi
 
     print_info "Pushing $LOCAL_SRC → $REMOTE_USER:$REMOTE_PATH"
@@ -872,13 +883,13 @@ _deploy_git() {
 
     # ── Prompt for any still-missing values ───────────────────────────────────
     if [[ -z "$GIT_REPO" ]]; then
-        read -r -p "Git repo URL: " GIT_REPO
+        ask "Git repo URL: " GIT_REPO
     fi
 
     # Branch selection — always offer a chance to override for testing
     echo ""
     echo -e "  Current branch: ${GREEN}${GIT_BRANCH:-main}${NC}"
-    read -r -p "  Deploy branch [press Enter to keep, or type another branch/tag]: " _branch_override
+    ask "  Deploy branch [press Enter to keep, or type another branch/tag]: " _branch_override
     [[ -n "$_branch_override" ]] && GIT_BRANCH="$_branch_override"
     GIT_BRANCH="${GIT_BRANCH:-main}"
 
@@ -892,7 +903,7 @@ _deploy_git() {
         if [[ -n "${DOMAIN:-}" ]]; then
             WEB_DIR="$NGINX_DEFAULT_ROOT/$DOMAIN/public"
         else
-            read -r -p "Target web directory on this server: " WEB_DIR
+            ask "Target web directory on this server: " WEB_DIR
         fi
     fi
     print_info "Target: $WEB_DIR  branch: $GIT_BRANCH"
@@ -992,7 +1003,7 @@ action_security() {
     echo "  3) Auto-renew SSL check     — test certbot renewal dry-run"
     echo "  0) Back"
     echo ""
-    read -r -p "Choose [0-3]: " _sc
+    ask "Choose [0-3]: " _sc
 
     case "$_sc" in
         1) _security_audit ;;
@@ -1071,7 +1082,7 @@ _security_ssl_renew_test() {
     echo ""
     print_cmd "0 0,12 * * * root certbot renew --quiet --post-hook 'systemctl reload nginx'"
     echo ""
-    read -r -p "Add this cron job now? (y/N): " _cron
+    ask "Add this cron job now? (y/N): " _cron
     if [[ "${_cron,,}" == "y" ]]; then
         if [[ -f /etc/cron.d/certbot-renew ]]; then
             print_warn "Cron job already exists at /etc/cron.d/certbot-renew — skipping."
@@ -1156,7 +1167,7 @@ action_fail2ban_mgmt() {
     echo "  3) Unban an IP"
     echo "  0) Back"
     echo ""
-    read -r -p "Choose [0-3]: " _f2b
+    ask "Choose [0-3]: " _f2b
 
     case "$_f2b" in
         1) fail2ban-client status ;;
@@ -1168,8 +1179,8 @@ action_fail2ban_mgmt() {
             done
             ;;
         3)
-            read -r -p "Enter IP to unban: " _ip
-            read -r -p "Enter jail name [nginx-req-limit]: " _jail
+            ask "Enter IP to unban: " _ip
+            ask "Enter jail name [nginx-req-limit]: " _jail
             _jail="${_jail:-nginx-req-limit}"
             fail2ban-client set "$_jail" unbanip "$_ip"
             print_info "Unbanned: $_ip from $_jail"
@@ -1196,18 +1207,18 @@ action_ip_filter() {
     echo "  3) List blocked IPs"
     echo "  0) Back"
     echo ""
-    read -r -p "Choose [0-3]: " _ipf
+    ask "Choose [0-3]: " _ipf
 
     case "$_ipf" in
         1)
-            read -r -p "Enter IP to block: " _ip
+            ask "Enter IP to block: " _ip
             validate_ip "$_ip" || { print_error "Invalid IP: $_ip"; return 1; }
             _firewall_block "$_ip"
             grep -qxF "$_ip" "$BLOCKED_LIST" || echo "$_ip" >> "$BLOCKED_LIST"
             print_info "Blocked: $_ip"
             ;;
         2)
-            read -r -p "Enter IP to unblock: " _ip
+            ask "Enter IP to unblock: " _ip
             validate_ip "$_ip" || { print_error "Invalid IP: $_ip"; return 1; }
             _firewall_unblock "$_ip"
             grep -vxF "$_ip" "$BLOCKED_LIST" > "${BLOCKED_LIST}.tmp" && mv "${BLOCKED_LIST}.tmp" "$BLOCKED_LIST" || true
@@ -1417,7 +1428,7 @@ action_analytics_ga4() {
         echo "    S) Process a single site"
         echo ""
         local _mode
-        read -r -p "  Choice [A/s]: " _mode
+        ask "  Choice [A/s]: " _mode
         if [[ "${_mode,,}" == "s" ]]; then
             echo ""
             echo "  Available sites under web/:"
@@ -1426,7 +1437,7 @@ action_analytics_ga4() {
                 echo "    - $(basename "$d")"
             done
             echo ""
-            read -r -p "  Site name: " SITE_NAME
+            ask "  Site name: " SITE_NAME
             if [[ -z "$SITE_NAME" ]]; then
                 print_error "No site name provided."
                 return 1
@@ -1443,7 +1454,7 @@ action_analytics_ga4() {
             if [[ "$found" != "true" ]]; then
                 print_warn "$SITE_NAME not in analytics.conf."
                 local _manual_id
-                read -r -p "  Enter GA4 ID for $SITE_NAME: " _manual_id
+                ask "  Enter GA4 ID for $SITE_NAME: " _manual_id
                 if [[ -z "$_manual_id" ]]; then
                     print_error "No GA4 ID provided."
                     return 1
@@ -1478,7 +1489,7 @@ action_analytics_ga4() {
     if [[ -n "${DEPLOY_OWNER:-}" && -n "${WEB_DIR:-}" && -d "$WEB_DIR" ]]; then
         echo ""
         print_info "Saved deploy owner: $DEPLOY_OWNER  ->  $WEB_DIR"
-        read -r -p "  Fix ownership on deployed GA4 files at $WEB_DIR? (y/N): " _fix_own
+        ask "  Fix ownership on deployed GA4 files at $WEB_DIR? (y/N): " _fix_own
         if [[ "${_fix_own,,}" == "y" ]]; then
             chown "$DEPLOY_OWNER" "$WEB_DIR/js/ga4.js" 2>/dev/null || true
             for html_file in "$WEB_DIR"/*.html; do
@@ -1644,7 +1655,7 @@ action_self_update() {
         print_warn "Local modifications detected:"
         echo "$dirty" | while IFS= read -r line; do echo "    $line"; done
         echo ""
-        read -r -p "  Stash local changes before pulling? (Y/n): " _st
+        ask "  Stash local changes before pulling? (Y/n): " _st
         if [[ "${_st,,}" != "n" ]]; then
             git -C "$SCRIPT_DIR" stash push -m "site_manager auto-stash before self-update" || {
                 print_error "git stash failed. Resolve local changes manually and retry."
@@ -1786,7 +1797,7 @@ action_deploy_installer() {
         if [[ "$AUTO_CONFIRM" == "yes" ]]; then
             return 0                                       # cron-quiet: nothing to do
         fi
-        read -r -p "  Redeploy anyway? (y/N): " _re
+        ask "  Redeploy anyway? (y/N): " _re
         if [[ "${_re,,}" != "y" ]]; then
             print_info "Nothing to deploy. Done."
             return 0
@@ -1842,7 +1853,7 @@ action_deploy_installer() {
     # ── 6. Confirm before write ─────────────────────────────────────────────
     if [[ "$AUTO_CONFIRM" != "yes" ]]; then
         echo ""
-        read -r -p "  Deploy this commit to $current_target? (y/N): " _go
+        ask "  Deploy this commit to $current_target? (y/N): " _go
         if [[ "${_go,,}" != "y" ]]; then
             print_info "Aborted by user."
             return 0
@@ -1979,7 +1990,7 @@ main() {
         _dispatch_action || true
 
         echo ""
-        read -r -p "  Press Enter to return to the menu..." _pause
+        ask "  Press Enter to return to the menu..." _pause
 
         # Reset per-action state so each menu pick starts clean.
         # Intentionally kept across iterations: DOMAIN, EMAIL, WEB_DIR,
