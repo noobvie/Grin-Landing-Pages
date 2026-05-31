@@ -24,3 +24,10 @@ logs/
 !.env.example
 *.pem
 *.key
+
+# ── Server-local deploy state (per-machine, never commit) ─────────────────────
+deploy/deploy_state.conf
+
+# ── Generated GA4 tag (injected into the deployed copy at deploy time) ────────
+# Kept out of git so the source tree stays raw and pulls never collide on it.
+web/*/js/ga4.js
