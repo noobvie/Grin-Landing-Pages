@@ -1322,7 +1322,7 @@ _ga4_process_site() {
 
     local old_id=""
     if [[ -f "$ga4_js" ]]; then
-        old_id=$(grep -oP 'G-[A-Z0-9]+' "$ga4_js" | head -1 || true)
+        old_id=$(grep -oE 'G-[A-Z0-9]+' "$ga4_js" | head -1 || true)
     fi
 
     if [[ -n "$old_id" && "$old_id" != "$ga4_id" ]]; then
@@ -1349,13 +1349,18 @@ GA4_EOF
         basename_f="$(basename "$html_file")"
 
         if grep -q "gtag" "$html_file" 2>/dev/null; then
-            if [[ -n "$old_id" && "$old_id" != "$ga4_id" ]]; then
-                sed -i.bak "s|$old_id|$ga4_id|g" "$html_file"
+            # Read the ID currently in the HTML loader URL, not from ga4.js, so a
+            # stale loader ID is always repaired even when ga4.js already matches.
+            local html_id=""
+            html_id=$(grep -oE 'id=G-[A-Z0-9]+' "$html_file" | grep -oE 'G-[A-Z0-9]+' | head -1 || true)
+            [[ -z "$html_id" ]] && html_id="$old_id"
+            if [[ -n "$html_id" && "$html_id" != "$ga4_id" ]]; then
+                sed -i.bak "s|$html_id|$ga4_id|g" "$html_file"
                 rm -f "${html_file}.bak"
-                print_info "Updated GA4 ID in: $basename_f ($old_id -> $ga4_id)"
+                print_info "Updated GA4 ID in: $basename_f ($html_id -> $ga4_id)"
                 updated_count=$(( updated_count + 1 ))
             else
-                print_warn "Skipped (already has gtag): $basename_f"
+                print_warn "Skipped (already current): $basename_f"
                 skipped_count=$(( skipped_count + 1 ))
             fi
             continue
