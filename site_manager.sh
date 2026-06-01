@@ -457,8 +457,9 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name ${domain} www.${domain};
 
     root ${web_dir};
@@ -478,7 +479,7 @@ server {
     add_header X-XSS-Protection           "1; mode=block"                                always;
     add_header Referrer-Policy            "strict-origin-when-cross-origin"              always;
     add_header Permissions-Policy         "camera=(), microphone=(), geolocation=()"     always;
-    add_header Content-Security-Policy    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://world.grin.money https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com;" always;
+    add_header Content-Security-Policy    "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://world.grin.money https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.google.com;" always;
 
     # Rate limiting
     limit_req zone=landing_${domain_id} burst=30 nodelay;
