@@ -156,7 +156,6 @@ print_info()    { echo -e "${GREEN}[INFO]${NC} $1"; }
 print_warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
 print_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 print_section() { echo -e "\n${BOLD}=========================================\n $1\n=========================================${NC}"; }
-print_blue()    { echo -e "${BLUE}[INFO]${NC} $1"; }
 print_cmd()     { echo -e "${DIM}  \$${NC} $1"; }
 
 check_root() {
@@ -442,8 +441,36 @@ get_web_dir() {
 generate_nginx_config() {
     local domain="$1"
     local web_dir="$2"
+    local cert_mode="${3:-letsencrypt}"   # letsencrypt | selfsigned
     local domain_id
     domain_id=$(domain_safe "$domain")
+
+    # Build the SSL directive block to match where the cert actually lives.
+    # certbot puts certs (and the shared options/dhparam files) under
+    # /etc/letsencrypt; the self-signed fallback writes to /etc/ssl/<domain>/
+    # and those shared includes do NOT exist — referencing them would make
+    # `nginx -t` fail and the whole site never come up.
+    local ssl_block
+    if [[ "$cert_mode" == "selfsigned" ]]; then
+        ssl_block=$(cat << SSL_EOF
+    # SSL — self-signed fallback (certbot unavailable). Re-run option 1 once
+    # DNS resolves to this server to replace with a real Let's Encrypt cert.
+    ssl_certificate     /etc/ssl/${domain}/fullchain.pem;
+    ssl_certificate_key /etc/ssl/${domain}/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+SSL_EOF
+)
+    else
+        ssl_block=$(cat << SSL_EOF
+    # SSL — managed by certbot
+    ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
+    include             /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
+SSL_EOF
+)
+    fi
 
     cat << NGINX_EOF
 # Rate limiting zone
@@ -465,11 +492,7 @@ server {
     root ${web_dir};
     index index.html;
 
-    # SSL — managed by certbot
-    ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
-    include             /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
+$ssl_block
 
     # Security headers
     server_tokens off;
@@ -562,6 +585,10 @@ HTML_EOF
     # Open firewall ports
     open_firewall_ports
 
+    # Track which cert the final vhost should point at. Flipped to "selfsigned"
+    # only if certbot fails below, so generate_nginx_config emits matching paths.
+    local cert_mode="letsencrypt"
+
     if [[ "$OS" == "linux" ]]; then
         # Get SSL cert first (needs port 80 open, nginx must not be running on 80 yet)
         # Use --nginx plugin so certbot auto-configures nginx
@@ -593,13 +620,14 @@ TMP_NGINX
                 -keyout "/etc/ssl/$DOMAIN/privkey.pem" \
                 -out    "/etc/ssl/$DOMAIN/fullchain.pem" \
                 -subj   "/CN=$DOMAIN" 2>/dev/null
+            cert_mode="selfsigned"
             print_warn "Self-signed cert generated. Replace with Let's Encrypt for production."
         }
     fi
 
-    # Write final nginx config
+    # Write final nginx config (SSL paths follow whichever cert we ended up with)
     print_section "Writing nginx Configuration"
-    generate_nginx_config "$DOMAIN" "$WEB_DIR" > "$conf_file"
+    generate_nginx_config "$DOMAIN" "$WEB_DIR" "$cert_mode" > "$conf_file"
 
     if [[ "$OS" == "linux" ]]; then
         ln -sf "$conf_file" "$NGINX_ENABLED/$DOMAIN" 2>/dev/null || true
@@ -676,7 +704,7 @@ action_remove_domain() {
     if [[ "${DELETE_FILES,,}" == "y" ]] && [[ -n "$web_dir" ]] && [[ -d "$web_dir" ]]; then
         ask "CONFIRM: Permanently delete $web_dir and all its contents? (yes/N): " _confirm
         if [[ "$_confirm" == "yes" ]]; then
-            rm -rf "$web_dir"
+            rm -rf "${web_dir:?web_dir is empty — refusing to delete}"
             print_info "Web files deleted: $web_dir"
         else
             print_info "Web files kept."
@@ -804,18 +832,6 @@ SPARSE_CHECKOUT="${SPARSE_CHECKOUT:-no}"
 DEPLOY_OWNER="$DEPLOY_OWNER"
 EOF
     print_info "Deploy settings saved → $DEPLOY_STATE_FILE"
-}
-
-# Silent variant — reads DEPLOY_OWNER + WEB_DIR from state file without any
-# prompts.  Used by action_analytics_ga4 to fix ownership after GA4 injection
-# without re-entering the interactive "Use saved settings?" flow.
-_read_deploy_state_silent() {
-    [[ -f "$DEPLOY_STATE_FILE" ]] || return 0
-    local _owner _dir
-    _owner=$( grep -E '^DEPLOY_OWNER=' "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
-    _dir=$(   grep -E '^WEB_DIR='      "$DEPLOY_STATE_FILE" | head -1 | cut -d= -f2- | tr -d '"' )
-    [[ -n "$_owner" ]] && DEPLOY_OWNER="$_owner"
-    [[ -n "$_dir"   && -z "$WEB_DIR" ]] && WEB_DIR="$_dir"
 }
 
 _deploy_local() {
@@ -1968,14 +1984,27 @@ main() {
         echo ""
         ask "  Press Enter to return to the menu..." _pause
 
-        # Reset per-action state so each menu pick starts clean.
-        # Intentionally kept across iterations: EMAIL, WEB_DIR, DEPLOY_MODE,
-        # DEPLOY_OWNER (convenient "last used" values — same across domains).
+        # Reset per-action state so each menu pick starts clean. Anything left
+        # populated here is silently reused by the next action (every input
+        # helper only prompts when its var is empty), which is the classic
+        # "it didn't ask me" bug. So we clear ALL per-action inputs and keep
+        # only genuine cross-domain conveniences: EMAIL (same Let's Encrypt
+        # address) and DEPLOY_OWNER (same ownership). Deploy inputs are
+        # repopulated from the saved-state FILE via _load_deploy_state, so
+        # clearing them here costs nothing and prevents cross-domain bleed.
         ACTION=""             # show menu on next get_action call
         DOMAIN=""             # add: always re-prompt for the new domain
         DOMAIN_TO_REMOVE=""   # remove: always re-prompt for domain
         DELETE_FILES=""       # remove: always re-prompt for file deletion
-        SITE_NAME=""          # analytics: always re-prompt for site / batch
+        SITE_NAME=""          # analytics/deploy: always re-prompt for site
+        WEB_DIR=""            # add: re-derive from the new domain, not the old
+        DEPLOY_MODE=""        # deploy: re-prompt / reload from saved state
+        LOCAL_SRC=""          # deploy: re-prompt / reload from saved state
+        REMOTE_USER=""        # deploy: re-prompt / reload from saved state
+        REMOTE_PATH=""        # deploy: re-prompt / reload from saved state
+        GIT_REPO=""           # deploy: re-prompt / reload from saved state
+        GIT_BRANCH=""         # deploy: re-prompt / reload from saved state
+        SPARSE_CHECKOUT=""    # deploy: re-prompt / reload from saved state
     done
 }
 
