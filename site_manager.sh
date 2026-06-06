@@ -20,7 +20,7 @@
 #   8) IP Filtering       — Block / Unblock IPs via ufw or iptables
 #   9) Update Script      — Self-update site_manager.sh via git pull (fast-forward only)
 #
-#   A) Analytics (GA4)    — Inject / update GA4 tracking (reads deploy/analytics.conf)
+#   A) Analytics (GA4)    — Inject / update GA4 tracking in a submitted directory (any web server)
 #   G) Grin-Money Desktop — Deploy install.ps1 from GitHub to <domain>/install (reads deploy/installer.conf)
 #
 #   0) Exit
@@ -353,7 +353,7 @@ EOF
     echo ""
     echo "  9) Update Script      — git pull latest site_manager.sh from GitHub"
     echo ""
-    echo "  A) Analytics (GA4)         — Refresh GA4 on a deployed site (auto-applied on deploy)"
+    echo "  A) Analytics (GA4)         — Inject/refresh GA4 in a directory you submit (any web server)"
     echo "  G) Grin-Money Desktop      — Deploy install.ps1 to <domain>/install"
     echo ""
     echo "  0) Exit"
@@ -763,7 +763,18 @@ _load_deploy_state() {
     [[ -n "$_owner"  ]] && echo "    Owner:   $_owner"
     echo ""
     ask "  Use saved settings? (Y/n) " _use
-    [[ "${_use,,}" == "n" ]] && return 0
+    if [[ "${_use,,}" == "n" ]]; then
+        # User declined the saved settings — clear any in-memory values so the
+        # deploy prompts ask for everything fresh. The downstream prompts are
+        # all guarded by `[[ -z "$VAR" ]]`, so leaving stale globals here would
+        # silently reuse old values (env vars, a prior deploy this session, or
+        # parsed --flags) instead of re-prompting.
+        DEPLOY_MODE=""; LOCAL_SRC=""; REMOTE_USER=""; REMOTE_PATH=""
+        GIT_REPO=""; GIT_BRANCH=""; SITE_NAME=""; WEB_DIR=""
+        SPARSE_CHECKOUT=""; DEPLOY_OWNER=""
+        print_info "Saved settings ignored — entering values manually."
+        return 0
+    fi
 
     [[ -n "$_mode"   && -z "$DEPLOY_MODE"   ]] && DEPLOY_MODE="$_mode"
     [[ -n "$_src"    && -z "$LOCAL_SRC"     ]] && LOCAL_SRC="$_src"
@@ -1406,48 +1417,75 @@ _ga4_apply_after_deploy() {
 action_analytics_ga4() {
     print_section "Analytics (GA4)"
 
-    if ! _load_analytics_conf; then
+    print_info "Injects / refreshes the GA4 tag in the directory you submit."
+    print_info "Directory-driven — works for ANY web server (nginx, apache,"
+    print_info "caddy, a static host…), not just nginx vhosts. It edits the"
+    print_info "published files in place, never the git source."
+    echo ""
+
+    # ── 1. Target directory — the folder that holds the .html files. ──────
+    # The user submits the path directly; we never resolve it from the saved
+    # nginx deploy state, so landing pages on a custom web server work too.
+    local target_dir=""
+    ask "  Web directory to tag (folder containing the .html files): " target_dir
+    target_dir="${target_dir%/}"   # strip trailing slash
+    if [[ -z "$target_dir" || ! -d "$target_dir" ]]; then
+        print_error "Directory not found: ${target_dir:-<empty>}"
         return 1
     fi
 
-    echo ""
-    echo "  Configured sites in analytics.conf:"
-    local i
-    for (( i=0; i<${#_GA4_SITES[@]}; i++ )); do
-        echo -e "    ${_GA4_SITES[$i]}  ->  ${_GA4_IDS[$i]}"
-    done
-    echo ""
-    print_info "GA4 is applied automatically on every deploy (option 3)."
-    print_info "Use this only to refresh the tag on an already-deployed site"
-    print_info "without doing a full redeploy. It edits the published files,"
-    print_info "never the git source — so the repo stays raw."
-    echo ""
-
-    # Resolve the live web root from saved deploy state (or prompt).
-    _load_deploy_state
-    if [[ -z "${WEB_DIR:-}" ]]; then
-        ask "  Deployed web directory to refresh: " WEB_DIR
-    fi
-    if [[ -z "${WEB_DIR:-}" || ! -d "$WEB_DIR" ]]; then
-        print_error "No valid deployed web directory found."
-        print_info "Run a deploy (option 3) first, or enter a valid path."
-        return 1
-    fi
-
-    _ga4_apply_after_deploy "$WEB_DIR" "${LOCAL_SRC:-${SITE_NAME:-}}"
-
-    # Ownership fix for the refreshed files
-    if [[ -n "${DEPLOY_OWNER:-}" ]]; then
+    # ── 2. GA4 measurement ID. ────────────────────────────────────────────
+    # Prefer a match from analytics.conf (by the folder's basename), but
+    # always allow a manual ID so an arbitrary directory can be tagged.
+    local ga4_id="" i
+    if [[ -f "$SCRIPT_DIR/deploy/analytics.conf" ]] && _load_analytics_conf; then
         echo ""
-        ask "  Fix ownership ($DEPLOY_OWNER) on refreshed files at $WEB_DIR? (y/N): " _fix_own
-        if [[ "${_fix_own,,}" == "y" ]]; then
-            chown -R "$DEPLOY_OWNER" "$WEB_DIR" 2>/dev/null || true
-            print_info "Ownership fixed."
+        echo "  Known GA4 IDs from analytics.conf:"
+        for (( i=0; i<${#_GA4_SITES[@]}; i++ )); do
+            echo -e "    ${_GA4_SITES[$i]}  ->  ${_GA4_IDS[$i]}"
+        done
+        local base suggest=""
+        base="$(basename "$target_dir")"
+        for (( i=0; i<${#_GA4_SITES[@]}; i++ )); do
+            if [[ "${_GA4_SITES[$i]}" == "$base" ]]; then
+                suggest="${_GA4_IDS[$i]}"; break
+            fi
+        done
+        echo ""
+        if [[ -n "$suggest" ]]; then
+            ask "  GA4 ID [Enter for $suggest]: " ga4_id
+            ga4_id="${ga4_id:-$suggest}"
+        else
+            ask "  GA4 ID to inject (G-XXXXXXXXXX): " ga4_id
+        fi
+    else
+        ask "  GA4 ID to inject (G-XXXXXXXXXX): " ga4_id
+    fi
+
+    if [[ ! "$ga4_id" =~ ^G-[A-Z0-9]+$ ]]; then
+        print_error "Invalid GA4 ID: ${ga4_id:-<empty>} (expected G-XXXXXXXXXX)"
+        return 1
+    fi
+
+    # ── 3. Inject / refresh the tag in the submitted directory. ───────────
+    _ga4_inject_dir "$target_dir" "$ga4_id" || return 1
+
+    # ── 4. Ownership — arbitrary user:group, NOT assumed www-data. ────────
+    # Custom web servers often run as a different user; ask explicitly and
+    # default to skipping so we never clobber permissions silently.
+    echo ""
+    local owner=""
+    ask "  Set ownership on $target_dir (user:group, Enter to skip): " owner
+    if [[ -n "$owner" ]]; then
+        if chown -R "$owner" "$target_dir"; then
+            print_info "Ownership set to $owner on $target_dir"
+        else
+            print_warn "Could not set ownership to $owner (does the user/group exist?)."
         fi
     fi
 
     echo ""
-    print_info "GA4 refresh complete  →  $WEB_DIR"
+    print_info "GA4 refresh complete  →  $target_dir"
     echo ""
 }
 
@@ -1499,7 +1537,7 @@ ACTIONS:
     --action fail2ban_install Install fail2ban
     --action fail2ban_mgmt    Manage fail2ban
     --action ip_filter        Block / unblock IPs
-    --action analytics_ga4    Refresh GA4 on the deployed web dir (auto-applied on deploy)
+    --action analytics_ga4    Inject/refresh GA4 in a directory you submit (any web server)
     --action deploy-installer Deploy Grin-Money Desktop install.ps1 to <domain>/install
                               (reads deploy/installer.conf)
 
@@ -1528,12 +1566,13 @@ REMOVE OPTIONS:
     --delete-files            Also delete web files
 
 ANALYTICS (GA4):
-    GA4 is applied automatically at the end of every deploy: the tag from
-    deploy/analytics.conf is injected into the *published* files in the web
-    dir, never into the git source — so the repo stays raw and pulls never
-    collide on generated files. The standalone analytics_ga4 action just
-    re-applies the tag to an already-deployed web dir (from saved deploy
-    state) without a full redeploy.
+    GA4 is applied automatically at the end of every nginx deploy: the tag
+    from deploy/analytics.conf is injected into the *published* files in the
+    web dir, never into the git source — so the repo stays raw and pulls
+    never collide on generated files. The standalone analytics_ga4 action is
+    directory-driven: you submit the target folder (works on ANY web server,
+    not just nginx vhosts), pick/enter the GA4 ID, and optionally set an
+    arbitrary user:group ownership on the tagged files.
 
 EXAMPLES:
     # Interactive menu:
