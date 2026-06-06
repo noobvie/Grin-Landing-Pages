@@ -1969,9 +1969,10 @@ main() {
         ask "  Press Enter to return to the menu..." _pause
 
         # Reset per-action state so each menu pick starts clean.
-        # Intentionally kept across iterations: DOMAIN, EMAIL, WEB_DIR,
-        # DEPLOY_MODE, DEPLOY_OWNER (convenient "last used" values).
+        # Intentionally kept across iterations: EMAIL, WEB_DIR, DEPLOY_MODE,
+        # DEPLOY_OWNER (convenient "last used" values — same across domains).
         ACTION=""             # show menu on next get_action call
+        DOMAIN=""             # add: always re-prompt for the new domain
         DOMAIN_TO_REMOVE=""   # remove: always re-prompt for domain
         DELETE_FILES=""       # remove: always re-prompt for file deletion
         SITE_NAME=""          # analytics: always re-prompt for site / batch
