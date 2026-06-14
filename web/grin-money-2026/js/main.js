@@ -434,7 +434,7 @@
    Endpoints used:
      /api/summary      → tip_height, current_hashrate, current_difficulty
      /api/price        → GRIN_USDT.last, GRIN_USDT.change_pct, GRIN_BTC.last
-     /api/active_peers → mainnet.recent (array of [timestamp, count] pairs)
+     /api/active_peers → mainnet.recent + testnet.recent (arrays of [timestamp, count]); summed
 
    Security:
      - API is CORS-enabled and read-only (no credentials sent).
@@ -511,10 +511,14 @@
         el('ls-price-btc').textContent = sats.toLocaleString() + ' sat';
       }
 
-      // Active mainnet peers — last entry in the recent time-series array
-      if (el('ls-peers') && peers?.mainnet?.recent?.length) {
-        const last = peers.mainnet.recent[peers.mainnet.recent.length - 1];
-        el('ls-peers').textContent = fmt(last[1]);
+      // Active peers — total of mainnet + testnet (last entry of each recent series)
+      if (el('ls-peers')) {
+        const latest = net => {
+          const r = peers?.[net]?.recent;
+          return (Array.isArray(r) && r.length) ? Number(r[r.length - 1][1]) || 0 : 0;
+        };
+        const total = latest('mainnet') + latest('testnet');
+        if (total > 0) el('ls-peers').textContent = fmt(total);
       }
 
       // Timestamp from summary (falls back to price timestamp)
