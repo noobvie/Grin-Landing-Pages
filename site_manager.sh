@@ -69,6 +69,7 @@ GIT_REPO=""                  # Git repo URL for git deploy mode
 GIT_BRANCH=""                # Git branch (default: from custom_repo.conf or "main")
 SITE_NAME=""                 # Site subdirectory name under web/ (e.g. "grin-money-2026")
 SPARSE_CHECKOUT=""           # "yes" to sparse-clone only web/<SITE_NAME>/
+DEPLOY_ALL=""                # "yes" to batch-deploy every site in deploy/sites.conf (git mode)
 
 # Removal configuration
 DOMAIN_TO_REMOVE=""          # Domain to remove
@@ -89,6 +90,7 @@ AUTO_CONFIRM=""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_STATE_FILE="$SCRIPT_DIR/deploy/deploy_state.conf"
+SITES_CONF_FILE="$SCRIPT_DIR/deploy/sites.conf"   # manifest of all hosted sites (batch git deploy)
 LOG_DIR="/opt/grin-landing/logs"
 LOG_FILE=""
 _LOG_INIT_DONE=false    # guard — only init_log once per session
@@ -722,30 +724,41 @@ action_remove_domain() {
 action_deploy() {
     print_section "Deploy Site"
 
+    # Unattended / explicit batch: --all (or DEPLOY_MODE=all) deploys every
+    # site in deploy/sites.conf in one git pass — no menu, ideal for cron.
+    if [[ "$DEPLOY_ALL" == "yes" || "$DEPLOY_MODE" == "all" ]]; then
+        DEPLOY_MODE="all"
+        _deploy_git_all
+        return $?
+    fi
+
     _load_deploy_state
 
     echo ""
     echo "Deploy modes:"
     echo "  1) local  — Copy files on this machine to a local nginx web dir"
     echo "  2) rsync  — Push files from this machine to a remote server via SSH"
-    echo "  3) git    — Run git pull on the server (must be run on the server)"
+    echo "  3) git    — Run git pull on the server (one site; must run on the server)"
+    echo "  4) ALL    — Batch git-deploy every site in deploy/sites.conf (one pass)"
     echo ""
 
     if [[ -z "$DEPLOY_MODE" ]]; then
-        ask "Choose deploy mode [1-3] or 0 to cancel: " _dm
+        ask "Choose deploy mode [1-4] or 0 to cancel: " _dm
         case "$_dm" in
             1) DEPLOY_MODE="local"  ;;
             2) DEPLOY_MODE="rsync"  ;;
             3) DEPLOY_MODE="git"    ;;
+            4) DEPLOY_MODE="all"    ;;
             0) return 0 ;;
             *) print_error "Invalid choice."; return 1 ;;
         esac
     fi
 
     case "$DEPLOY_MODE" in
-        local)  _deploy_local  ;;
-        rsync)  _deploy_rsync  ;;
-        git)    _deploy_git    ;;
+        local)  _deploy_local    ;;
+        rsync)  _deploy_rsync    ;;
+        git)    _deploy_git      ;;
+        all)    _deploy_git_all  ;;
         *) print_error "Unknown DEPLOY_MODE: $DEPLOY_MODE"; return 1 ;;
     esac
 }
@@ -983,6 +996,116 @@ _deploy_git() {
     _prompt_ownership "$WEB_DIR"
     _save_deploy_state
     print_info "Git deploy complete  →  $WEB_DIR  [branch: $GIT_BRANCH]"
+}
+
+# Load deploy/sites.conf into the parallel arrays _SITE_KEYS / _SITE_DOMAINS /
+# _SITE_WEBDIRS. Web dir is derived from the domain unless a row gives an
+# explicit override column. Returns 1 if the manifest is missing/empty.
+_load_sites_conf() {
+    _SITE_KEYS=(); _SITE_DOMAINS=(); _SITE_WEBDIRS=()
+
+    if [[ ! -f "$SITES_CONF_FILE" ]]; then
+        print_error "Missing site manifest: $SITES_CONF_FILE"
+        print_warn  "Create it (one row per site: <site_key> <domain> [web_dir])."
+        return 1
+    fi
+
+    local line _key _domain _override _idx=0
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%%#*}"                       # strip inline/full comments
+        [[ -z "${line// /}" ]] && continue        # skip blank lines
+        # shellcheck disable=SC2086
+        set -- $line                              # word-split on whitespace
+        _key="$1"; _domain="${2:-}"; _override="${3:-}"
+        if [[ -z "$_key" || -z "$_domain" ]]; then
+            print_warn "sites.conf: skipping malformed row: $line"
+            continue
+        fi
+        _SITE_KEYS[$_idx]="$_key"
+        _SITE_DOMAINS[$_idx]="$_domain"
+        _SITE_WEBDIRS[$_idx]="${_override:-$NGINX_DEFAULT_ROOT/$_domain/public}"
+        _idx=$(( _idx + 1 ))
+    done < "$SITES_CONF_FILE"
+
+    if [[ ${#_SITE_KEYS[@]} -eq 0 ]]; then
+        print_warn "sites.conf has no usable site rows."
+        return 1
+    fi
+    return 0
+}
+
+# Batch git deploy: pull every site in deploy/sites.conf in a single clone.
+# Repo + branch come from custom_repo.conf (or --git-repo/--git-branch); each
+# site's web/<key>/ subdir is rsynced to its derived web dir, GA4 is applied,
+# and ownership (DEPLOY_OWNER) is reapplied. Non-interactive friendly: with
+# --all nothing is prompted, so it drops cleanly into cron.
+_deploy_git_all() {
+    _load_sites_conf || return 1
+
+    # ── Resolve repo + branch (reuse custom_repo.conf, like _deploy_git) ──────
+    local conf_file="$SCRIPT_DIR/deploy/custom_repo.conf"
+    if [[ -f "$conf_file" ]]; then
+        local _repo _branch
+        _repo=$(   grep -E '^GIT_REPO='   "$conf_file" | head -1 | cut -d= -f2- | tr -d '"' )
+        _branch=$( grep -E '^GIT_BRANCH=' "$conf_file" | head -1 | cut -d= -f2- | tr -d '"' )
+        [[ -n "$_repo"   && -z "$GIT_REPO"   ]] && GIT_REPO="$_repo"
+        [[ -n "$_branch" && -z "$GIT_BRANCH" ]] && GIT_BRANCH="$_branch"
+    fi
+    if [[ -z "$GIT_REPO" ]]; then
+        if [[ "$DEPLOY_ALL" == "yes" ]]; then
+            print_error "Batch deploy: GIT_REPO not set (deploy/custom_repo.conf or --git-repo)."
+            return 1
+        fi
+        ask "Git repo URL: " GIT_REPO
+    fi
+    GIT_BRANCH="${GIT_BRANCH:-main}"
+
+    print_info "Batch git deploy — ${#_SITE_KEYS[@]} site(s), branch: $GIT_BRANCH"
+    print_info "Repo: $GIT_REPO"
+
+    # Ask for ownership once (interactive only) so every site gets the same owner.
+    if [[ -z "$DEPLOY_OWNER" && "$DEPLOY_ALL" != "yes" ]]; then
+        ask "  Set ownership for all deployed sites (e.g. www-data:www-data, Enter to skip): " _owner
+        DEPLOY_OWNER="${_owner:-}"
+    fi
+
+    # ── Clone the repo ONCE; rsync each subdir out of it ──────────────────────
+    local tmp_clone; tmp_clone="$(mktemp -d)"
+    print_info "Cloning into temp dir..."
+    if ! git clone --depth 1 --branch "$GIT_BRANCH" "$GIT_REPO" "$tmp_clone"; then
+        print_error "Clone failed: $GIT_REPO ($GIT_BRANCH)"
+        rm -rf "$tmp_clone"
+        return 1
+    fi
+
+    local i ok=0 fail=0 site_src target
+    for (( i=0; i<${#_SITE_KEYS[@]}; i++ )); do
+        site_src="$tmp_clone/web/${_SITE_KEYS[$i]}"
+        target="${_SITE_WEBDIRS[$i]}"
+        echo ""
+        print_info "[${_SITE_KEYS[$i]}] → $target"
+        if [[ ! -d "$site_src" ]]; then
+            print_error "  Not in repo: web/${_SITE_KEYS[$i]} — skipping"
+            fail=$(( fail + 1 )); continue
+        fi
+        mkdir -p "$target"
+        if rsync -a --delete "$site_src/" "$target/"; then
+            _ga4_apply_after_deploy "$target" "${_SITE_KEYS[$i]}"
+            if [[ -n "$DEPLOY_OWNER" ]]; then
+                chown -R "$DEPLOY_OWNER" "$target" \
+                    && print_info "  Ownership: $DEPLOY_OWNER"
+            fi
+            ok=$(( ok + 1 ))
+        else
+            print_error "  rsync failed for ${_SITE_KEYS[$i]}"
+            fail=$(( fail + 1 ))
+        fi
+    done
+
+    rm -rf "$tmp_clone"
+    echo ""
+    print_info "Batch deploy complete — $ok deployed, $fail skipped/failed (branch: $GIT_BRANCH)."
+    [[ $fail -eq 0 ]]
 }
 
 #############################################################################
@@ -1524,6 +1647,7 @@ parse_arguments() {
             --git-branch)  GIT_BRANCH="$2";       shift 2 ;;
             --site)        SITE_NAME="$2";        shift 2 ;;
             --delete-files) DELETE_FILES="yes";   shift   ;;
+            --all)          DEPLOY_ALL="yes";     shift   ;;
             --auto-confirm) AUTO_CONFIRM="yes";   shift   ;;
             -h|--help)     show_help; exit 0      ;;
             *) print_error "Unknown option: $1"; show_help; exit 1 ;;
@@ -1576,6 +1700,15 @@ DEPLOY OPTIONS:
     --remote-path  PATH           Remote web dir (rsync mode)
     --git-repo     URL            Git repo URL (git mode)
     --git-branch   BRANCH         Git branch (default: main)
+    --all                         Batch git-deploy EVERY site in deploy/sites.conf
+                                  in one clone. Web dir per site is derived from
+                                  its domain (<nginx_root>/<domain>/public) unless
+                                  the manifest row gives an override. Repo/branch
+                                  come from custom_repo.conf or --git-repo/--git-branch.
+                                  Non-interactive — ideal for cron:
+                                  */30 * * * * /path/to/site_manager.sh \
+                                      --action deploy --all \
+                                      >> /var/log/grin-sites-deploy.log 2>&1
 
 REMOVE OPTIONS:
     --domain DOMAIN           Domain to remove
@@ -1605,6 +1738,9 @@ EXAMPLES:
     sudo ./deploy/site_manager.sh --action deploy --deploy-mode git \
         --git-repo https://github.com/youruser/grin-landing-page \
         --dir /var/www/grin.money/public
+
+    # Deploy ALL sites in deploy/sites.conf in one pass (run on server):
+    sudo ./deploy/site_manager.sh --action deploy --all
 
     # List sites:
     sudo ./deploy/site_manager.sh --action list
@@ -2005,6 +2141,7 @@ main() {
         GIT_REPO=""           # deploy: re-prompt / reload from saved state
         GIT_BRANCH=""         # deploy: re-prompt / reload from saved state
         SPARSE_CHECKOUT=""    # deploy: re-prompt / reload from saved state
+        DEPLOY_ALL=""         # deploy: batch flag is per-invocation only
     done
 }
 

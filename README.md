@@ -17,6 +17,7 @@ pick a menu option, follow the prompts.
 Grin-Landing-Pages/
 ├── site_manager.sh                # interactive menu — run this
 ├── deploy/
+│   ├── sites.conf                 # site manifest (batch git deploy: key→domain)
 │   ├── analytics.conf             # GA4 site→ID map
 │   ├── custom_repo.conf           # git deploy config
 │   └── installer.conf             # install.ps1 publishing config
@@ -59,7 +60,7 @@ The interactive menu handles everything from there.
 |---|---|---|
 | 1 | Add Domain | nginx vhost + Let's Encrypt SSL + security headers |
 | 2 | Remove Domain | Remove nginx config, optionally revoke SSL |
-| 3 | Deploy Site | Push/pull static files (local, rsync, or git) |
+| 3 | Deploy Site | Push/pull static files (local, rsync, git, or **ALL** — batch every site in `deploy/sites.conf`) |
 | 4 | List Sites | Show all configured nginx sites with SSL status |
 | 5 | Security Hardening | Audit/apply security headers, certbot auto-renewal |
 | 6 | Install fail2ban | Install & configure fail2ban for nginx |
@@ -77,6 +78,41 @@ The interactive menu handles everything from there.
 - Blocks `.php`, `.env`, `.git`, dotfiles, common attack paths
 - 1-year immutable cache for static assets
 - Per-domain access and error logs
+
+---
+
+## Batch Deploy — many sites at once (`deploy/sites.conf`)
+
+Deploying 10+ sites one prompt-at-a-time doesn't scale. Declare every site once
+in `deploy/sites.conf` (one row per site), then deploy them all in a single git
+pull. Web dir is derived from the domain automatically — no per-site typing:
+
+```
+# <site_key>          <domain>          [web_dir_override]
+grin-money-2026       grin.money
+grinnode-org-2026     grinnode.org
+some-other-2026       example.org       /var/www/custom/pub
+```
+
+- `site_key` matches a subdirectory under `web/` (same key as `analytics.conf`).
+- `domain` → web dir `<nginx_root>/<domain>/public` (override column optional).
+- Repo + branch come from `deploy/custom_repo.conf` (or `--git-repo`/`--git-branch`).
+- GA4 is joined on `site_key` from `analytics.conf` and applied per site.
+
+Run it from the menu — **Deploy Site (3) → option 4 "ALL"** — or unattended:
+
+```bash
+# Deploy every site in one pass (run on the server):
+sudo ./site_manager.sh --action deploy --all
+
+# Hourly auto-pull of all sites via cron:
+0 * * * * /path/to/site_manager.sh --action deploy --all \
+    >> /var/log/grin-sites-deploy.log 2>&1
+```
+
+The repo is cloned once; each site's `web/<key>/` is rsynced to its web dir,
+GA4 applied, and ownership reapplied. The run prints a `deployed / skipped`
+summary and exits non-zero if any site failed (cron-friendly).
 
 ---
 
