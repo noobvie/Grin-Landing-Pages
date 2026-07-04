@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Deploy a Grin node on Linux with Grin Node Toolkit, or use Grim wallet on Windows, macOS, and Linux. MimbleWimble privacy, 60 GRIN/min linear emission, no premine, no ICO.">
-  <meta name="keywords" content="Grin node, run Grin, Grin cryptocurrency, MimbleWimble, Grin Node Toolkit, Grim wallet, Grin privacy, GRIN">
+  <meta name="description" content="Deploy a Grin node on Linux with Grin Node Toolkit, use Grim wallet on Windows, macOS, and Linux, or pay by username on your phone with Goblin. MimbleWimble privacy, 60 GRIN/min linear emission, no premine, no ICO.">
+  <meta name="keywords" content="Grin node, run Grin, Grin cryptocurrency, MimbleWimble, Grin Node Toolkit, Grim wallet, Goblin wallet, Grin mobile wallet, Nostr, Nym mixnet, Grin privacy, GRIN">
   <meta name="robots" content="index, follow">
   <meta property="og:title" content="GrinNode.org — Run Grin. Own the network.">
-  <meta property="og:description" content="Practical home for Grin node operators. Linux toolkit, Grim wallet for all platforms, and why Grin matters for newcomers.">
+  <meta property="og:description" content="Practical home for Grin node operators. Linux toolkit, Grim wallet for all platforms, Goblin mobile wallet, and why Grin matters for newcomers.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="GrinNode.org — Run Grin. Own the network.">
-  <meta name="twitter:description" content="Deploy a Grin node on Linux with Grin Node Toolkit, or use Grim wallet on Windows, macOS, or Linux. MimbleWimble privacy, 60 GRIN/min emission, no premine.">
+  <meta name="twitter:description" content="Deploy a Grin node on Linux with Grin Node Toolkit, use Grim wallet on Windows, macOS, or Linux, or pay by username on mobile with Goblin. MimbleWimble privacy, 60 GRIN/min emission, no premine.">
   <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://grinnode.org/">
@@ -137,6 +137,12 @@
     .grim-why-list{margin:0;padding:0 0 0 18px;color:var(--soft);font-size:14px;line-height:1.8}
     .code{border:1px solid var(--line);border-radius:var(--radius);background:#050e08;color:#cdffd9;padding:18px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.7}
     .code pre{margin:0;white-space:pre-wrap}.code--mb{margin-bottom:14px}
+    .disclose{margin-top:4px;border-top:1px solid var(--line);padding-top:14px}
+    .disclose>summary{cursor:pointer;list-style:none;font-family:var(--mono);font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;user-select:none}
+    .disclose>summary::-webkit-details-marker{display:none}
+    .disclose>summary::before{content:"+";color:var(--green);font-weight:800;font-size:15px}
+    .disclose[open]>summary{margin-bottom:14px}
+    .disclose[open]>summary::before{content:"\2212"}
     .steps{counter-reset:steps;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
     .step{position:relative;padding-top:56px}
     .step:before{counter-increment:steps;content:counter(steps,decimal-leading-zero);position:absolute;left:22px;top:18px;color:var(--green);font-family:var(--mono);font-weight:800;font-size:14px}
@@ -196,7 +202,7 @@
     "@type": "WebSite",
     "name": "GrinNode.org",
     "url": "https://grinnode.org/",
-    "description": "Deploy a Grin node on Linux or use Grim wallet on any platform. Grin Node Toolkit for Linux VPS operators, Grim wallet for Windows, macOS, and Linux.",
+    "description": "Deploy a Grin node on Linux, use Grim wallet on any desktop, or pay by username on your phone with Goblin. Grin Node Toolkit for Linux VPS operators, Grim wallet for Windows, macOS, and Linux, Goblin for mobile.",
     "potentialAction": { "@type": "SearchAction", "target": "https://grinnode.org/" }
   }
   </script>
@@ -207,7 +213,7 @@
     <nav class="nav" aria-label="Primary navigation">
       <a class="brand" href="#top" aria-label="GrinNode.org home"><img src="favicon.svg" width="36" height="36" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a>
       <div class="links">
-        <a href="#why-nodes">Why nodes</a><a href="#run">Run a node</a><a href="#toolkit">Toolkit</a><a href="#grim">Grim wallet &amp; Docker</a><a href="#why-grin">Why Grin</a><a href="#status">Status</a>
+        <a href="#why-nodes">Why nodes</a><a href="#run">Run a node</a><a href="#toolkit">Toolkit</a><a href="#grim">Wallets &amp; Docker</a><a href="#why-grin">Why Grin</a><a href="#status">Status</a>
       </div>
       <div class="actions">
         <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
@@ -225,17 +231,18 @@
         <div>
           <div class="eyebrow"><span class="pulse" aria-hidden="true"></span> independent nodes make Grin stronger</div>
           <h1>Run Grin.<br><span class="grad-text">Own the network.</span></h1>
-          <p>GrinNode.org is a practical home for Grin node operators. Deploy a Linux server node with Grin Node Toolkit, or use Grim wallet on Windows, macOS, or Linux for a full-featured desktop experience.</p>
+          <p>GrinNode.org is a practical home for Grin node operators. Deploy a Linux server node with Grin Node Toolkit, use Grim wallet on Windows, macOS, or Linux for a full-featured desktop experience, or pay by username on your phone with Goblin.</p>
           <div class="heroActions">
             <a class="btn primary" href="#run">Start running a node &rarr;</a>
             <a class="btn ghost" href="https://gri.mw" target="_blank" rel="noopener">Get Grim wallet</a>
+            <a class="btn ghost" href="https://goblin.st" target="_blank" rel="noopener">Goblin (mobile)</a>
             <a class="btn ghost" href="https://github.com/wiesche89/umbrel-community-app-store" target="_blank" rel="noopener">Umbrel OS</a>
             <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Node Toolkit</a>
           </div>
           <div class="metrics" aria-label="Project highlights">
             <div class="metric"><b>&lt; 1 hour</b><span>target setup with chain snapshots</span></div>
             <div class="metric"><b>3414</b><span>mainnet inbound P2P port</span></div>
-            <div class="metric"><b>Linux &middot; Docker &middot; Desktop</b><span>three paths, one network</span></div>
+            <div class="metric"><b>Linux &middot; Docker &middot; Desktop &middot; Mobile</b><span>four paths, one network</span></div>
           </div>
         </div>
         <aside class="console" aria-label="Node control room preview">
@@ -328,8 +335,8 @@ sudo ./grin-node-toolkit.sh</pre></div>
 
     <section class="band" id="grim"><div class="section">
       <div class="head">
-        <div><div class="kicker">04 / Windows &amp; Umbrel platform</div><h2>Grim wallet &amp; Docker &mdash; Grin on any platform.</h2></div>
-        <p>Grim is an open-source Grin wallet for Windows, macOS, and Linux. Prefer containers? Run Grin in Docker or install it directly from the Umbrel community app store.</p>
+        <div><div class="kicker">04 / Wallets &amp; platforms</div><h2>Grim, Goblin &amp; Docker &mdash; Grin on any platform.</h2></div>
+        <p>Grim is an open-source Grin wallet for Windows, macOS, and Linux. Want Grin on your phone? Goblin is a private, mobile-first payments app &mdash; pay a username like Cash App or WeChat Pay, but no one ever sees the amount, sender, or recipient. Prefer containers? Run Grin in Docker or install it directly from the Umbrel community app store.</p>
       </div>
       <div class="grid3">
         <article class="project grim">
@@ -341,6 +348,38 @@ sudo ./grin-node-toolkit.sh</pre></div>
               <a class="btn primary" href="https://gri.mw" target="_blank" rel="noopener">Download Grim &rarr;</a>
               <a class="btn ghost" href="https://github.com/GetGrin/grim" target="_blank" rel="noopener">View on GitHub</a>
             </div>
+            <details class="disclose">
+              <summary>Install steps &amp; why Grim</summary>
+              <div class="code code--mb"><pre># Windows &mdash; download installer from gri.mw
+# Then launch Grim.exe and follow the setup wizard
+
+# macOS &mdash; download .dmg from gri.mw
+# Drag Grim.app to Applications and open
+
+# Linux &mdash; download AppImage or .deb from gri.mw
+chmod +x Grim-*.AppImage && ./Grim-*.AppImage</pre></div>
+              <div class="card grim-why">
+                <div class="grim-why-label">Why Grim?</div>
+                <ul class="grim-why-list">
+                  <li>GUI-first &mdash; no terminal knowledge required</li>
+                  <li>Native binaries, no Electron bloat</li>
+                  <li>Works on all three major desktop platforms</li>
+                  <li>Connects to your own node or public nodes</li>
+                  <li>Full Slatepack send / receive support</li>
+                </ul>
+              </div>
+            </details>
+          </div>
+        </article>
+        <article class="project">
+          <div class="projectTop"><span class="label">2ro/goblin &nbsp;&middot;&nbsp; goblin.st</span><div class="title">Goblin wallet</div></div>
+          <div class="projectBody">
+            <p>Grin's answer to Cash App or WeChat Pay &mdash; a private, mobile-first payments app. Pay a username like sending a text; no bank, no KYC, no phone number. Payments are end-to-end encrypted over Nostr and the Nym mixnet, so relays only ever see ciphertext &mdash; never the amount, sender, or recipient. Built on GRIM.</p>
+            <div class="tags"><span class="tag">Android</span><span class="tag">Desktop</span><span class="tag">Pay by username</span><span class="tag">Nostr</span><span class="tag">Nym mixnet</span><span class="tag">Open source</span></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <a class="btn primary" href="https://goblin.st" target="_blank" rel="noopener">Get Goblin &rarr;</a>
+              <a class="btn ghost" href="https://docs.goblin.st" target="_blank" rel="noopener">Docs</a>
+            </div>
           </div>
         </article>
         <article class="project docker">
@@ -351,26 +390,6 @@ sudo ./grin-node-toolkit.sh</pre></div>
             <a class="btn primary" href="https://github.com/wiesche89/umbrel-community-app-store" target="_blank" rel="noopener">View on GitHub &rarr;</a>
           </div>
         </article>
-        <div>
-          <div class="code code--mb"><pre># Windows &mdash; download installer from gri.mw
-# Then launch Grim.exe and follow the setup wizard
-
-# macOS &mdash; download .dmg from gri.mw
-# Drag Grim.app to Applications and open
-
-# Linux &mdash; download AppImage or .deb from gri.mw
-chmod +x Grim-*.AppImage && ./Grim-*.AppImage</pre></div>
-          <div class="card grim-why">
-            <div class="grim-why-label">Why Grim?</div>
-            <ul class="grim-why-list">
-              <li>GUI-first &mdash; no terminal knowledge required</li>
-              <li>Native binaries, no Electron bloat</li>
-              <li>Works on all three major desktop platforms</li>
-              <li>Connects to your own node or public nodes</li>
-              <li>Full Slatepack send / receive support</li>
-            </ul>
-          </div>
-        </div>
       </div>
     </div></section>
 
@@ -381,7 +400,7 @@ chmod +x Grim-*.AppImage && ./Grim-*.AppImage</pre></div>
       </div>
       <div class="steps">
         <article class="step"><h3>Understand</h3><p>Learn what Grin is, why it is different from other cryptocurrencies, and why running a node matters.</p></article>
-        <article class="step"><h3>Choose</h3><p>Pick your path: Linux server node via Grin Node Toolkit, or desktop wallet via Grim on any platform.</p></article>
+        <article class="step"><h3>Choose</h3><p>Pick your path: Linux server node via Grin Node Toolkit, desktop wallet via Grim, or Goblin mobile wallet on your phone.</p></article>
         <article class="step"><h3>Install</h3><p>Follow the quick start &mdash; copy the commands, point at your VPS or download the installer.</p></article>
         <article class="step"><h3>Operate</h3><p>Check status, API endpoints, snapshots, wallet services, backups, and monitoring after setup.</p></article>
       </div>
@@ -474,10 +493,12 @@ chmod +x Grim-*.AppImage && ./Grim-*.AppImage</pre></div>
       <div class="ctaInner">
         <div class="kicker">GrinNode.org</div>
         <h2>A node today makes Grin stronger tomorrow.</h2>
-        <p>Run Linux infrastructure with Grin Node Toolkit, or download Grim wallet on any platform and start transacting privately. The network grows one node at a time.</p>
+        <p>Run Linux infrastructure with Grin Node Toolkit, spin up a home server with Docker or Umbrel, download Grim wallet on any desktop, or pay by username on your phone with Goblin &mdash; and start transacting privately. The network grows one node at a time.</p>
         <div class="ctaActions">
           <a class="btn primary" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Linux Toolkit &rarr;</a>
           <a class="btn ghost" href="https://gri.mw" target="_blank" rel="noopener">Get Grim wallet</a>
+          <a class="btn ghost" href="https://goblin.st" target="_blank" rel="noopener">Goblin (mobile)</a>
+          <a class="btn ghost" href="https://github.com/wiesche89/umbrel-community-app-store" target="_blank" rel="noopener">Docker / Umbrel</a>
           <a class="btn ghost" href="https://grin.mw" target="_blank" rel="noopener">Official Grin</a>
         </div>
       </div>
