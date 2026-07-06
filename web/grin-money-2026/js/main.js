@@ -432,9 +432,9 @@
    six stat cards with live network data. Refreshes every 5 minutes.
 
    Endpoints used:
-     /api/summary      → tip_height, current_hashrate, current_difficulty
-     /api/price        → GRIN_USDT.last, GRIN_USDT.change_pct, GRIN_BTC.last
-     /api/active_peers → mainnet.recent + testnet.recent (arrays of [timestamp, count]); summed
+     /api/summary  → tip_height, current_hashrate, current_difficulty
+     /api/price    → GRIN_USDT.last, GRIN_USDT.change_pct, GRIN_BTC.last
+     /api/versions → timeframes.month.both.sampled_from (distinct nodes, last 30 days)
 
    Security:
      - API is CORS-enabled and read-only (no credentials sent).
@@ -469,10 +469,10 @@
 
     try {
       // All three requests fire in parallel
-      const [summary, price, peers] = await Promise.all([
-        fetch('https://world.grin.money/api/summary',      { cache: 'no-store' }).then(r => r.json()),
-        fetch('https://world.grin.money/api/price',        { cache: 'no-store' }).then(r => r.json()),
-        fetch('https://world.grin.money/api/active_peers', { cache: 'no-store' }).then(r => r.json()),
+      const [summary, price, nodes] = await Promise.all([
+        fetch('https://world.grin.money/api/summary',  { cache: 'no-store' }).then(r => r.json()),
+        fetch('https://world.grin.money/api/price',    { cache: 'no-store' }).then(r => r.json()),
+        fetch('https://world.grin.money/api/versions', { cache: 'no-store' }).then(r => r.json()),
       ]);
 
       // Block height
@@ -511,13 +511,9 @@
         el('ls-price-btc').textContent = sats.toLocaleString() + ' sat';
       }
 
-      // Active peers — total of mainnet + testnet (last entry of each recent series)
+      // Active nodes — distinct nodes seen in the last 30 days (mainnet + testnet)
       if (el('ls-peers')) {
-        const latest = net => {
-          const r = peers?.[net]?.recent;
-          return (Array.isArray(r) && r.length) ? Number(r[r.length - 1][1]) || 0 : 0;
-        };
-        const total = latest('mainnet') + latest('testnet');
+        const total = Number(nodes?.timeframes?.month?.both?.sampled_from) || 0;
         if (total > 0) el('ls-peers').textContent = fmt(total);
       }
 

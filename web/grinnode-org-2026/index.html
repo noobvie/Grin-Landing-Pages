@@ -257,7 +257,7 @@
             <div class="live-stats">
               <div class="live-row"><span class="live-label">block height</span><span class="live-val ok" id="lv-height">—</span></div>
               <div class="live-row"><span class="live-label">circulating supply</span><span class="live-val teal" id="lv-supply">—</span></div>
-              <div class="live-row"><span class="live-label">active peers</span><span class="live-val blue" id="lv-peers">—</span></div>
+              <div class="live-row"><span class="live-label">active nodes</span><span class="live-val blue" id="lv-peers">—</span></div>
             </div>
           </div>
         </aside>
@@ -475,14 +475,14 @@ chmod +x Grim-*.AppImage && ./Grim-*.AppImage</pre></div>
     <section class="section" id="status">
       <div class="head">
         <div><div class="kicker">07 / Live network stats</div><h2>Grin network, right now.</h2></div>
-        <p>Live data from <a href="https://world.grin.money" target="_blank" rel="noopener" style="color:var(--green)">world.grin.money</a> &mdash; height, supply, hashrate, difficulty, peers, price, and annual inflation rate, all updated every 5 minutes.</p>
+        <p>Live data from <a href="https://world.grin.money" target="_blank" rel="noopener" style="color:var(--green)">world.grin.money</a> &mdash; height, supply, hashrate, difficulty, monthly active nodes, price, and annual inflation rate, all updated every 5 minutes.</p>
       </div>
       <div class="statusGrid">
         <div class="status"><strong class="ok" id="stat-height">—</strong><small>block height</small></div>
         <div class="status"><strong class="teal" id="stat-supply">—</strong><small>circulating supply</small></div>
         <div class="status"><strong class="gold" id="stat-hashrate">—</strong><small>network hashrate</small></div>
         <div class="status"><strong class="blue" id="stat-difficulty">—</strong><small>mining difficulty</small></div>
-        <div class="status"><strong class="ok" id="stat-peers">—</strong><small>active peers</small></div>
+        <div class="status"><strong class="ok" id="stat-peers">—</strong><small>active nodes / 30 days</small></div>
         <div class="status"><strong class="gold" id="stat-price-usd">—</strong><small>GRIN / USD</small></div>
         <div class="status"><strong id="stat-price-btc" style="color:var(--muted)">—</strong><small>GRIN / BTC (sats)</small></div>
         <div class="status"><strong class="teal" id="stat-inflation">—</strong><small>annual inflation</small></div>
@@ -568,7 +568,7 @@ chmod +x Grim-*.AppImage && ./Grim-*.AppImage</pre></div>
       try {
         const [sumRes, peersRes, priceRes] = await Promise.allSettled([
           fetch("https://world.grin.money/api/summary"),
-          fetch("https://world.grin.money/api/active_peers"),
+          fetch("https://world.grin.money/api/versions"),
           fetch("https://world.grin.money/api/price"),
         ]);
         if (sumRes.status === "fulfilled" && sumRes.value.ok) {
@@ -587,15 +587,11 @@ chmod +x Grim-*.AppImage && ./Grim-*.AppImage</pre></div>
         }
         if (peersRes.status === "fulfilled" && peersRes.value.ok) {
           const d = await peersRes.value.json();
-          // Total active peers = mainnet + testnet (latest "recent" sample of each)
-          const latest = net => {
-            const r = d?.[net]?.recent;
-            return (Array.isArray(r) && r.length) ? Number(r[r.length - 1][1]) || 0 : 0;
-          };
-          const count = latest("mainnet") + latest("testnet");
+          // Monthly active nodes = distinct nodes seen in the last 30 days (mainnet + testnet)
+          const count = Number(d?.timeframes?.month?.both?.sampled_from) || 0;
           if (count > 0) {
-            set("lv-peers",    count + " active");
-            set("stat-peers",  String(count));
+            set("lv-peers",    count.toLocaleString() + " this month");
+            set("stat-peers",  count.toLocaleString());
           }
         }
         if (priceRes.status === "fulfilled" && priceRes.value.ok) {
