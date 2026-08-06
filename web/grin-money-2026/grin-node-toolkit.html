@@ -14,7 +14,7 @@
   <meta property="og:url"         content="https://grin.money/grin-node-toolkit.html" />
   <meta property="og:site_name"   content="Grin" />
   <meta property="og:title"       content="Grin Node Toolkit — Master Node Infrastructure" />
-  <meta property="og:description" content="One bash toolkit. Full node, pruned node, explorer, public API, mining pool, wallet portal — all semi-automated. 10 live demo sites built with it." />
+  <meta property="og:description" content="One bash toolkit. Full node, pruned node, explorer, public API, mining pool, wallet portal, Nostr relay — all semi-automated. 11 live demo sites built with it." />
   <meta property="og:image"       content="https://grin.money/img/og-grin.png" />
 
   <meta name="twitter:card"        content="summary_large_image" />
@@ -89,6 +89,12 @@
     }
     .tk-official-note a { color: var(--cyan); text-decoration: none; }
     .tk-official-note a:hover { text-decoration: underline; }
+    /* wss endpoint inside a demo card — matches .eco-url/.eco-tag dim cyan,
+       so it never outshines the card title. */
+    .tk-endpoint {
+      color: var(--cyan-dim);
+      word-break: break-all;
+    }
     @media (max-width: 900px) {
       .tk-demo-grid { grid-template-columns: 1fr 1fr; }
       .tk-roadmap-grid { grid-template-columns: 1fr; }
@@ -173,7 +179,7 @@
 
   <div class="hero-stats">
     <div class="stat-item">
-      <span class="stat-value green">10</span>
+      <span class="stat-value green">11</span>
       <span class="stat-label">Live Demo Sites</span>
     </div>
     <div class="stat-divider">|</div>
@@ -350,7 +356,7 @@
 <section id="tk-demo-sites" class="section">
   <div class="container">
     <div class="section-label">// 02 — LIVE DEMO SITES</div>
-    <h2 class="section-title">10 Sites Built With <span class="accent-cyan">This Toolkit</span></h2>
+    <h2 class="section-title">11 Sites Built With <span class="accent-cyan">This Toolkit</span></h2>
     <p class="section-subtitle">Every site below was deployed semi-automatically using grin-node-toolkit on a VPS. No manual server configuration.</p>
 
     <div class="tk-demo-grid fade-in">
@@ -476,6 +482,19 @@
         <div class="eco-url">grinscan.org ↗</div>
       </a>
 
+      <a href="https://relay.grin.money" target="_blank" rel="noopener" class="eco-card">
+        <div class="eco-number">11</div>
+        <div class="eco-title">Floonet Nostr Relay</div>
+        <div class="eco-desc">Grin-native Nostr relay (floonet-rs) — ecosystem transport for the Goblin wallet. Pay-by-username slatepacks ride as encrypted Nostr events, so the relay only ever sees ciphertext. Open to write, no registration.<br/><code class="tk-endpoint">wss://relay.grin.money</code></div>
+        <div class="eco-tags">
+          <span class="eco-tag">nostr</span>
+          <span class="eco-tag">relay</span>
+          <span class="eco-tag">goblin</span>
+          <span class="eco-badge eco-badge-green">live ↗</span>
+        </div>
+        <div class="eco-url">relay.grin.money ↗</div>
+      </a>
+
     </div>
   </div>
 </section>
@@ -562,6 +581,7 @@
         <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Mining services — stratum + pool setup</span></div>
         <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Admin centre — backup, firewall, nginx audit</span></div>
         <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Block explorer deploy (clone grincoin.org style)</span></div>
+        <div class="tk-shipped-item"><span class="tk-shipped-icon">✓</span><span class="tk-shipped-text">Floonet Nostr relay deploy — transport for Goblin wallet</span></div>
       </div>
 
       <div>
@@ -781,7 +801,7 @@
     { id: 'tk-line-1', text: 'name:     Grin Node Toolkit',                         color: 'text-bright', delay: 400  },
     { id: 'tk-line-2', text: 'type:     bash · modular · semi-automated',            color: 'cyan',        delay: 900  },
     { id: 'tk-line-3', text: 'features: node  api  explorer  mining  wallet  drop',  color: 'green',       delay: 1400 },
-    { id: 'tk-line-4', text: 'status:   ACTIVE — 10 live infrastructure sites running', color: 'text',      delay: 1900 },
+    { id: 'tk-line-4', text: 'status:   ACTIVE — 11 live infrastructure sites running', color: 'text',      delay: 1900 },
   ];
   lines.forEach(({ id, text, color, delay }) => {
     const el = document.getElementById(id);
