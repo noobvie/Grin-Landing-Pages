@@ -39,8 +39,12 @@
 #
 # DEPLOY MODES
 #   local  — Copy local web/ files directly to WEB_DIR (same machine)
-#   rsync  — Push files from local to remote over SSH
+#   rsync  — Push files from local to remote over SSH (tags a temp staging copy)
 #   git    — Pull/clone repo on the server
+#   all    — Batch-publish every site in deploy/sites.conf from this clone
+#
+#   All four apply the GA4 tag from deploy/analytics.conf to the PUBLISHED
+#   copy only — the git source tree is never modified.
 #
 # LOG FILE
 #   /opt/grin-landing/logs/site_<action>_YYYYMMDD_HHMMSS.log
@@ -337,7 +341,7 @@ show_main_menu() {
 ╔════════════════════════════════════════════════════════════════╗
 ║                                                                ║
 ║     site_manager.sh  —  Static Site Deployment Manager         ║
-║                    V.20260527                                  ║
+║                    V.20260807                                  ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
 EOF
@@ -912,9 +916,42 @@ _deploy_rsync() {
         ask "Remote web directory (e.g. /var/www/grin.money/public): " REMOTE_PATH
     fi
 
-    print_info "Pushing $LOCAL_SRC → $REMOTE_USER:$REMOTE_PATH"
-    print_cmd "rsync -avz --delete $LOCAL_SRC/ $REMOTE_USER:$REMOTE_PATH/"
-    rsync -avz --delete "$LOCAL_SRC/" "$REMOTE_USER:$REMOTE_PATH/"
+    # ── GA4 via a local staging copy ──────────────────────────────────────────
+    # local/git/all deploys inject into the *published* dir after the copy; over
+    # SSH there is no local published dir to post-process, and injecting into
+    # $LOCAL_SRC would dirty the git clone (the one rule _ga4_inject_dir exists
+    # to protect). So: copy → tag the copy → push the copy. Without this the
+    # remote gets pages whose <script src="js/ga4.js"> 404s, i.e. gtag.js loads
+    # but no page_view is ever sent.
+    local _stage="" _push_src="$LOCAL_SRC" _rc=0
+    if _stage="$(mktemp -d 2>/dev/null)" && [[ -n "$_stage" ]]; then
+        if rsync -a "$LOCAL_SRC/" "$_stage/"; then
+            _ga4_apply_after_deploy "$_stage" "$LOCAL_SRC"
+            _push_src="$_stage"
+        else
+            print_warn "GA4: staging copy failed — pushing source tree untagged."
+            rm -rf "$_stage"; _stage=""
+        fi
+    else
+        _stage=""
+        print_warn "GA4: could not create a staging dir — pushing source tree untagged."
+    fi
+
+    if [[ -n "$_stage" ]]; then
+        print_info "Pushing $LOCAL_SRC (GA4-tagged staging copy) → $REMOTE_USER:$REMOTE_PATH"
+    else
+        print_info "Pushing $LOCAL_SRC → $REMOTE_USER:$REMOTE_PATH"
+    fi
+    print_cmd "rsync -avz --delete $_push_src/ $REMOTE_USER:$REMOTE_PATH/"
+    rsync -avz --delete "$_push_src/" "$REMOTE_USER:$REMOTE_PATH/" || _rc=$?
+
+    if [[ -n "$_stage" ]]; then rm -rf "$_stage"; fi
+
+    if [[ $_rc -ne 0 ]]; then
+        print_error "rsync push failed (exit $_rc) — nothing saved."
+        return "$_rc"
+    fi
+
     _save_deploy_state
     print_info "rsync deploy complete."
 }
@@ -1718,13 +1755,17 @@ REMOVE OPTIONS:
     --delete-files            Also delete web files
 
 ANALYTICS (GA4):
-    GA4 is applied automatically at the end of every nginx deploy: the tag
-    from deploy/analytics.conf is injected into the *published* files in the
+    GA4 is applied automatically by every deploy mode: the tag from
+    deploy/analytics.conf is injected into the *published* files in the
     web dir, never into the git source — so the repo stays raw and pulls
-    never collide on generated files. The standalone analytics_ga4 action is
-    directory-driven: you submit the target folder (works on ANY web server,
-    not just nginx vhosts), pick/enter the GA4 ID, and optionally set an
-    arbitrary user:group ownership on the tagged files.
+    never collide on generated files. local/git/all tag the web dir after
+    the copy; rsync has no local published dir, so it copies the source to
+    a temp staging dir, tags that, and pushes it.
+
+    The standalone analytics_ga4 action is directory-driven: you submit the
+    target folder (works on ANY web server, not just nginx vhosts),
+    pick/enter the GA4 ID, and optionally set an arbitrary user:group
+    ownership on the tagged files.
 
 EXAMPLES:
     # Interactive menu:

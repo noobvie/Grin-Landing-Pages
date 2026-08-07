@@ -67,7 +67,7 @@ The interactive menu handles everything from there.
 | 7 | fail2ban Mgmt | View bans, unban IPs |
 | 8 | IP Filtering | Block/unblock IPs via ufw / iptables / firewalld |
 | 9 | Update Script | `git pull` latest site_manager.sh |
-| A | Analytics (GA4) | Inject/update GA4 tracking (config-driven, multi-site) |
+| A | Analytics (GA4) | Manually tag a directory you submit — any web server (deploys tag automatically) |
 | G | Desktop Installer | Publish `install.ps1` to `<domain>/install` |
 
 ### nginx config generated per domain
@@ -129,9 +129,22 @@ grin-money-2026="G-98GRB5MKDT"
 grinnode-org-2026="G-EERXEJ55PZ"
 ```
 
-Run option **A** from the menu — it offers batch (all sites) or single-site
-processing. Changing an ID in the config and re-running replaces the old ID
-everywhere automatically.
+**Every deploy mode tags automatically** — you do not normally need option A.
+`local`, `git` and `ALL` inject into the published web dir after the copy;
+`rsync` stages the source in a temp dir, tags that, and pushes it. The git
+source tree is never modified, so pulls never collide on generated files.
+
+Option **A** is the manual/repair path: it asks for **one directory** and one
+GA4 ID, then tags every top-level `*.html` in it. Use it when the target isn't
+reachable by a deploy mode — a site on another web server (apache, caddy, a
+static host), a directory whose name doesn't match an `analytics.conf` key, or
+a one-off ID. It suggests an ID when the folder's basename matches a config
+key, but any `G-XXXXXXXXXX` can be typed in. It also offers to set ownership,
+since a non-nginx server may not run as `www-data`.
+
+Injection is idempotent: a page that already carries the loader has its ID
+**corrected** rather than duplicated, so changing an ID in `analytics.conf` and
+re-deploying replaces the old one everywhere.
 
 ---
 
