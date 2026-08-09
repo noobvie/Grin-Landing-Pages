@@ -1,0 +1,1297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fidelius — a Grin wallet on your own server, open in any browser</title>
+<meta name="description" content="Fidelius is a self-hosted browser wallet for Grin, built on the official grin-wallet. No app, no store, no account. Reach it over HTTPS behind a password, or seal it inside a WireGuard tunnel with a real certificate and no open port. Currently in testing.">
+<meta name="keywords" content="Fidelius, Grin wallet, self-hosted wallet, grin-wallet, MimbleWimble, web wallet, WireGuard, DNS-01, slatepack, Tor, Grin Node Toolkit">
+<meta name="robots" content="index, follow">
+<meta name="author" content="Grin Node Toolkit">
+<meta name="theme-color" content="#E7E9E1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A100D" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://fidelius.grin.money/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fidelius.grin.money/">
+<meta property="og:title" content="Fidelius — a Grin wallet on your own server, open in any browser">
+<meta property="og:description" content="A browser front end for the official grin-wallet, installed on a machine you own. Public HTTPS behind a password, or a WireGuard tunnel with no open port at all.">
+<meta property="og:image" content="https://fidelius.grin.money/og-image.svg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Fidelius — Grin personal web wallet, engraved certificate plate">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fidelius — a Grin wallet on your own server">
+<meta name="twitter:description" content="Self-hosted browser wallet for Grin, built on the official grin-wallet. No app, no store, no account. In testing.">
+<meta name="twitter:image" content="https://fidelius.grin.money/og-image.svg">
+<script>
+  /* Theme boot — runs before paint so a chosen theme never flashes the other one. */
+  (function () {
+    try {
+      var t = localStorage.getItem('fid-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) { /* private mode — fall through to the system preference */ }
+  })();
+</script>
+<style>
+/* ══ Tokens — bare :root is the complete LIGHT palette (laid paper) ══════════ */
+:root{
+  color-scheme: light;
+  --paper:#E7E9E1;
+  --paper-2:#DEE2D8;
+  --card:#F5F6F0;
+  --card-2:#EBEDE4;
+  --ink:#0C1A15;
+  --ink-2:#46554D;
+  --rule:#C2C9BD;
+  --rule-soft:#D6DACE;
+  --gilt:#836411;              /* gold that stays legible as text on paper */
+  --gilt-bright:#B08C25;       /* ornament, hairlines, engraving */
+  --gilt-fill:#C9A227;         /* filled chips + seals */
+  --gilt-ink:#1B1400;          /* ink placed ON a gilt fill */
+  --viridian:#0B3D2E;
+  --oxblood:#7A2320;
+  --oxblood-bg:#F2E1DE;
+  --shadow:rgba(12,26,21,.10);
+  --shadow-2:rgba(12,26,21,.16);
+
+  --f-display:"Sitka Banner","Iowan Old Style","Cambria",Georgia,"Times New Roman",serif;
+  --f-body:"Charter","Sitka Text","Cambria",Georgia,"Times New Roman",serif;
+  --f-mono:"Consolas","SFMono-Regular",ui-monospace,"Cascadia Mono","DejaVu Sans Mono",monospace;
+  --f-ui:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+
+  --wrap:1080px;
+  --radius:2px;                /* a plate has corners, not pills */
+  --head-h:96px;               /* measured live in JS — sticky header height */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --paper:#0A100D;
+    --paper-2:#070C0A;
+    --card:#111815;
+    --card-2:#151D19;
+    --ink:#E9EDE5;
+    --ink-2:#98A69D;
+    --rule:#26302B;
+    --rule-soft:#1B231F;
+    --gilt:#D9B44A;
+    --gilt-bright:#E4C46A;
+    --gilt-fill:#C9A227;
+    --gilt-ink:#140E00;
+    --viridian:#7CC3A6;
+    --oxblood:#E5866F;
+    --oxblood-bg:#2B1512;
+    --shadow:rgba(0,0,0,.46);
+    --shadow-2:rgba(0,0,0,.62);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --paper:#0A100D;
+  --paper-2:#070C0A;
+  --card:#111815;
+  --card-2:#151D19;
+  --ink:#E9EDE5;
+  --ink-2:#98A69D;
+  --rule:#26302B;
+  --rule-soft:#1B231F;
+  --gilt:#D9B44A;
+  --gilt-bright:#E4C46A;
+  --gilt-fill:#C9A227;
+  --gilt-ink:#140E00;
+  --viridian:#7CC3A6;
+  --oxblood:#E5866F;
+  --oxblood-bg:#2B1512;
+  --shadow:rgba(0,0,0,.46);
+  --shadow-2:rgba(0,0,0,.62);
+}
+
+/* ══ Base ═══════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:17px;
+  line-height:1.68;
+  font-kerning:normal;
+}
+img,svg,canvas{max-width:100%}
+a{color:var(--ink);text-underline-offset:3px;text-decoration-color:var(--gilt-bright)}
+a:hover{color:var(--gilt)}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:600;line-height:1.16;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.05rem,4.6vw,3.15rem);letter-spacing:-.012em}
+h2{font-size:clamp(1.5rem,2.9vw,2.05rem);letter-spacing:-.008em}
+h3{font-size:1.12rem;letter-spacing:-.003em}
+p{margin:0}
+/* The header is sticky, so an anchor jump would otherwise land underneath it. */
+section[id],.readout{scroll-margin-top:calc(var(--head-h) + 1rem)}
+:focus-visible{outline:2px solid var(--gilt-fill);outline-offset:3px}
+::selection{background:var(--gilt-fill);color:var(--gilt-ink)}
+
+.wrap{width:min(100% - 2.2rem, var(--wrap));margin-inline:auto}
+.measure{max-width:66ch}
+.stack{display:flex;flex-direction:column}
+.gap-m{gap:1.1rem}.gap-l{gap:1.9rem}
+.muted{color:var(--ink-2)}
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+.eyebrow{
+  font-family:var(--f-mono);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gilt);display:flex;align-items:center;gap:.7rem;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule);min-width:2rem}
+
+.skip{
+  position:absolute;left:1rem;top:-4rem;z-index:80;background:var(--gilt-fill);color:var(--gilt-ink);
+  padding:.6rem 1rem;font-family:var(--f-ui);font-size:.85rem;font-weight:600;border-radius:var(--radius);
+}
+.skip:focus{top:.6rem}
+
+/* ══ Masthead ═══════════════════════════════════════════════════════════════ */
+.masthead{position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:1px solid var(--rule)}
+
+.alert{
+  background:var(--oxblood-bg);
+  border-bottom:1px solid color-mix(in srgb, var(--oxblood) 34%, transparent);
+  color:var(--oxblood);
+  font-family:var(--f-mono);font-size:.735rem;letter-spacing:.055em;
+}
+/* Inline, not flex: as flex siblings the tag and the sentence are two items, so
+   the sentence wraps whole and the tag gets a line to itself — one wasted line
+   on a header that is sticky at every width. */
+.alert-in{
+  width:min(100% - 2.2rem, var(--wrap));margin-inline:auto;padding:.42rem 0;
+}
+/* Ink on the filled tag is always the page ground: dark text on the light
+   theme's salmon, light text on the dark theme's deep red. One token, both. */
+.alert-tag{
+  background:var(--oxblood);color:var(--paper);display:inline-block;margin-right:.5rem;
+  padding:.06rem .42rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+}
+
+.nav{
+  width:min(100% - 2.2rem, var(--wrap));margin-inline:auto;
+  min-height:60px;display:flex;align-items:center;justify-content:space-between;gap:1rem;
+}
+.nav-tools{display:flex;align-items:center;gap:.4rem;flex:none}
+.brand{display:inline-flex;align-items:center;gap:.66rem;font-family:var(--f-display);font-size:1.16rem;letter-spacing:.01em;text-decoration:none}
+.brand svg{width:28px;height:28px;flex:none;display:block}
+.brand b{font-weight:600}
+.brand span{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.19em;color:var(--ink-2);text-transform:uppercase}
+.nav-links{display:flex;gap:.15rem;font-family:var(--f-ui);font-size:.855rem}
+.nav-links a{padding:.42rem .62rem;color:var(--ink-2);text-decoration:none;border-radius:var(--radius)}
+.nav-links a:hover{color:var(--ink);background:var(--card-2)}
+.icon-btn{
+  width:40px;height:40px;flex:none;display:grid;place-items:center;cursor:pointer;
+  background:var(--card);border:1px solid var(--rule);border-radius:var(--radius);color:var(--ink);
+}
+.icon-btn:hover{border-color:var(--gilt-bright)}
+.icon-btn svg{width:17px;height:17px}
+.menu-btn{display:none}
+
+/* Below 860px the links leave the bar and become a panel dropped from the
+   bottom edge of the whole sticky header — alert strip included, which is why
+   it hangs off .masthead (top:100%) and not off .nav. */
+@media (max-width:860px){
+  .menu-btn{display:grid}
+  .nav-links{
+    display:none;position:absolute;left:0;right:0;top:100%;
+    flex-direction:column;gap:0;font-size:.96rem;
+    /* --card, not --paper: the panel drops onto a page of the same ground, so
+       without its own surface the seam reads as a torn screenshot. */
+    background:var(--card);border-bottom:1px solid var(--gilt-bright);
+    padding:.35rem 0 .75rem;box-shadow:0 20px 32px -22px var(--shadow-2);
+  }
+  .masthead.nav-open .nav-links{display:flex}
+  .nav-links a{padding:.72rem 1.1rem;border-radius:0}
+}
+
+/* ══ Bands ══════════════════════════════════════════════════════════════════ */
+.band{padding:4.4rem 0;border-top:1px solid var(--rule-soft)}
+.band-alt{background:var(--paper-2)}
+
+/* ══ Hero plate ═════════════════════════════════════════════════════════════ */
+.hero{position:relative;padding:3.4rem 0 4.2rem;overflow:hidden}
+#guilloche{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(1120px,150vw);height:min(1120px,150vw);
+  /* Must beat the blanket `canvas{max-width:100%}` above: below a 1120px
+     viewport that rule would clamp the width while the height kept its own
+     value, leaving a non-square box that stretches the square bitmap. */
+  max-width:none;
+  pointer-events:none;z-index:0;
+}
+.hero .wrap{position:relative;z-index:1}
+
+.plate{
+  background:color-mix(in srgb, var(--card) 88%, transparent);
+  border:1px solid var(--gilt-bright);
+  padding:clamp(1.5rem,4vw,3rem);
+  box-shadow:0 1px 0 var(--rule) inset, 0 18px 44px -30px var(--shadow-2);
+  position:relative;
+}
+.plate::after{
+  content:"";position:absolute;inset:5px;border:1px solid var(--rule);pointer-events:none;
+}
+.plate > *{position:relative;z-index:1}
+.plate-head{
+  display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;
+  font-family:var(--f-mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gilt);
+  padding-bottom:.9rem;margin-bottom:1.6rem;border-bottom:1px solid var(--rule);
+}
+.hero h1{margin-bottom:1.15rem}
+.lede{font-size:1.09rem;color:var(--ink-2);max-width:60ch}
+.lede strong{color:var(--ink);font-weight:600}
+
+.cta-row{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:1.9rem}
+.btn{
+  font-family:var(--f-ui);font-size:.9rem;font-weight:600;letter-spacing:.01em;
+  padding:.66rem 1.15rem;border-radius:var(--radius);border:1px solid var(--rule);
+  background:var(--card-2);color:var(--ink);text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem;
+}
+.btn:hover{border-color:var(--gilt-bright);color:var(--ink)}
+.btn-gilt{background:var(--gilt-fill);border-color:var(--gilt-fill);color:var(--gilt-ink)}
+.btn-gilt:hover{background:var(--gilt-bright);border-color:var(--gilt-bright);color:var(--gilt-ink)}
+
+.serials{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;
+  margin-top:2.4rem;background:var(--rule);border:1px solid var(--rule);
+}
+.serial{background:var(--card);padding:.8rem .9rem}
+.serial dt{font-family:var(--f-mono);font-size:.63rem;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-2);margin-bottom:.22rem}
+.serial dd{margin:0;font-family:var(--f-mono);font-size:.88rem;color:var(--ink)}
+.serial dd.ok{color:var(--viridian)}
+.serial dd.warn{color:var(--oxblood)}
+
+/* ══ Generic content pieces ═════════════════════════════════════════════════ */
+.sec-head{margin-bottom:2.2rem}
+.sec-head h2{margin-top:.8rem}
+.sec-head p{margin-top:.9rem;color:var(--ink-2)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:1.3rem}
+.card{background:var(--card);border:1px solid var(--rule);padding:1.35rem 1.4rem 1.5rem}
+.card h3{margin-bottom:.6rem}
+.card p{color:var(--ink-2);font-size:.97rem}
+.card .kicker{
+  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.19em;text-transform:uppercase;
+  color:var(--gilt);display:block;margin-bottom:.7rem;
+}
+
+table{border-collapse:collapse;width:100%;font-size:.94rem}
+caption{text-align:left;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-2);padding-bottom:.7rem}
+th,td{text-align:left;padding:.72rem .85rem;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+thead th{
+  font-family:var(--f-mono);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--gilt);border-bottom:1px solid var(--rule);font-weight:400;white-space:nowrap;
+}
+tbody th{font-family:var(--f-ui);font-size:.86rem;font-weight:600;color:var(--ink);white-space:nowrap}
+td{color:var(--ink-2)}
+.col-us{background:color-mix(in srgb, var(--gilt-fill) 8%, transparent)}
+thead .col-us{color:var(--ink)}
+
+code{font-family:var(--f-mono);font-size:.88em;background:color-mix(in srgb, var(--gilt-fill) 12%, transparent);padding:.06em .34em;border-radius:var(--radius)}
+pre{
+  margin:0;background:var(--card);border:1px solid var(--rule);border-left:2px solid var(--gilt-bright);
+  padding:1rem 1.1rem;overflow-x:auto;font-family:var(--f-mono);font-size:.845rem;line-height:1.62;color:var(--ink);
+}
+pre code{background:none;padding:0;font-size:1em}
+.prompt{color:var(--gilt)}
+.comment{color:var(--ink-2)}
+
+/* ══ Proof strip ════════════════════════════════════════════════════════════ */
+.proof{display:grid;grid-template-columns:1fr;gap:1.2rem}
+@media(min-width:940px){ .proof{grid-template-columns:1fr 1fr;align-items:start} }
+.proof textarea{
+  width:100%;min-height:190px;resize:vertical;
+  background:var(--card);color:var(--ink);border:1px solid var(--rule);
+  font-family:var(--f-mono);font-size:.8rem;line-height:1.5;padding:.9rem;border-radius:var(--radius);
+}
+.proof textarea:focus{border-color:var(--gilt-bright)}
+.proof-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;align-items:center}
+.readout{background:var(--card);border:1px solid var(--rule);min-height:190px}
+.readout-head{
+  padding:.6rem .9rem;border-bottom:1px solid var(--rule);
+  font-family:var(--f-mono);font-size:.66rem;letter-spacing:.17em;text-transform:uppercase;color:var(--gilt);
+}
+.rows{margin:0;padding:0;list-style:none}
+.rows li{display:flex;gap:1rem;justify-content:space-between;align-items:baseline;padding:.5rem .9rem;border-bottom:1px solid var(--rule-soft);font-family:var(--f-mono);font-size:.82rem}
+.rows li:last-child{border-bottom:0}
+.rows .k{color:var(--ink-2);letter-spacing:.06em;text-transform:uppercase;font-size:.68rem;flex:none}
+.rows .v{text-align:right;word-break:break-all;color:var(--ink)}
+.rows .v.opaque{color:var(--oxblood);letter-spacing:.08em}
+.rows .v.open{color:var(--viridian)}
+.readout-note{padding:.75rem .9rem;font-size:.86rem;color:var(--ink-2);font-family:var(--f-body);border-top:1px solid var(--rule)}
+.readout-empty{padding:1.4rem .9rem;color:var(--ink-2);font-size:.92rem}
+
+/* ══ Clause of limits ═══════════════════════════════════════════════════════ */
+.clauses{counter-reset:clause;display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.clause{background:var(--card);padding:1.25rem 1.4rem;display:grid;grid-template-columns:auto 1fr;gap:1.1rem;align-items:start}
+.clause::before{
+  counter-increment:clause;content:"ART. " counter(clause,upper-roman);
+  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.14em;color:var(--oxblood);
+  padding-top:.28rem;white-space:nowrap;
+}
+.clause h3{font-size:1.02rem;margin-bottom:.4rem}
+.clause p{color:var(--ink-2);font-size:.95rem}
+
+/* ══ Install steps ══════════════════════════════════════════════════════════ */
+.steps{counter-reset:step;margin:0;padding:0;list-style:none;display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.steps li{background:var(--card);padding:.95rem 1.2rem;display:grid;grid-template-columns:2.1rem 1fr;gap:.15rem .9rem;align-items:baseline}
+.steps li::before{
+  counter-increment:step;content:counter(step);
+  font-family:var(--f-mono);font-size:.8rem;color:var(--gilt);text-align:right;
+  /* The row has THREE grid items — marker, title, description. Without this the
+     description falls into row 2 of the 2.1rem marker column and sets one word
+     per line. The marker spans both rows so the text keeps the 1fr column. */
+  grid-column:1;grid-row:1 / span 2;
+}
+.steps b{font-weight:600;font-family:var(--f-ui);font-size:.9rem}
+.steps span{display:block;color:var(--ink-2);font-size:.92rem;margin-top:.15rem}
+.steps li.key-v::before{content:"V";color:var(--viridian)}
+
+.note{
+  border-left:2px solid var(--gilt-bright);background:var(--card-2);
+  padding:.9rem 1.1rem;font-size:.94rem;color:var(--ink-2);
+}
+.note b{color:var(--ink)}
+.note-warn{border-left-color:var(--oxblood);background:var(--oxblood-bg)}
+.note-warn b{color:var(--oxblood)}
+
+/* ══ Path diagram ═══════════════════════════════════════════════════════════ */
+.path{
+  display:flex;flex-wrap:wrap;align-items:center;gap:.55rem;
+  font-family:var(--f-mono);font-size:.78rem;padding:1.1rem;background:var(--card);border:1px solid var(--rule);
+}
+.hop{border:1px solid var(--rule);padding:.35rem .6rem;background:var(--card-2);color:var(--ink);white-space:nowrap}
+.hop-sealed{border-color:var(--gilt-bright);color:var(--gilt)}
+.arrow{color:var(--gilt-bright);flex:none}
+
+/* ══ Footer ═════════════════════════════════════════════════════════════════ */
+.foot{border-top:1px solid var(--rule);background:var(--paper-2);padding:2.6rem 0 3.4rem}
+.foot-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1.8rem}
+.foot h4{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gilt);font-weight:400;margin-bottom:.7rem}
+.foot ul{margin:0;padding:0;list-style:none;display:grid;gap:.42rem;font-size:.92rem}
+.foot a{color:var(--ink-2);text-decoration:none}
+.foot a:hover{color:var(--gilt)}
+.foot-base{margin-top:2.4rem;padding-top:1.3rem;border-top:1px solid var(--rule);font-family:var(--f-mono);font-size:.71rem;letter-spacing:.05em;color:var(--ink-2);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+
+/* ══ Narrow screens ═════════════════════════════════════════════════════════
+   A four-column comparison cannot be squeezed into a phone and cannot honestly
+   be side-scrolled either — the row label scrolls away and the cell stops
+   meaning anything. So below 720px each row becomes its own block and every
+   cell carries its column name in front of it. */
+@media (max-width:720px){
+  .band{padding:3.1rem 0}
+  .hero{padding:2.4rem 0 3.1rem}
+  .sec-head{margin-bottom:1.7rem}
+
+  /* The header is sticky, so every line it costs is a line the reader never
+     gets back — hence the tighter setting and the shorter sentence here. */
+  .alert{font-size:.695rem;letter-spacing:.03em;line-height:1.5}
+  .alert-in{padding:.4rem 0}
+  .alert-tag{margin-right:.45rem}
+  .alert-more{display:none}
+
+  .scroll-x{overflow-x:visible}
+  table,tbody,caption{display:block}
+  table{border-collapse:separate;border-spacing:0;font-size:1rem}
+  /* display:block FIRST — position and width are ignored on an internal table
+     box, so without it the whole visually-hidden trick is inert and the header
+     row keeps its full table width off the side of the screen. Kept in the
+     accessibility tree rather than display:none: the row headers still read. */
+  thead{display:block;position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  tbody tr{display:block;background:var(--card);border:1px solid var(--rule);margin-bottom:.9rem}
+  tbody tr:last-child{margin-bottom:0}
+  tbody th{
+    display:block;white-space:normal;font-family:var(--f-display);font-size:1.06rem;
+    font-weight:600;padding:.85rem .95rem .7rem;border-bottom:1px solid var(--rule);
+  }
+  tbody td{
+    display:grid;grid-template-columns:minmax(5.2rem,auto) 1fr;gap:.25rem .9rem;
+    padding:.7rem .95rem;border-bottom:1px solid var(--rule-soft);font-size:.95rem;
+  }
+  tbody td:last-child{border-bottom:0}
+  tbody td::before{
+    content:attr(data-label);font-family:var(--f-mono);font-size:.62rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--gilt);padding-top:.3rem;
+  }
+
+  .proof textarea{min-height:140px}
+  .foot ul{gap:.75rem}
+  .foot-base{gap:.5rem}
+}
+@media (max-width:560px){
+  /* A 63-character address has nowhere to go on one line with its label. */
+  .rows li{flex-direction:column;align-items:stretch;gap:.1rem}
+  .rows .v{text-align:left}
+  .clause{grid-template-columns:1fr;gap:.5rem}
+  .clause::before{padding-top:0}
+  tbody td{grid-template-columns:1fr;gap:.1rem}
+}
+
+/* ══ Short viewports ════════════════════════════════════════════════════════
+   A phone held sideways is ~390px TALL and over 720px wide, so every width
+   query above misses it and the header keeps its full desktop sentence — 117px
+   of a 390px screen, a third of everything, permanently. Height is the only
+   axis that sees this case. */
+@media (max-height:520px){
+  .alert-more{display:none}
+  .alert{font-size:.7rem;line-height:1.5}
+  .alert-in{padding:.35rem 0}
+  .nav{min-height:48px}
+  .brand svg{width:24px;height:24px}
+  .icon-btn{width:36px;height:36px}
+}
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *{transition:none !important;animation:none !important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="alert">
+    <div class="alert-in">
+      <span class="alert-tag">Testing</span>
+      <span>Fidelius is not ready for production &mdash; use testnet, or amounts you can afford to lose.<span class="alert-more"> The code is complete and reviewed, but has never been proven on a live server.</span></span>
+    </div>
+  </div>
+  <nav class="nav" aria-label="Primary">
+    <a class="brand" href="#top">
+      <!-- The Grin coin in a domino mask. Same drawing as the favicon. -->
+      <svg viewBox="0 0 244 244" aria-hidden="true">
+        <circle cx="122" cy="122" r="95.5" fill="var(--gilt-fill)"/>
+        <circle cx="122" cy="122" r="85.25" fill="#0A100D"/>
+        <g transform="translate(0.209,-2)">
+          <path fill="#E4C46A" d="M162,92C159.966,87.434 158.071,78.413 152.855,76.407C146.14,73.825 141.989,90.729 141,95L140,95C138.307,87.682 136.035,77.31 128,75C124.28,90.624 131.886,107.479 139,121C146.596,117.37 150.297,106.002 151,98L152,98L160,122C166.436,120.15 168.675,113.781 170.999,108C175.988,95.592 180.174,80.332 177,67C167.395,69.72 164.473,83.455 162,92M66,124C74.595,119.896 78.685,106.906 80,98L81,98C82.017,102.293 84.736,113.368 90.1,114.079C96.934,114.983 100.517,99.819 101,95L102,95C104.179,102.529 106.475,112.32 114,116C116.776,104.34 113.452,91.905 109.188,81C108.092,78.196 105.841,70.636 101.975,70.636C95.641,70.636 92.08,87.332 91,92L90,92L82,68C67.928,74.72 60.284,110.453 66,124M51,136C61.443,181.551 109.612,207.374 153,188.138C168.791,181.137 181.317,168.663 188.539,153C190.405,148.953 194.07,141.628 191.933,136.318C189.805,131.029 169.166,139.671 164.009,141.928C163.285,142.25 162.774,142.918 162.655,143.702C162.655,143.702 162.655,143.702 162.655,143.702C162.486,144.811 162.786,145.941 163.485,146.82C164.183,147.699 165.216,148.247 166.335,148.333C170.116,148.624 175,149 175,149C159.313,179.365 116.899,192.791 87,168.532C80.308,163.103 74.338,156.652 70.32,149C68.377,145.3 66.575,140.568 63.272,138.029C60.099,135.589 55.285,134.753 51,136Z"/>
+        </g>
+        <path d="M28,90 C58,68 100,62 122,76 C144,62 186,68 216,90 C221,113 207,136 184,143 C157,151 132,141 126,127 C124,123 120,123 118,127 C112,141 87,151 60,143 C37,136 23,113 28,90 Z"
+              fill="#0A100D" stroke="#0A100D" stroke-width="10" stroke-linejoin="round"/>
+        <path d="M28,90 C58,68 100,62 122,76 C144,62 186,68 216,90 C221,113 207,136 184,143 C157,151 132,141 126,127 C124,123 120,123 118,127 C112,141 87,151 60,143 C37,136 23,113 28,90 Z"
+              fill="var(--gilt-fill)"/>
+        <ellipse cx="74" cy="104" rx="23" ry="12.5" fill="#0A100D" transform="rotate(-6 74 104)"/>
+        <ellipse cx="170" cy="104" rx="23" ry="12.5" fill="#0A100D" transform="rotate(6 170 104)"/>
+      </svg>
+      <b>Fidelius</b> <span>051</span>
+    </a>
+    <div class="nav-links" id="nav-links">
+      <a href="#what">What it is</a>
+      <a href="#rails">Sending</a>
+      <a href="#inspect">Inspect</a>
+      <a href="#compare">Vs. Grim &amp; Goblin</a>
+      <a href="#security">Security</a>
+      <a href="#private">Private access</a>
+      <a href="#limits">Limits</a>
+      <a href="#install">Install</a>
+    </div>
+    <div class="nav-tools">
+      <button class="icon-btn menu-btn" id="menu-btn" type="button"
+              aria-expanded="false" aria-controls="nav-links" aria-label="Sections">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="theme-btn" type="button" aria-label="Switch colour theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <path d="M21 13.2A8.4 8.4 0 1 1 10.8 3a6.6 6.6 0 0 0 10.2 10.2Z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+
+<!-- ═══ HERO ═══════════════════════════════════════════════════════════════ -->
+<section class="hero" id="top">
+  <canvas id="guilloche" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="plate">
+      <div class="plate-head">
+        <span>Grin Personal Web Wallet</span>
+        <span>Self-hosted &middot; Issue 2026</span>
+      </div>
+      <h1>Your wallet lives on a machine you own, and opens in any browser.</h1>
+      <p class="lede">Fidelius is a browser front end for the <strong>official grin-wallet</strong>, installed on your own server by one script. There is no app to install, no store to be approved by, and no account anywhere. Reach it over public HTTPS behind a password &mdash; or seal it inside a WireGuard tunnel where the internet cannot find it at all.</p>
+      <div class="cta-row">
+        <a class="btn btn-gilt" href="#install">Read the install guide</a>
+        <a class="btn" href="#inspect">Try the slatepack reader</a>
+        <a class="btn" href="#limits">See what it can&rsquo;t do</a>
+      </div>
+      <dl class="serials">
+        <div class="serial"><dt>Engine</dt><dd>grin-wallet v5.4.1</dd></div>
+        <div class="serial"><dt>Licence</dt><dd>Open source</dd></div>
+        <div class="serial"><dt>Custody</dt><dd class="ok">Your server</dd></div>
+        <div class="serial"><dt>Status</dt><dd class="warn">Testing</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WHAT IT IS ═════════════════════════════════════════════════════════ -->
+<section class="band band-alt" id="what">
+  <div class="wrap">
+    <div class="sec-head measure">
+      <p class="eyebrow">The instrument</p>
+      <h2>A front end, not a new wallet.</h2>
+      <p>Fidelius writes no cryptography of its own. It drives the wallet the Grin project publishes, on hardware you chose, and gives it a screen you can reach from anywhere.</p>
+    </div>
+    <div class="cards">
+      <article class="card">
+        <span class="kicker">Upstream</span>
+        <h3>The official binary does the work</h3>
+        <p>Fidelius downloads <code>grin-wallet</code> from the mimblewimble release page, verifies its SHA256, and pins it at <b>v5.4.1</b>. It then talks to it over the Owner API v3 &mdash; ECDH key exchange, AES-256-GCM on every call. Your keys are handled by the same code a command-line user runs.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Shape</span>
+        <h3>One service, many wallets</h3>
+        <p>A single Node process on <code>127.0.0.1:7420</code> under systemd, with nginx in front holding TLS and the password. It serves as many wallets as you create, mainnet and testnet side by side, each in its own directory with its own seed.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Secrets</span>
+        <h3>The passphrase never touches disk</h3>
+        <p>It is passed to grin-wallet over stdin &mdash; never on a command line, where every local user could read it in <code>ps</code> &mdash; and held in process memory only while the wallet is unlocked. The browser locks on idle, and a server-side backstop locks it again if you simply close the tab.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Neighbours</span>
+        <h3>Beside your own node</h3>
+        <p>The same toolkit installs the Grin node. Point Fidelius at it and nothing about your balance, your addresses or your broadcasts passes through a stranger&rsquo;s server. Public nodes are offered as a fallback, not a default requirement.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Reach</span>
+        <h3>Two doors, and you pick</h3>
+        <p>Public HTTPS with Basic Auth, rate limits and a fail2ban jail on failed logins &mdash; or the private path, where nginx listens only on a WireGuard address and the wallet has no public surface at all. Switching between them is a menu option, not a rebuild.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Backups</span>
+        <h3>Seeds included in the archive</h3>
+        <p>The toolkit&rsquo;s encrypted backup finds Fidelius wallets by looking at what actually exists on disk, so a wallet you create next month is covered without re-running anything. Restore puts the seeds and the registry back where the service expects them.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RAILS ══════════════════════════════════════════════════════════════ -->
+<section class="band" id="rails">
+  <div class="wrap stack gap-l">
+    <div class="sec-head measure" style="margin-bottom:0">
+      <p class="eyebrow">Transport</p>
+      <h2>Three ways to hand over a payment.</h2>
+      <p>Grin has no addresses that simply receive. A payment is a short conversation between two wallets, so the interesting question is always: how does the other side hear from you?</p>
+    </div>
+
+    <div class="scroll-x">
+      <table>
+        <caption>Choosing a rail</caption>
+        <thead>
+          <tr>
+            <th scope="col">Rail</th>
+            <th scope="col">Both online?</th>
+            <th scope="col">You copy a blob?</th>
+            <th scope="col">Use it when</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Tor</th>
+            <td data-label="Both online?">Required</td>
+            <td data-label="Copy a blob?">No</td>
+            <td data-label="Use it when">The payee runs a wallet that is listening now. Fastest, and the only rail that finishes in one click.</td>
+          </tr>
+          <tr>
+            <th scope="row">Slatepack</th>
+            <td data-label="Both online?">No</td>
+            <td data-label="Copy a blob?">Yes &mdash; three rounds</td>
+            <td data-label="Use it when">You have any channel to the other person at all: email, a messenger, a printed QR. Nothing else has to exist.</td>
+          </tr>
+          <tr>
+            <th scope="row">Transporter</th>
+            <td data-label="Both online?">No</td>
+            <td data-label="Copy a blob?">No</td>
+            <td data-label="Use it when">Neither of you keeps a wallet online. An encrypted queue holds the slate until the other wallet next unlocks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cards">
+      <article class="card">
+        <span class="kicker">Rail 1 &middot; Tor</span>
+        <h3>Straight through, nothing to carry</h3>
+        <p>Your wallet dials the recipient&rsquo;s onion address and completes the exchange itself. Because Fidelius lives on a server that is always on, your own listener is reachable while every device you own is switched off &mdash; people can pay you in your sleep.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Rail 2 &middot; Slatepack</span>
+        <h3>A block of text, sent however you like</h3>
+        <p>The wallet gives you an armored block. They receive it, hand one back, you finalize. It works with no relay, no Tor and no shared uptime &mdash; and it is the rail you fall back on when everything else is having a bad day.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Rail 3 &middot; Transporter</span>
+        <h3>A queue that waits for them</h3>
+        <p>The slate is encrypted to the recipient&rsquo;s key and deposited into a store-and-forward queue you or someone you trust runs. The relay can refuse to deliver and can see which address talks to which &mdash; it can never read the slate or spend from it.</p>
+      </article>
+    </div>
+
+    <div class="note note-warn measure">
+      <b>The one failure worth memorising.</b> A Transporter deposit to a well-formed but wrong address <em>succeeds</em>. It lands in a queue nobody owns, no error is ever raised, and the only symptom is coins that stay reserved forever. Send <code>0.1</code> &#8745; first, wait for it to complete, then send the rest. Fidelius prompts you to do exactly that on any first payment to an unknown address.
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROOF STRIP ════════════════════════════════════════════════════════ -->
+<section class="band band-alt" id="inspect">
+  <div class="wrap stack gap-l">
+    <div class="sec-head measure" style="margin-bottom:0">
+      <p class="eyebrow">Evidence</p>
+      <h2>Don&rsquo;t take &ldquo;private&rdquo; on trust. Read one.</h2>
+      <p>Paste any slatepack below. It is decoded entirely inside this page &mdash; no network request is made, and there is no server here to make one to. Watch what a stranger holding your payment can actually learn from it.</p>
+    </div>
+
+    <div class="proof">
+      <div>
+        <label for="sp-input" class="eyebrow" style="margin-bottom:.6rem">Paste a slatepack</label>
+        <textarea id="sp-input" spellcheck="false" placeholder="BEGINSLATEPACK. 4xC6nHi1PZNXNKe uPu2ptvVWFhVaPa ... ENDSLATEPACK."></textarea>
+        <div class="proof-actions">
+          <button class="btn btn-gilt" type="button" id="sp-read">Read it</button>
+          <button class="btn" type="button" id="sp-enc">Sample &middot; encrypted</button>
+          <button class="btn" type="button" id="sp-plain">Sample &middot; plaintext</button>
+          <button class="btn" type="button" id="sp-clear">Clear</button>
+        </div>
+        <p class="muted" style="font-size:.86rem;margin-top:.9rem">What you paste is never transmitted &mdash; the decoding happens in this tab and there is no endpoint here to send it to. The decoder is a plain script file you can read at <code>js/slatepack-decode.js</code> before you trust that sentence. The two samples are correctly-formed slatepacks built for this page &mdash; not real payments &mdash; so you can see both outcomes without owning any Grin.</p>
+      </div>
+
+      <div class="readout" id="sp-out">
+        <div class="readout-head">Readout</div>
+        <div class="readout-empty" id="sp-empty">Paste a slatepack and press <b>Read it</b>. If yours is encrypted &mdash; the normal case when the sender knew who they were paying &mdash; this panel will be able to tell you almost nothing. That is the result, not a failure.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ COMPARISON ═════════════════════════════════════════════════════════ -->
+<section class="band" id="compare">
+  <div class="wrap stack gap-l">
+    <div class="sec-head measure" style="margin-bottom:0">
+      <p class="eyebrow">Position</p>
+      <h2>What a server wallet gives you that a phone wallet can&rsquo;t.</h2>
+      <p>Grim and Goblin are good wallets, and this is not an argument that they are wrong. They are a different <em>shape</em> of tool: an app on a device you carry. Fidelius is a service on a machine that never sleeps. The trade runs in both directions.</p>
+    </div>
+
+    <div class="scroll-x">
+      <table>
+        <caption>Fidelius, Grim and Goblin &mdash; the differences that change your day</caption>
+        <thead>
+          <tr>
+            <th scope="col">&nbsp;</th>
+            <th scope="col" class="col-us">Fidelius</th>
+            <th scope="col">Grim</th>
+            <th scope="col">Goblin</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Where it runs</th>
+            <td class="col-us" data-label="Fidelius">A server you own, reached by URL</td>
+            <td data-label="Grim">A device you install it on &mdash; desktop, with Android support still limited</td>
+            <td data-label="Goblin">The device in your hand</td>
+          </tr>
+          <tr>
+            <th scope="row">To use it on a new device</th>
+            <td class="col-us" data-label="Fidelius">Open the address. Nothing to install</td>
+            <td data-label="Grim">Download and install the build for that platform</td>
+            <td data-label="Goblin">Download and install the build for that platform</td>
+          </tr>
+          <tr>
+            <th scope="row">Platform support</th>
+            <td class="col-us" data-label="Fidelius">Anything with a browser &mdash; including devices that will never have a Grin app</td>
+            <td data-label="Grim">Per-platform builds</td>
+            <td data-label="Goblin">Per-platform builds</td>
+          </tr>
+          <tr>
+            <th scope="row">App-store gatekeeping</th>
+            <td class="col-us" data-label="Fidelius">None. There is no app to submit, review, or have removed</td>
+            <td data-label="Grim">Applies wherever the app is distributed</td>
+            <td data-label="Goblin">Applies wherever the app is distributed</td>
+          </tr>
+          <tr>
+            <th scope="row">Updates</th>
+            <td class="col-us" data-label="Fidelius">Update the server once; every device is current</td>
+            <td data-label="Grim">Update each device</td>
+            <td data-label="Goblin">Update each device</td>
+          </tr>
+          <tr>
+            <th scope="row">Wallet engine</th>
+            <td class="col-us" data-label="Fidelius">The official <code>grin-wallet</code> release, unmodified, pinned and checksum-verified</td>
+            <td data-label="Grim">A vendored fork of the official Grin and grin-wallet crates</td>
+            <td data-label="Goblin">The same, by way of the Grim framework</td>
+          </tr>
+          <tr>
+            <th scope="row">Receiving while your devices are off</th>
+            <td class="col-us" data-label="Fidelius">Yes &mdash; the listener runs on the server, 24/7</td>
+            <td data-label="Grim">The app has to be running</td>
+            <td data-label="Goblin">Messages wait on a relay until the app opens</td>
+          </tr>
+          <tr>
+            <th scope="row">Who can take your keys</th>
+            <td class="col-us" data-label="Fidelius">Anyone with root on your server &mdash; including your VPS provider</td>
+            <td data-label="Grim">Anyone who takes the device and its wallet password</td>
+            <td data-label="Goblin">Anyone who takes the device and its wallet password</td>
+          </tr>
+          <tr>
+            <th scope="row">What it costs to start</th>
+            <td class="col-us" data-label="Fidelius">A Linux server, a domain, and one script run</td>
+            <td data-label="Grim">A download</td>
+            <td data-label="Goblin">A download</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cards">
+      <article class="card">
+        <span class="kicker">Advantage</span>
+        <h3>It is a URL, so it goes where you go</h3>
+        <p>A borrowed laptop, a work machine you may not install software on, a tablet, a phone whose store has no Grin wallet at all. The wallet does not have to be ported to a platform to be reachable from it &mdash; and there is no wallet app sitting on the device afterwards.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Advantage</span>
+        <h3>Open at the front, or invisible</h3>
+        <p>Run it publicly behind TLS, a password and a ban jail. Or take the private path: nginx binds to a WireGuard address only, and the wallet stops existing for everyone who is not inside your tunnel &mdash; while keeping a real, publicly-trusted certificate. Same install, one menu option apart.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Advantage</span>
+        <h3>No new cryptography to trust</h3>
+        <p>Every key operation is the official grin-wallet binary that the Grin project releases, pinned to a version this project has read, and checksum-verified on download. What Fidelius adds is a screen, a session, and three ways to deliver a slate.</p>
+      </article>
+    </div>
+
+    <div class="note measure">
+      <b>Use Grim or Goblin instead when</b> you don&rsquo;t want to run a server &mdash; that is the honest dividing line. They start in minutes with nothing to rent and nothing to maintain, your keys stay on hardware you physically hold, and Goblin&rsquo;s pay-by-username over Nostr is genuinely nicer than copying addresses around. If you already run a node, Fidelius costs you nothing new. If you don&rsquo;t, a device wallet is the smaller, saner tool.
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECURITY ═══════════════════════════════════════════════════════════ -->
+<section class="band band-alt" id="security">
+  <div class="wrap stack gap-l">
+    <div class="sec-head measure" style="margin-bottom:0">
+      <p class="eyebrow">Guards</p>
+      <h2>What actually stands between a stranger and your coins.</h2>
+      <p>Stated as layers, so you can see where each one stops and what it never covered.</p>
+    </div>
+
+    <div class="scroll-x">
+      <table>
+        <caption>Defence layers</caption>
+        <thead>
+          <tr><th scope="col">Layer</th><th scope="col">What it does</th><th scope="col">What it does not do</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">nginx</th>
+            <td data-label="It does">TLS, Basic Auth on every path, strict CSP with no inline script, rate limits on sending and on the API, security headers, a 1&nbsp;MB body cap.</td>
+            <td data-label="It doesn&rsquo;t">It cannot help once someone knows the password.</td>
+          </tr>
+          <tr>
+            <th scope="row">fail2ban</th>
+            <td data-label="It does">Bans an address after repeated failed logins. Basic Auth is the whole authentication boundary, so this is the thing that makes guessing expensive.</td>
+            <td data-label="It doesn&rsquo;t">Nothing against a leaked or reused password.</td>
+          </tr>
+          <tr>
+            <th scope="row">The session</th>
+            <td data-label="It does">The passphrase lives in process memory while unlocked. The browser locks on real idle time, and a server-side timer locks it again if you close the tab. Background pollers deliberately do not count as activity.</td>
+            <td data-label="It doesn&rsquo;t">An unlocked session in front of someone else is an unlocked wallet.</td>
+          </tr>
+          <tr>
+            <th scope="row">grin-wallet</th>
+            <td data-label="It does">Holds the seed, signs, builds transactions. Reached over Owner API v3: ECDH key exchange, AES-256-GCM per call. The passphrase is fed on stdin, never on a command line.</td>
+            <td data-label="It doesn&rsquo;t">It cannot recover a lost passphrase. Nobody can.</td>
+          </tr>
+          <tr>
+            <th scope="row">systemd</th>
+            <td data-label="It does"><code>ProtectSystem=full</code>, <code>ProtectHome=true</code>, <code>PrivateTmp=true</code>, <code>NoNewPrivileges=true</code>, and one writable path.</td>
+            <td data-label="It doesn&rsquo;t">The service runs as root; the sandbox narrows the blast radius, it does not remove it.</td>
+          </tr>
+          <tr>
+            <th scope="row">WireGuard (optional)</th>
+            <td data-label="It does">Removes the wallet from the public internet entirely &mdash; see below.</td>
+            <td data-label="It doesn&rsquo;t">Changes <em>who can reach it</em>, never what happens once they do.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PRIVATE ACCESS ═════════════════════════════════════════════════════ -->
+<section class="band" id="private">
+  <div class="wrap stack gap-l">
+    <div class="sec-head measure" style="margin-bottom:0">
+      <p class="eyebrow">Private access</p>
+      <h2>A real certificate, and no open port.</h2>
+      <p>The usual trade is that a private service gets a self-signed certificate and a browser warning you learn to click through. This avoids the trade: the certificate is issued by proving control of the domain <em>through DNS</em>, which never connects to your server at all.</p>
+    </div>
+
+    <div class="path" role="img" aria-label="Path: phone over UDP 51820 to the WireGuard interface, to nginx bound on the tunnel address, to the wallet on localhost.">
+      <span class="hop">your phone</span><span class="arrow">&rarr;</span>
+      <span class="hop">udp/51820</span><span class="arrow">&rarr;</span>
+      <span class="hop hop-sealed">wg0 &middot; 10.9.0.1</span><span class="arrow">&rarr;</span>
+      <span class="hop hop-sealed">nginx listens 10.9.0.1:443</span><span class="arrow">&rarr;</span>
+      <span class="hop">127.0.0.1:7420</span>
+    </div>
+
+    <div class="cards">
+      <article class="card">
+        <span class="kicker">Why it works</span>
+        <h3>DNS-01 never dials your host</h3>
+        <p>Let&rsquo;s Encrypt asks for a TXT record instead of an HTTP request, so issuance and renewal both work with every port closed. Your public DNS record then points a public name at a private address &mdash; and only a device inside the tunnel can route to it.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Why bind, not block</span>
+        <h3>An address nginx never listens on cannot be probed</h3>
+        <p>An <code>allow/deny</code> rule still lets a stranger complete the TLS handshake and reach the HTTP layer before being refused &mdash; so any pre-authentication bug stays reachable, and the host stays confirmable. Binding to the tunnel address removes the surface instead of guarding it.</p>
+      </article>
+      <article class="card">
+        <span class="kicker">Two locked doors</span>
+        <h3>It refuses to lock you out</h3>
+        <p>The switch will not run until a device has actually completed a handshake &mdash; a config file is not evidence &mdash; and it refuses to proceed on a certificate whose renewal needs port 80, because that one renews fine today and fails silently two months later.</p>
+      </article>
+    </div>
+
+    <div class="note note-warn measure">
+      <b>Say the quiet part.</b> A tunnel changes who can reach the wallet, not what happens after they do. The service still runs as root, and a stolen device that is already inside the tunnel is a complete bypass. Private access is a way to shrink the audience &mdash; it is not a second password.
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LIMITS ═════════════════════════════════════════════════════════════ -->
+<section class="band band-alt" id="limits">
+  <div class="wrap stack gap-l">
+    <div class="sec-head measure" style="margin-bottom:0">
+      <p class="eyebrow">Terms</p>
+      <h2>What this costs you, before you install it.</h2>
+      <p>Every clause below is a plain fact about how the software is built. None of them can be fixed by a support ticket, because there is nobody to open one with.</p>
+    </div>
+
+    <div class="clauses">
+      <div class="clause">
+        <div>
+          <h3>The passphrase is arithmetic, not policy</h3>
+          <p>It is not stored anywhere &mdash; not in a database, not on the server, not with anyone. There is no reset link and no override, because there is nothing to override. Forget it and the coins in that wallet are gone, permanently.</p>
+        </div>
+      </div>
+      <div class="clause">
+        <div>
+          <h3>The recovery phrase is shown once</h3>
+          <p>Twenty-four words, at creation. Write them on paper and store the paper somewhere a fire or a burglary would not take with it. A screenshot puts your wallet in your photo library, and eventually in whatever backs that library up.</p>
+        </div>
+      </div>
+      <div class="clause">
+        <div>
+          <h3>Your server operator is inside your trust boundary</h3>
+          <p>The seeds sit on that machine. Anyone with root on it &mdash; you, an intruder, or the company you rent it from &mdash; can reach them. A rented VPS is convenient; it is not the same as hardware you physically hold, and it is not a backup.</p>
+        </div>
+      </div>
+      <div class="clause">
+        <div>
+          <h3>A browser is a wider door than an app</h3>
+          <p>The wallet is reachable by anyone who has your password and can reach the address. That is the deal you accept in exchange for it working everywhere. Use a password you use nowhere else, install the ban jail, and consider the private path if the wallet holds anything that matters.</p>
+        </div>
+      </div>
+      <div class="clause">
+        <div>
+          <h3>It is in testing, and the version is deliberately frozen</h3>
+          <p>The code is complete and has been reviewed, but has not been proven on a live production server. <code>grin-wallet</code> is pinned to <b>v5.4.1</b> on purpose: the way Fidelius hands over a passphrase depends on how that version reads input, so upgrades are made by a human who has checked, never by chasing the latest release.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ INSTALL ════════════════════════════════════════════════════════════ -->
+<section class="band" id="install">
+  <div class="wrap stack gap-l">
+    <div class="sec-head measure" style="margin-bottom:0">
+      <p class="eyebrow">Installation</p>
+      <h2>Self-hosting it, start to finish.</h2>
+      <p>Fidelius ships inside the Grin Node Toolkit. Everything below happens on the server, as root, in one interactive menu.</p>
+    </div>
+
+    <div class="stack gap-m">
+      <h3>Before you start</h3>
+      <ul class="measure muted" style="padding-left:1.2rem;display:grid;gap:.4rem;font-size:.96rem">
+        <li>A Linux server you control &mdash; Debian or Ubuntu, or Rocky/AlmaLinux&nbsp;10+.</li>
+        <li>Root access, and a domain name whose <code>A</code> record points at it.</li>
+        <li>Port 80 and 443 reachable, at least long enough to get the first certificate.</li>
+        <li>Optional but recommended: a Grin node on the same box, from the same toolkit.</li>
+      </ul>
+    </div>
+
+    <div class="stack gap-m">
+      <h3>Get the toolkit</h3>
+<pre><code><span class="prompt">$</span> git clone https://github.com/noobvie/Grin-Node-Toolkit.git
+<span class="prompt">$</span> cd Grin-Node-Toolkit
+<span class="prompt">$</span> chmod +x grin-node-toolkit.sh
+<span class="prompt">$</span> sudo ./grin-node-toolkit.sh</code></pre>
+      <p class="muted measure" style="font-size:.94rem">From the main menu choose <b>Wallet &amp; Payment Services</b>, then <b>Fidelius</b>. The steps below are that screen, in order.</p>
+    </div>
+
+    <ol class="steps">
+      <li><b>Install the grin-wallet binary</b><span>Downloads the pinned official release and verifies its checksum.</span></li>
+      <li><b>Install dependencies</b><span>Node.js, nginx, certbot, htpasswd, tor, qrencode and jq.</span></li>
+      <li><b>Deploy files and the service</b><span>Installs the app and the systemd unit, listening on localhost only.</span></li>
+      <li><b>Configure nginx</b><span>Writes an HTTP-only virtual host first &mdash; a certificate cannot be referenced before it exists.</span></li>
+      <li><b>Set up SSL</b><span>Let&rsquo;s Encrypt, or a Cloudflare origin certificate. This is where the site becomes HTTPS.</span></li>
+      <li><b>Set up Basic Auth</b><span>Your username and password. This is the entire authentication boundary &mdash; treat it that way.</span></li>
+      <li><b>Configure the firewall</b><span>Opens 80 and 443, and installs the fail2ban jail on failed logins.</span></li>
+      <li><b>Status &amp; info</b><span>Shows what is installed, what is running, and the URL to open.</span></li>
+      <li><b>Edit saved settings</b><span>Change the domain, the contact email or the auth user later, without reinstalling.</span></li>
+    </ol>
+
+    <div class="note measure">
+      <b>Order matters at steps 4 and 5.</b> nginx refuses to start if a virtual host references a certificate file that is not there yet, so the HTTP host is written first and the certificate is fetched second. Running them out of order is the most common way to end up with a web server that will not come back up.
+    </div>
+
+    <div class="stack gap-m">
+      <h3>Optional: take it off the public internet</h3>
+      <p class="measure muted" style="font-size:.96rem">Menu key <b>V</b> holds the private-access path. Run it after the wallet already works publicly &mdash; it is a change of door, not a different install.</p>
+      <ol class="steps">
+        <li class="key-v"><b>Install WireGuard</b><span>Creates the interface and opens the UDP port.</span></li>
+        <li class="key-v"><b>Add a device</b><span>Prints a QR code to scan with the WireGuard app on your phone.</span></li>
+        <li class="key-v"><b>Devices</b><span>List, revoke, or re-show a QR code.</span></li>
+        <li class="key-v"><b>Certificate via DNS-01</b><span>Re-issues the certificate so renewal proves domain control by TXT record, with no port needed.</span></li>
+        <li class="key-v"><b>Switch to VPN-only</b><span>Rebinds nginx to the tunnel address. Refuses to run without a proven handshake.</span></li>
+        <li class="key-v"><b>Revert to public HTTPS</b><span>Puts it back, in one step.</span></li>
+        <li class="key-v"><b>Diagnose access</b><span>Checks the tunnel, the binding, the certificate and the DNS answer, and names what is wrong.</span></li>
+      </ol>
+      <div class="note note-warn measure">
+        <b>If you use Cloudflare</b>, the record pointing at your tunnel address must be <b>DNS only</b> &mdash; the grey cloud. A proxied record sends browsers to Cloudflare&rsquo;s edge, which has no route to a private address.
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <h4>Fidelius</h4>
+        <ul>
+          <li><a href="#what">What it is</a></li>
+          <li><a href="#rails">Sending</a></li>
+          <li><a href="#inspect">Slatepack reader</a></li>
+          <li><a href="#install">Install guide</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Source</h4>
+        <ul>
+          <li><a href="https://github.com/noobvie/Grin-Node-Toolkit" rel="noopener">Grin Node Toolkit</a></li>
+          <li><a href="https://github.com/mimblewimble/grin-wallet" rel="noopener">mimblewimble/grin-wallet</a></li>
+          <li><a href="https://github.com/mimblewimble/grin" rel="noopener">mimblewimble/grin</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Grin</h4>
+        <ul>
+          <li><a href="https://grin.money/" rel="noopener">grin.money</a></li>
+          <li><a href="https://grinnode.org/" rel="noopener">grinnode.org</a></li>
+          <li><a href="https://docs.grin.mw/" rel="noopener">docs.grin.mw</a></li>
+          <li><a href="https://forum.grin.mw/" rel="noopener">forum.grin.mw</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Other wallets</h4>
+        <ul>
+          <li><a href="https://github.com/GetGrin/grim" rel="noopener">Grim</a></li>
+          <li><a href="https://docs.goblin.st/" rel="noopener">Goblin</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>Fidelius &middot; self-hosted Grin wallet &middot; in testing</span>
+      <span>No accounts &middot; no third-party fonts &middot; nothing you paste is sent anywhere</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/slatepack-decode.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ── Theme toggle ──────────────────────────────────────────────────────── */
+  var root = document.documentElement;
+  var btn  = document.getElementById('theme-btn');
+  var head = document.querySelector('.masthead');
+
+  /* ── Sticky header height ──────────────────────────────────────────────────
+     Published to CSS so anchor jumps clear the header. It is measured rather
+     than guessed because the alert strip wraps to a different number of lines
+     at every width. */
+  function syncHead() {
+    if (head) root.style.setProperty('--head-h', head.offsetHeight + 'px');
+  }
+  syncHead();
+  window.addEventListener('load', syncHead);
+
+  /* ── Section menu (narrow screens only) ────────────────────────────────── */
+  var menuBtn = document.getElementById('menu-btn');
+  var links   = document.getElementById('nav-links');
+
+  function setMenu(open) {
+    head.classList.toggle('nav-open', open);
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  menuBtn.addEventListener('click', function () {
+    setMenu(head.className.indexOf('nav-open') === -1);
+  });
+  /* Close on choosing a section, otherwise the panel covers what you jumped to. */
+  links.addEventListener('click', function (e) {
+    if (e.target.closest('a')) setMenu(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && head.className.indexOf('nav-open') !== -1) {
+      setMenu(false);
+      menuBtn.focus();
+    }
+  });
+
+  function currentTheme() {
+    var stamped = root.getAttribute('data-theme');
+    if (stamped) return stamped;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  btn.addEventListener('click', function () {
+    var next = currentTheme() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('fid-theme', next); } catch (e) {}
+    drawPlate();
+  });
+
+  /* ── Guilloché rosette ─────────────────────────────────────────────────────
+     A parametric hypotrochoid, the same family of curve engraved onto banknotes
+     and share certificates: a point on a small circle rolling inside a larger
+     one, traced sixteen times at a drifting phase. Drawn once, no loop. */
+  var canvas = document.getElementById('guilloche');
+
+  function drawPlate() {
+    if (!canvas || !canvas.getContext) return;
+    var css  = getComputedStyle(root);
+    var gilt = css.getPropertyValue('--gilt-bright').trim() || '#B08C25';
+    var dpr  = Math.min(window.devicePixelRatio || 1, 2);
+    /* Bitmap must match the CSS box exactly — a smaller bitmap gets stretched
+       and every hairline goes soft, which is the one thing an engraving can't
+       survive. The element is square in CSS, so one dimension is enough. */
+    var size = canvas.clientWidth || 880;
+
+    canvas.width  = Math.round(size * dpr);
+    canvas.height = Math.round(size * dpr);
+
+    var g = canvas.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, size, size);
+    g.translate(size / 2, size / 2);
+    g.strokeStyle = gilt;
+    g.lineWidth = 0.55;
+    g.globalAlpha = 0.42;
+
+    var R = size * 0.255, r = size * 0.105, f = 9, passes = 16;
+    for (var p = 0; p < passes; p++) {
+      var phase = p * 0.21, rad = R + p * 0.55;
+      g.beginPath();
+      for (var i = 0; i <= 1080; i++) {
+        var t = i * Math.PI / 540;
+        var x = rad * Math.cos(t) + r * Math.cos(f * t + phase);
+        var y = rad * Math.sin(t) + r * Math.sin(f * t + phase);
+        if (i) { g.lineTo(x, y); } else { g.moveTo(x, y); }
+      }
+      g.closePath();
+      g.stroke();
+    }
+
+    /* Two plain rules outside the rosette, as a plate's border would carry. */
+    g.globalAlpha = 0.3;
+    [size * 0.408, size * 0.418].forEach(function (rr) {
+      g.beginPath();
+      g.arc(0, 0, rr, 0, Math.PI * 2);
+      g.stroke();
+    });
+  }
+
+  drawPlate();
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    syncHead();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(drawPlate, 180);
+  });
+
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var onScheme = function () { if (!root.getAttribute('data-theme')) drawPlate(); };
+    if (mq.addEventListener) { mq.addEventListener('change', onScheme); }
+    else if (mq.addListener) { mq.addListener(onScheme); }
+  }
+
+  /* ── Proof strip ───────────────────────────────────────────────────────── */
+  var input  = document.getElementById('sp-input');
+  var out    = document.getElementById('sp-out');
+  var readBtn  = document.getElementById('sp-read');
+  var clearBtn = document.getElementById('sp-clear');
+  var encBtn   = document.getElementById('sp-enc');
+  var plainBtn = document.getElementById('sp-plain');
+
+  var EMPTY_HTML = out.innerHTML;
+
+  /* Two correctly-formed sample slatepacks, constructed for this page and
+     round-trip verified against the decoder above. Neither is a real payment.
+     ENCRYPTED is the ordinary case: mode 1 moves the sender inside the sealed
+     metadata, so a keyless reader recovers the version and the mode, full stop. */
+  var SAMPLE_ENC =
+    'BEGINSLATEPACK. QUfzQUbf1twkFCa VfZYRvo5QjqmHCN hqzj3ih7ZghxXri 8AqxRoejHbmhBWm ' +
+    'LHQgfrXedH8ngdN 4SVD3ro9WYsDLrK FYm7DuTvSnszZN4 LHLA6JrSDmoogKh YTqgtZRh8Uwspo8 ' +
+    'RJDdfTXJDBc6bDe gKmK7UqkUwDJEgT HMofbJ6QXtbVK8k Vw6MkWkWNuhtD1u GqFaCKUcQaTb9xr ' +
+    'XdcpYe4vzAt78HY aLyHxiNS6i7p1cS sD3yhZkjU6RTeKi YUxocNr2uRMmvbq J8275TWemDHuHDr ' +
+    'Jdni15nwTxN1TbD c54TQs6rdiQFBPg UuJzxyuCSzvUrta yNGT7FpCxWB2aQG 58vC6668t4a9w9p ' +
+    '3kAsuote8ywDmJV Wbkwoo3RJNQ73Uc y8DDqCScxLUxEH5 RGDdpfS6c3KoNhP aPEcmrhE4RADMRD ' +
+    'UXLfD3qWRWcXU8t qDPWTqyU5B6tNB5 rKqQYExpTqbscsD BvgLTmwoNuzMQSf 7NJNSqc3budGdGY ' +
+    'vTnfPZbgerGSWLi uFjmFFxLsq2aD1p nVWb9yfqnW3o3iL zQUzKhzBG. ENDSLATEPACK.';
+
+  /* PLAINTEXT is what a wallet produces when the sender did not address the
+     slate to a specific recipient — everything in it is readable in transit. */
+  var SAMPLE_PLAIN =
+    'BEGINSLATEPACK. 2UFyUECLrxqQe5K z6xV9AMax4CQBHj ReYHRrAgtnFGmQe G4fFJjkSjrSvEL7 ' +
+    '2iPRRZr4jCy98Wx jZBuKavw3xXZzJw visLyLP12JZFFN9 DRwruFnJkGwoM7S xiHNGtVH9qyV59C ' +
+    'zBWPK5mNwm61GfM K4XewN9q9ntu9Me CfA8ZYyDKMrVLqe PpXrQBiGon6KTLQ 5xULKRM3jiRJRUs ' +
+    '4s. ENDSLATEPACK.';
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function row(k, v, cls) {
+    return '<li><span class="k">' + esc(k) + '</span><span class="v' +
+           (cls ? ' ' + cls : '') + '">' + esc(v) + '</span></li>';
+  }
+
+  function render(head, rowsHtml, note) {
+    out.innerHTML = '<div class="readout-head">' + esc(head) + '</div>' +
+                    '<ul class="rows">' + rowsHtml + '</ul>' +
+                    (note ? '<div class="readout-note">' + note + '</div>' : '');
+  }
+
+  function showError(msg) {
+    render('Readout', row('result', 'could not read', 'opaque'),
+           esc(msg));
+  }
+
+  function show(res) {
+    var rows = '';
+    rows += row('format', 'slatepack v' + res.slatepackVersion, 'open');
+    rows += row('encryption', res.encrypted ? 'mode 1 — encrypted' : 'mode 0 — plaintext',
+                res.encrypted ? 'opaque' : 'open');
+    rows += row('checksum', res.checksumOk === false ? 'FAILED'
+                          : res.checksumOk === null ? 'not verified' : 'valid',
+                res.checksumOk === false ? 'opaque' : 'open');
+
+    if (res.encrypted) {
+      rows += row('sender', 'sealed inside', 'opaque');
+      rows += row('network', 'sealed inside', 'opaque');
+      rows += row('amount', 'sealed inside', 'opaque');
+      rows += row('stage', 'sealed inside', 'opaque');
+      render('Readout — encrypted', rows,
+        'Everything below the envelope is encrypted to the recipient&rsquo;s key. A relay, a mail ' +
+        'server, this page, or anyone who intercepts the block reads exactly what you see here: that ' +
+        'it is a slatepack, and nothing else. Only the wallet it was addressed to can open it.');
+      return;
+    }
+
+    rows += row('sender', res.sender || 'not present', res.sender ? 'open' : 'opaque');
+    rows += row('network', res.network === 'unknown' ? 'not declared' : res.network,
+                res.network === 'unknown' ? 'opaque' : 'open');
+
+    if (res.slate) {
+      rows += row('stage', res.slate.state + ' — ' + res.slate.stateLabel, 'open');
+      rows += row('amount', res.slate.amountGrin + ' ∩', 'open');
+      rows += row('fee', res.slate.feeGrin + ' ∩', 'open');
+      rows += row('slate id', res.slate.id, 'open');
+      render('Readout — plaintext', rows,
+        '<b>' + esc(res.slate.guide.title) + '.</b> ' + esc(res.slate.guide.next) +
+        ' &mdash; This one was sent <em>unencrypted</em>, which is what a wallet produces when the ' +
+        'sender did not address it to a specific recipient. Everything above was readable by anyone ' +
+        'who handled it. Grin&rsquo;s network still shows no amounts on chain; this is about the ' +
+        'blob in transit, and it is the reason the encrypted mode exists.');
+      return;
+    }
+
+    render('Readout — envelope only', rows,
+      'The envelope parsed, but the slate body did not: ' + esc(res.slateError || 'unknown reason') +
+      '. The facts above still hold &mdash; they come from the header.');
+  }
+
+  function matches(q) {
+    return !!(window.matchMedia && window.matchMedia(q).matches);
+  }
+
+  /* Above 940px the readout sits beside the box and is already on screen. Below
+     it, the result lands under the fold and looks like nothing happened. */
+  function revealReadout() {
+    if (matches('(min-width: 940px)')) return;
+    out.scrollIntoView({ block: 'start' });
+  }
+
+  function read() {
+    var text = (input.value || '').trim();
+    if (!text) {
+      out.innerHTML = EMPTY_HTML;
+      return;
+    }
+    if (!window.SlatepackDecode) {
+      showError('The decoder script did not load, so nothing can be read here.');
+      revealReadout();
+      return;
+    }
+    window.SlatepackDecode.decodeSlatepack(text).then(function (res) {
+      show(res);
+      revealReadout();
+    })['catch'](function (err) {
+      showError(err && err.message ? err.message : 'Unreadable input.');
+      revealReadout();
+    });
+  }
+
+  readBtn.addEventListener('click', read);
+  clearBtn.addEventListener('click', function () {
+    input.value = '';
+    out.innerHTML = EMPTY_HTML;
+    /* Not on touch: re-focusing the box throws the on-screen keyboard back up
+       over the page for someone who just asked to clear it. */
+    if (!matches('(pointer: coarse)')) input.focus();
+  });
+  encBtn.addEventListener('click', function () {
+    input.value = SAMPLE_ENC;
+    read();
+  });
+  plainBtn.addEventListener('click', function () {
+    input.value = SAMPLE_PLAIN;
+    read();
+  });
+})();
+</script>
+</body>
+</html>
