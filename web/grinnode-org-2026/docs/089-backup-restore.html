@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Back up and restore — Grin Node Toolkit Manual</title>
+  <meta name="description" content="What the toolkit-wide backup (Script 089) captures and leaves out, the one personal key, scheduling, the offsite push, and restoring onto a fresh server.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/docs/089-backup-restore.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="Back up and restore — Grin Node Toolkit Manual">
+  <meta property="og:description" content="What the toolkit-wide backup (Script 089) captures and leaves out, the one personal key, scheduling, the offsite push, and restoring onto a fresh server.">
+  <meta property="og:url" content="https://grinnode.org/docs/089-backup-restore.html">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Back up and restore — Grin Node Toolkit Manual">
+  <meta name="twitter:description" content="What the toolkit-wide backup (Script 089) captures and leaves out, the one personal key, scheduling, the offsite push, and restoring onto a fresh server.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <link rel="stylesheet" href="docs.css">
+  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"Back up and restore","description":"What the toolkit-wide backup (Script 089) captures and leaves out, the one personal key, scheduling, the offsite push, and restoring onto a fresh server.","url":"https://grinnode.org/docs/089-backup-restore.html","dateModified":"2026-09-20","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"},{"@type":"ListItem","position":3,"name":"Back up and restore","item":"https://grinnode.org/docs/089-backup-restore.html"}]}]</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="links">
+        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Manual contents">
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="index.html">Grin Node Toolkit Manual</a><a href="getting-started.html">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node.html"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver.html"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data.html"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api.html"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services.html"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="06-global-health.html"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan.html"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services.html"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool.html"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance.html"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="051-fidelius.html"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce.html"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop.html"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="089-backup-restore.html" aria-current="page"><span class="nav-label">Script 089</span>Back up and restore</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths.html">Ports and paths</a></div></nav>
+    </aside>
+
+    <main id="main">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://grinnode.org/">GrinNode.org</a><span class="crumb-sep" aria-hidden="true">›</span><a href="https://grinnode.org/docs/">Manual</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page">Back up and restore</span></nav>
+      <article>
+        <div class="kicker">Scripts · Script 089</div>
+        <h1>Back up and restore</h1>
+        <p class="lead">What the toolkit-wide backup (Script 089) captures and leaves out, the one personal key, scheduling, the offsite push, and restoring onto a fresh server.</p>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-09-20">20 Sept 2026</time></span><span>Page updated <time datetime="2026-09-20">20 Sept 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+<p>Script 089 — <strong>Admin &amp; Maintenance → Backup &amp; Restore</strong>, key <code>9</code> — makes one encrypted archive of everything on the server that you could not simply reinstall: configuration, API secrets, wallet seeds, product databases, nginx sites, certificates, cron schedules and Tor identities. Chain data is deliberately left out — a new node gets it from a snapshot in minutes. The same script restores such an archive, schedules unattended backups, and pushes every archive to another machine over SSH.</p>
+<p>Several products carry their own backup as well (solo mining, Grin Drop, the public pool, the relay, the Transporter). They all share this script's engine, key and archive folder; <a href="#other-backups-in-the-toolkit">the last section</a> says which archive holds what, because <strong>two wallets are not in this one</strong>.</p>
+<h2 id="what-is-backed-up">What is backed up<a class="anchor" href="#what-is-backed-up" aria-label="Link to this section">#</a></h2>
+<p>A backup walks these sources. &quot;Ask&quot; means an interactive backup asks <code>[Y/n]</code>; the scheduled backup takes the default.</p>
+<div class="table-wrap"><table><thead><tr><th>Source</th><th>Ask?</th><th>What it holds</th></tr></thead><tbody><tr><td><code>/opt/grin/conf/</code></td><td>Always</td><td>Every small config the scripts share — node locations, product settings, the wallets registry, watchdog and schedule state. The two backup-key files inside it are <strong>excluded</strong></td></tr><tr><td><code>/opt/grin/keys/</code></td><td>Always</td><td>The node API secret vault, which is what keeps <code>.api_secret</code> and <code>.foreign_api_secret</code> the same across a node rebuild — and, after a restore, on a new server</td></tr><tr><td>Grin nginx sites</td><td>Always</td><td>Every file in <code>sites-available</code> whose name contains <em>grin</em> or whose root is a Grin web root, plus a list of which were enabled</td></tr><tr><td><code>/etc/letsencrypt/live</code> and <code>renewal</code></td><td>Always</td><td>Your certificates</td></tr><tr><td>root and <code>www-data</code> crontabs</td><td>Always</td><td>Collector, snapshot and backup schedules</td></tr><tr><td>Wallets in the registry</td><td>Ask (default yes)</td><td>The directories listed in <code>/opt/grin/conf/grin_wallets_location.conf</code> — today that is the CMD wallet from <a href="05-wallet-services.html#the-cmd-wallet-quick-setup">hub 05</a>, <code>/opt/grin/cmdwallet/&lt;network&gt;/</code>, seed included</td></tr><tr><td>Grin Drop</td><td>Ask (default yes)</td><td><code>/opt/grin/drop-&lt;net&gt;/</code> (config, secrets, wallet seed) and the database in <code>drop-&lt;net&gt;-data/</code>; a second question includes or skips the LMDB <code>wallet_data/</code></td></tr><tr><td>Product databases</td><td>Always</td><td><code>grin-stats/stats.db</code> and <code>config.env</code>, <code>grin-price/grin-price.db</code>, both GrinScan databases, every <code>solo-stats/*.db</code> — each taken as a consistent <strong>online snapshot</strong> (<code>sqlite3 .backup</code>), so a collector writing at that moment does not produce a torn copy</td></tr><tr><td>Tor onion identities</td><td>Ask (default yes)</td><td><code>/var/lib/tor/grin-&lt;network&gt;-raw-tcp</code> (Script 01's node onion), <code>grin-&lt;network&gt;-nginx</code> (Script 04's API onion) and the legacy <code>grin-&lt;network&gt;</code> — the <strong>secret key</strong> that <em>is</em> the <code>.onion</code> address</td></tr><tr><td>Floonet relay</td><td>Ask (default yes)</td><td><code>/etc/floonet-rs/</code> and the relay's databases (NIP-05 usernames, stored events)</td></tr><tr><td>Fidelius</td><td>Ask (default yes)</td><td>Every <code>/opt/grin/fidelius/wallet_&lt;network&gt;_*</code> directory found on disk, with the registry <code>wallets_info.json</code>, <code>config.conf</code> and <code>wallet.env</code> — seeds included</td></tr><tr><td>Accio gateway state</td><td>Ask (default yes)</td><td><code>/opt/grin/accio-&lt;net&gt;/gateway-state/</code> and <code>gateway.json</code> — the table that maps each wallet to its receiving address; not a cache</td></tr><tr><td><code>/opt/grin/logs/</code></td><td>Ask (default <strong>no</strong>)</td><td>Logs</td></tr></tbody></table></div>
+<p><strong>Not included, on purpose:</strong> <code>chain_data/</code> (Script 01 rebuilds it from a snapshot), the node and wallet binaries (re-downloaded; a <em>source-built</em> node binary from Script 01 → <code>G</code> is the one thing you would have to recompile), <code>/var/www/</code> (every product re-deploys its web files), Fidelius's and Accio's application code, the GrinScan and pool applications.</p>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p>Two wallets that hold real money are <strong>not</strong> in this archive, and the script does not say so on screen:</p>
+<ul><li>the <strong>solo-mining wallet</strong> (<code>/opt/grin/solowallet/&lt;network&gt;/</code>, seed and saved passphrase) — the solo setup never writes the registry this script reads, so only its stats databases are captured. Use <a href="07-mining-services.html#backups">the solo menu's own backup</a>.</li><li>the <strong>public pool wallet</strong> and pool database — covered by <a href="07-public-pool.html#backups-and-scheduled-tasks">the pool's own backup</a>, by design.</li></ul>
+<p>And one that <em>is</em> captured but is <strong>not put back by the restore menu</strong>: the CMD wallet. The restore only writes wallets back to <code>/opt/grin/wallet/</code>, a folder no current script creates, so <code>/opt/grin/cmdwallet/</code> stays in the archive. <a href="#restore-on-a-fresh-server">Restoring it by hand</a> is a one-line <code>tar</code>. (Read from the code, not verified on a server.)</p></div></aside>
+<p>Whatever the archive holds, the <strong>24 seed words</strong> written on paper are the backup that needs no key, no server and no toolkit. Have both.</p>
+<h2 id="before-you-start">Before you start<a class="anchor" href="#before-you-start" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Need</th><th>Why</th></tr></thead><tbody><tr><td>A <strong>personal key</strong> you will never lose</td><td>Every archive is encrypted with it; without it a backup is noise. See below</td></tr><tr><td><code>openssl</code> and <code>sqlite3</code></td><td>Encryption, and the consistent database snapshots. Script 01 installs both; without <code>sqlite3</code> databases are live-copied instead, which is usually fine</td></tr><tr><td>Somewhere <strong>off the server</strong> to keep archives</td><td>A backup that lives only on the box it protects is lost with the box. The offsite push does this automatically</td></tr><tr><td>For the offsite push: a second machine reachable over SSH</td><td>Any Linux box or VPS with a user that owns one directory</td></tr></tbody></table></div>
+<h2 id="the-menu">The menu<a class="anchor" href="#the-menu" aria-label="Link to this section">#</a></h2>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">  9  Backup &amp; Restore — Grin Node Toolkit
+
+  Auto-backup: not scheduled
+  Offsite push: not configured
+
+  B)  Backup now
+      Saves conf, wallets, ALL product DBs (online snapshot), nginx, SSL, crontabs · encrypted
+
+  S)  Schedule automatic backup
+      Daily or 2 days per week · random off-peak time
+
+  R)  Restore from a backup
+      Restores files from a previous backup archive
+
+  P)  Offsite push (scp to a remote server)
+      Auto-copy every finished archive to a remote box over ssh
+
+  0)  Return</code></pre></div>
+<p>Key <code>10</code> on the admin hub still reaches this screen (its slot before 2026-08-05).</p>
+<h2 id="the-personal-key">The personal key<a class="anchor" href="#the-personal-key" aria-label="Link to this section">#</a></h2>
+<p>The first backup or schedule asks you to invent a <strong>personal key</strong> (at least 4 characters, typed twice). It is stored, base64-encoded, in <code>/opt/grin/conf/grin_backup.conf</code> (mode 600) so that scheduled backups can encrypt without you, and it is <strong>shared by every product backup on the server</strong> — solo, Drop, pool, relay, Transporter and this one all use it.</p>
+<p>Each archive's password is the key followed by the date in its filename: <code>&lt;personal key&gt;&lt;DDMMYYYY&gt;</code>. The date part is read from the filename at restore time; the key part you type by hand. The key file is never inside an archive, so an archive by itself tells an attacker nothing.</p>
+<aside class="callout callout-danger"><span class="callout-label">Danger</span><div><p>Write the key down somewhere that is not this server. If you forget it <em>and</em> lose the server, every archive is permanently unreadable — the wallet seeds inside them included. The script says this in red when you set it; it means it.</p></div></aside>
+<p>Changing the key: this screen has no &quot;change key&quot; action — a key is only asked for when none exists. The product backup menus (Grin Drop, solo, pool, relay, Transporter) each have a <em>set key</em> item that replaces the shared key for <strong>future</strong> archives; older archives keep needing the key they were made with. If you had a per-product key from before 2026-07-10, the first run adopts it as the shared key.</p>
+<h2 id="backup-now-step-by-step">Backup now, step by step<a class="anchor" href="#backup-now-step-by-step" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Step</th><th>What happens</th><th>What you do</th></tr></thead><tbody><tr><td>1</td><td>Destination. Default <code>/opt/grin/backups/</code></td><td>Enter for the default, or another path</td></tr><tr><td>—</td><td>Personal key: loaded from the key file, or set now if there is none</td><td>Type it twice the first time</td></tr><tr><td>2</td><td>Collects the always-on sources (conf, keys vault, nginx, Let's Encrypt, crontabs) and lists each with ✓ or —</td><td>Nothing</td></tr><tr><td>3</td><td>Wallets from the registry</td><td><code>Y</code></td></tr><tr><td>4</td><td>Grin Drop, if installed; then whether to include its <code>wallet_data/</code></td><td><code>Y</code>, <code>Y</code></td></tr><tr><td>5</td><td>Product databases, listed with sizes (<code>stats.db</code> can be ~100 MB)</td><td>Nothing</td></tr><tr><td>5b–5e</td><td>Tor identities, Floonet relay, Fidelius, Accio — each only if present, each <code>[Y/n]</code></td><td><code>Y</code></td></tr><tr><td>6</td><td>Logs</td><td>Usually <code>n</code></td></tr><tr><td>7</td><td>Writes a <code>MANIFEST.txt</code>, snapshots the databases, builds the tar, encrypts it with AES-256-CBC (PBKDF2, 600 000 iterations), moves it into place with mode 600, pushes it offsite if configured</td><td>Wait</td></tr></tbody></table></div>
+<p>The result is one file in <code>/opt/grin/backups/</code>:</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">grin_toolkit_backup_&lt;DDMMYYYY&gt;.tar.gz.enc</code></pre></div>
+<p><strong>One archive per day</strong> — a second backup the same day overwrites the first. The screen ends by reminding you that the password is your key plus that date.</p>
+<h3 id="check-it">Check it<a class="anchor" href="#check-it" aria-label="Link to this section">#</a></h3>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash">ls -la /opt/grin/backups/
+# read the manifest without restoring anything (asks for the personal key + date)
+D=20092026   # the DDMMYYYY from the filename
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
+  -in /opt/grin/backups/grin_toolkit_backup_$D.tar.gz.enc | tar -tzf - | head -40</code></pre></div>
+<p><code>openssl</code> prompts for the password; type your key immediately followed by the date. A listing that starts with <code>MANIFEST.txt</code> and <code>crontabs/</code> is a good archive; <em>bad decrypt</em> means the key or date was wrong.</p>
+<h2 id="schedule-automatic-backups">Schedule automatic backups<a class="anchor" href="#schedule-automatic-backups" aria-label="Link to this section">#</a></h2>
+<p><code>S</code> installs a line in root's crontab that runs the backup unattended with the defaults above (wallets, Drop, identities included; logs excluded) and then prunes old archives.</p>
+<div class="table-wrap"><table><thead><tr><th>Choice</th><th>Options</th></tr></thead><tbody><tr><td>Frequency</td><td>Daily, or two days a week that you pick (1 = Monday … 7 = Sunday)</td></tr><tr><td>Time</td><td>Chosen for you at random from ten off-peak slots between 01:00 and 04:30, so a fleet of servers does not all back up at once. Shown before you confirm</td></tr><tr><td>Retention</td><td>7, 14 or 30 days, keep all, or a custom number. After each run, this script's archives older than that in the backup folder are deleted</td></tr></tbody></table></div>
+<p>The entry is tagged so the menu can show, replace or remove it, and looks like:</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">30 3 * * * bash /path/to/scripts/089_backup_restore.sh --auto-backup --keep-days 14
+``` A scheduled run **fails, silently, until a personal key exists** — the menu makes you set one before it installs the schedule, but a box that got its cron line before the shared key existed needs one set from this screen once. The run's log lines land in a `grin_backup_restore_&lt;date&gt;.log` file in `/opt/grin/logs/`.
+
+## Offsite push
+
+`P` sends every finished archive — this one and every product's — to one remote machine with `scp`, right after it is created. It uses a dedicated passphrase-less SSH key, `/root/.ssh/grin_backup_push_ed25519`, because cron cannot type a passphrase; protect the *remote* side instead by giving the push a low-privilege user that owns only the backup directory.
+
+```text
+  1) Configure target        (host / port / user / dir · generates the key)
+  2) Show target-host command  (paste on the remote to authorize)
+  3) Send key with ssh-copy-id (asks the remote password once)
+  4) Test connection
+  5) Remote retention days
+  6) Push newest archives now (seed the remote with current backups)
+  7) Catch-up retry cron      (re-push newest if it missed the remote)
+  E) Enable    D) Disable (target kept)</code></pre></div>
+<p>Set it up as <code>1</code> → <code>2</code> or <code>3</code> → <code>4</code> → <code>E</code>, then <code>6</code> once to copy what you already have. <code>5</code> prunes archives on the remote older than N days (0 keeps all); <code>7</code> installs a cron that re-sends the newest archive if a push failed while the remote was down. A failed push never fails the backup — the local archive stays, the failure is logged to <code>/opt/grin/logs/backup-push.log</code>, and the target is saved in <code>/opt/grin/conf/grin_backup_remote.conf</code> (mode 600, never inside an archive).</p>
+<p>Only current-format archives are safe to store where others might read them; archives named <code>temp_dir_*</code> from before 2026-07-10 derived their password from the filename and should be treated as readable by anyone who has the file.</p>
+<h2 id="restore-on-a-fresh-server">Restore on a fresh server<a class="anchor" href="#restore-on-a-fresh-server" aria-label="Link to this section">#</a></h2>
+<p>The restore writes files back where they came from and re-enables the nginx sites it finds; it does not install software. So the order on a new server is: <strong>toolkit → restore → Script 01 → each product's setup</strong>. Restoring <em>before</em> building the node is what lets Script 01 pick the old API secrets up from the restored vault and reuse the restored <code>.onion</code> key, so wallets and mirrors that knew the old server keep working.</p>
+<ol><li>Install the toolkit (<a href="getting-started.html">Getting started</a>) and run it once so <code>/opt/grin/</code> exists.</li><li>Copy the archive over: <code>mkdir -p /opt/grin/backups</code> then <code>scp</code> the <code>.enc</code> file into it from wherever you keep archives.</li><li><strong>Admin &amp; Maintenance → Backup &amp; Restore → <code>R</code>.</strong> Pick the archive from the list (or <code>C</code> for a custom path). Type the personal key; the date is read from the filename. The manifest is shown — read it — then confirm.</li><li>The restore stops Tor while it swaps identity directories (and Fidelius if it is running), puts files back with the permissions each service expects, re-enables the nginx sites that were enabled, runs <code>nginx -t</code> and reloads if it passes, and prints <em>Next steps</em>.</li><li><strong>Script 01</strong> — build the node(s) the old server had. Step 8b restores the API secrets from the vault; step 13b reuses the onion key. Then <code>grin-secret-sync</code> once.</li><li>Each product's own setup for the software the archive does not carry: <a href="051-fidelius.html">Fidelius</a> steps 1 and 3, <a href="059-grin-drop.html">Grin Drop</a> install, <a href="06b-grinscan.html">GrinScan</a> and <a href="06-global-health.html">Script 06</a> install, the Floonet relay (Script 09 — <em>manual page coming</em>). Their restored configs and databases are picked up as the services start.</li><li>Point DNS at the new server. Let's Encrypt certificates came with the archive; renewal works again once a product setup has installed certbot (its package timer, or the cron <a href="02-nginx-fileserver.html">Script 02</a> writes, takes it from there).</li><li>Set the personal key again (the key file is never in an archive) — the same key, so the naming of future archives stays consistent — and re-create the schedule and the offsite target.</li></ol>
+<p><strong>The CMD wallet by hand.</strong> If the manifest lists <code>wallet: /opt/grin/cmdwallet/...</code>, put it back yourself before starting its listener:</p>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash">D=20092026   # date from the archive name
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
+  -in /opt/grin/backups/grin_toolkit_backup_$D.tar.gz.enc -out /root/restore.tar.gz
+tar -xzf /root/restore.tar.gz -C / opt/grin/cmdwallet
+chmod -R go-rwx /opt/grin/cmdwallet &amp;&amp; rm /root/restore.tar.gz</code></pre></div>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p>Restoring onto a <strong>running</strong> server overwrites what is there. Stop the node and every wallet listener first — extracting a wallet's <code>wallet_data/</code> (an LMDB database) over an open wallet can corrupt it. The restore screen warns about this and then does not check.</p></div></aside>
+<aside class="callout callout-note"><span class="callout-label">Note</span><div><p>The full sequence above is assembled from the scripts' own <em>Next steps</em> and from how Script 01 treats an existing vault and onion key; it has not been rehearsed end-to-end on a fresh VPS. Rehearse it on a throw-away server before you depend on it.</p></div></aside>
+<h2 id="test-your-restore">Test your restore<a class="anchor" href="#test-your-restore" aria-label="Link to this section">#</a></h2>
+<p>A backup you have never restored is a hope, not a backup. Once, and after any big change:</p>
+<ul><li>Rent the cheapest VPS for an hour, run the sequence above with testnet only, and check that <strong>Node Status &amp; Sync</strong> shows the node, that a restored wallet reports the expected balance with <code>grin-wallet info</code>, and that a restored <code>.onion</code> hostname matches the old one.</li><li>At minimum, run the <code>openssl … | tar -tzf -</code> listing from <a href="#check-it">Check it</a> on the <em>offsite</em> copy, from the offsite machine — that proves the key, the date and the transfer in one go.</li></ul>
+<h2 id="what-was-created">What was created<a class="anchor" href="#what-was-created" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Path</th><th>Purpose</th></tr></thead><tbody><tr><td><code>/opt/grin/backups/grin_toolkit_backup_&lt;DDMMYYYY&gt;.tar.gz.enc</code></td><td>The archive, mode 600, directory mode 700</td></tr><tr><td><code>/opt/grin/conf/grin_backup.conf</code></td><td>The personal key (base64, mode 600) — shared by every product backup</td></tr><tr><td><code>/opt/grin/conf/grin_backup_remote.conf</code></td><td>The offsite target, when configured</td></tr><tr><td><code>/root/.ssh/grin_backup_push_ed25519</code></td><td>The dedicated push key</td></tr><tr><td><code>/usr/local/bin/grin-backup-push</code></td><td>The push command cron wrappers call</td></tr><tr><td><code>/opt/grin/logs/grin_backup_restore_&lt;date&gt;.log</code>, <code>backup-push.log</code></td><td>Logs</td></tr><tr><td><code>/opt/grin/temp/</code></td><td>Where archives from before 2026-07-10 were kept; still restorable from <code>R</code>, never pruned</td></tr></tbody></table></div>
+<h2 id="other-backups-in-the-toolkit">Other backups in the toolkit<a class="anchor" href="#other-backups-in-the-toolkit" aria-label="Link to this section">#</a></h2>
+<p>All of these use the same key, the same folder and the same name pattern, and all are pushed offsite by the same target.</p>
+<div class="table-wrap"><table><thead><tr><th>Archive</th><th>Made by</th><th>Holds</th></tr></thead><tbody><tr><td><code>grin_toolkit_backup_*</code></td><td>This page</td><td>Everything in the table above</td></tr><tr><td><code>grin_solo_backup_*</code></td><td><a href="07-mining-services.html#backups">Solo mining → Backups</a></td><td>The <strong>solo wallet</strong> (seed, passphrase), its config and stats — the only archive with this seed</td></tr><tr><td><code>grin_drop_backup_*</code></td><td><a href="059-grin-drop.html#backups">Grin Drop → Backups</a></td><td>The Drop wallet and database (also in the toolkit archive)</td></tr><tr><td><code>grin_pubpool_backup_*</code>, <code>grin_pubpooltestnet_backup_*</code></td><td><a href="07-public-pool.html#backups-and-scheduled-tasks">Public pool → Backups</a></td><td>The <strong>pool wallet</strong>, pool database, WireGuard identity, vhost — not in the toolkit archive</td></tr><tr><td><code>grin_tor_onion_&lt;net&gt;.tar.gz</code></td><td><a href="04-publish-node-api.html#the-tor-onion">Script 04 → <code>V</code></a></td><td>The API onion's key files, <strong>unencrypted</strong> (also in the toolkit archive, encrypted)</td></tr><tr><td>Relay and Transporter archives</td><td>Their menus on Script 09 <em>(manual page coming)</em></td><td>Relay config and databases (also here); the Transporter queue (only there)</td></tr></tbody></table></div>
+<h2 id="troubleshooting">Troubleshooting<a class="anchor" href="#troubleshooting" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead><tbody><tr><td><em>Wrong key or corrupt backup</em> on restore</td><td>The key is not the one in force when the archive was made, or you included the date — the restore adds the date itself. Try the previous key if it was changed since</td></tr><tr><td><code>bad decrypt</code> from a manual <code>openssl</code></td><td>Password must be key immediately followed by <code>DDMMYYYY</code> from the filename, no space</td></tr><tr><td>Scheduled backup never appears</td><td>No personal key existed when cron ran; the run logs <em>no backup personal key set</em> and stops. Open this screen, <code>B</code> once to set the key, done</td></tr><tr><td><em>Backup needs a personal key</em> / <em>Scheduling needs a personal key</em></td><td>You cancelled the key prompt. Set one</td></tr><tr><td><code>~ live copy (no .backup)</code> next to a database</td><td><code>sqlite3</code> is missing or the snapshot timed out (60 s); the file was copied live after a checkpoint. Install <code>sqlite3</code> for consistent snapshots</td></tr><tr><td><em>Archive came out empty (zero bytes)</em></td><td>Disk full while writing. Free space (Disk Cleanup) and retry; nothing was kept or pushed</td></tr><tr><td><em>Offsite push FAILED — local archive is safe</em></td><td>Remote down, key not authorised, or wrong path. <code>P</code> → <code>4</code> to test; <code>7</code> installs the catch-up retry</td></tr><tr><td>Restored a wallet, <code>grin-wallet info</code> shows nothing</td><td>The wallet's <code>node_api_secret_path</code> points at the old node's secret file. <code>grin-secret-sync</code> re-points every wallet at the live node</td></tr><tr><td>CMD wallet missing after restore</td><td>Expected — see <a href="#restore-on-a-fresh-server">Restore on a fresh server</a> for the manual extraction</td></tr><tr><td><code>nginx config test failed — fix before reloading</code> after restore</td><td>A restored vhost references a certificate that is not on this box yet, or a product not yet reinstalled. Disable that site, install the product, re-enable</td></tr></tbody></table></div>
+<h2 id="related">Related<a class="anchor" href="#related" aria-label="Link to this section">#</a></h2>
+<ul><li><a href="08-admin-maintenance.html">Admin and maintenance</a> — the hub this lives on, and the full uninstall that deletes <code>/opt/grin/backups</code> with everything else</li><li><a href="01-build-node.html">Script 01</a> — the node build that reuses the restored secrets and onion key</li><li><a href="04-publish-node-api.html">Script 04</a> — the onion identity backup and recovery for the published API</li><li><a href="07-mining-services.html#backups">Solo mining</a> and <a href="07-public-pool.html#backups-and-scheduled-tasks">Public pool</a> — the two wallets this archive does not hold</li><li><a href="059-grin-drop.html#backups">Grin Drop</a> · <a href="051-fidelius.html#backups-and-seeds">Fidelius</a> — what each expects after a restore</li><li><a href="reference-ports-and-paths.html">Ports and paths</a> — the <code>/opt/grin</code> layout the archive mirrors</li></ul>
+      </article>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="059-grin-drop.html"><span>Previous</span><strong>Grin Drop — a giveaway and donation portal</strong></a><a class="pager-next" href="reference-ports-and-paths.html"><span>Next</span><strong>Ports and paths</strong></a></nav>
+    </main>
+
+    <aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav><a href="#what-is-backed-up">What is backed up</a><a href="#before-you-start">Before you start</a><a href="#the-menu">The menu</a><a href="#the-personal-key">The personal key</a><a href="#backup-now-step-by-step">Backup now, step by step</a><a href="#schedule-automatic-backups">Schedule automatic backups</a><a href="#restore-on-a-fresh-server">Restore on a fresh server</a><a href="#test-your-restore">Test your restore</a><a href="#what-was-created">What was created</a><a href="#other-backups-in-the-toolkit">Other backups in the toolkit</a><a href="#troubleshooting">Troubleshooting</a><a href="#related">Related</a></nav></aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
+      });
+      var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
+      btn.addEventListener("click", function () {
+        var open = side.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.querySelectorAll(".copy").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var code = b.parentNode.querySelector("code").textContent;
+          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
+          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+        });
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      if (links.length && "IntersectionObserver" in window) {
+        var map = {};
+        links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { links.forEach(function (a) { a.classList.remove("active"); }); var a = map[en.target.id]; if (a) a.classList.add("active"); }
+          });
+        }, { rootMargin: "-80px 0px -70% 0px" });
+        Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+    })();
+  </script>
+</body>
+</html>

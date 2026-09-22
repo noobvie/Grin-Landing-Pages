@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GrinScan — a self-hosted block explorer — Grin Node Toolkit Manual</title>
+  <meta name="description" content="Run GrinScan, the toolkit's Node.js block explorer for Grin mainnet and testnet — why an archive node matters, and how to move it without re-crawling.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/docs/06b-grinscan.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="GrinScan — a self-hosted block explorer — Grin Node Toolkit Manual">
+  <meta property="og:description" content="Run GrinScan, the toolkit's Node.js block explorer for Grin mainnet and testnet — why an archive node matters, and how to move it without re-crawling.">
+  <meta property="og:url" content="https://grinnode.org/docs/06b-grinscan.html">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GrinScan — a self-hosted block explorer — Grin Node Toolkit Manual">
+  <meta name="twitter:description" content="Run GrinScan, the toolkit's Node.js block explorer for Grin mainnet and testnet — why an archive node matters, and how to move it without re-crawling.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <link rel="stylesheet" href="docs.css">
+  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"GrinScan — a self-hosted block explorer","description":"Run GrinScan, the toolkit's Node.js block explorer for Grin mainnet and testnet — why an archive node matters, and how to move it without re-crawling.","url":"https://grinnode.org/docs/06b-grinscan.html","dateModified":"2026-09-20","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"},{"@type":"ListItem","position":3,"name":"GrinScan — a self-hosted block explorer","item":"https://grinnode.org/docs/06b-grinscan.html"}]}]</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="links">
+        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Manual contents">
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="index.html">Grin Node Toolkit Manual</a><a href="getting-started.html">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node.html"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver.html"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data.html"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api.html"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services.html"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="06-global-health.html"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan.html" aria-current="page"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services.html"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool.html"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance.html"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="051-fidelius.html"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce.html"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop.html"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="089-backup-restore.html"><span class="nav-label">Script 089</span>Back up and restore</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths.html">Ports and paths</a></div></nav>
+    </aside>
+
+    <main id="main">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://grinnode.org/">GrinNode.org</a><span class="crumb-sep" aria-hidden="true">›</span><a href="https://grinnode.org/docs/">Manual</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page">GrinScan — a self-hosted block explorer</span></nav>
+      <article>
+        <div class="kicker">Scripts · Script 06b</div>
+        <h1>GrinScan — a self-hosted block explorer</h1>
+        <p class="lead">Run GrinScan, the toolkit's Node.js block explorer for Grin mainnet and testnet — why an archive node matters, and how to move it without re-crawling.</p>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-09-20">20 Sept 2026</time></span><span>Page updated <time datetime="2026-09-20">20 Sept 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+<p>GrinScan is the block explorer behind <a href="https://grinscan.org" target="_blank" rel="noopener">grinscan.org</a> and <a href="https://test.grinscan.org" target="_blank" rel="noopener">test.grinscan.org</a>: a Node.js application with its own small SQLite database that shows the latest blocks, one page per block, kernel and output, hashrate and difficulty charts, price, the node's peers and a JSON API — with live updates pushed to the page as blocks arrive, a mobile layout and light and dark themes. It runs one copy per network, so a single server can serve mainnet and testnet under two subdomains.</p>
+<p>It is option <code>B</code> of <a href="06-global-health.html">Script 06</a>. Unlike the grincoin.org explorer (option <code>C</code>) it needs no Rust build, and unlike the <a href="06-global-health.html#tiny-explorer">Tiny Explorer</a> it keeps history, so it can draw charts and page through blocks.</p>
+<h2 id="what-it-does">What it does<a class="anchor" href="#what-it-does" aria-label="Link to this section">#</a></h2>
+<ol><li>Installs Node.js 24 (it needs the built-in <code>node:sqlite</code> module), copies the app to <code>/opt/grin/grinscan/app/</code> and writes two systemd services, <code>grinscan-test</code> and <code>grinscan-main</code>, that run as <code>www-data</code>.</li><li>Writes a <code>config.json</code> per network with the node's API URLs, a copy of the node's two API secrets, ports <strong>3010</strong> (testnet) and <strong>3011</strong> (mainnet), and the cache settings.</li><li>On start, the service asks the node whether it can serve block 1 — that decides <code>node_mode</code>, archive or pruned — then caches the last <strong>500 blocks</strong> into its database and from there on polls the node every <strong>30 seconds</strong> for new ones. Old blocks are read from the node on demand when the node is an archive; on a pruned node they are reported as not found.</li><li>nginx fronts each copy on its own subdomain with HTTPS, a rate limit on the REST endpoints and the special handling the live-update stream needs.</li></ol>
+<h2 id="pruned-or-archive-node">Pruned or archive node?<a class="anchor" href="#pruned-or-archive-node" aria-label="Link to this section">#</a></h2>
+<p>A Grin node keeps the full <strong>header</strong> chain forever, but a <strong>pruned</strong> node throws away the <em>bodies</em> — the inputs, outputs and kernels — of blocks older than a few weeks. An <strong>archive</strong> node (<code>mainnet-full</code>, Script 01's <em>full</em> mode) keeps every body since genesis.</p>
+<p>GrinScan needs bodies to show a block's transactions, so:</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>Pruned node</th><th>Archive node</th></tr></thead><tbody><tr><td>Latest blocks, charts, live updates, price</td><td>✓</td><td>✓</td></tr><tr><td>Any block from the last ~500 (the cache)</td><td>✓</td><td>✓</td></tr><tr><td>Older blocks, the genesis block</td><td><em>not found</em></td><td>✓, read live from the node</td></tr><tr><td>Kernel lookup by excess</td><td>✓ (kernels are never pruned)</td><td>✓</td></tr><tr><td>Output lookup by commitment</td><td>✓ while unspent; a spent, pruned output is <em>not found</em></td><td>✓</td></tr><tr><td>Disk and memory on the node</td><td>Small</td><td>18 GB and growing; <strong>bulk random reads thrash a 4 GB box</strong> (swap fills, the node stalls)</td></tr></tbody></table></div>
+<p>GrinScan is written for that last row: it never crawls the chain from genesis unless you ask it to (<code>backfill_history</code> in <code>config.json</code>, off by default), and even then it goes gently — three requests at a time with pauses. Single on-demand reads of old blocks are fine on a 4 GB archive box; pre-warming charts with deep history wants 8 GB or more.</p>
+<p>The installer checks for an archive node and asks before continuing without one. Both choices are legitimate: testnet on a pruned node is the normal case, and a mainnet explorer that only needs recent blocks works fine pruned.</p>
+<h2 id="before-you-start">Before you start<a class="anchor" href="#before-you-start" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Need</th><th>Why</th></tr></thead><tbody><tr><td>A synced node from <a href="01-build-node.html">Script 01</a> for each network you want — mainnet on 3413, testnet on 13413</td><td>GrinScan reads blocks through the node's Foreign API and peers through its Owner API, both on localhost</td></tr><tr><td>nginx + certbot</td><td><code>N</code> in the Script 06 menu</td></tr><tr><td>A subdomain per network with an A record, e.g. <code>scan.yourdomain.com</code> and <code>test.yourdomain.com</code></td><td>Set before the nginx step; Cloudflare records on <strong>DNS only</strong></td></tr><tr><td>Root shell, a few hundred MB of disk</td><td>The database grows with the block cache (500 blocks) plus a compact daily table that never gets pruned — small</td></tr></tbody></table></div>
+<aside class="callout callout-tip"><span class="callout-label">Tip</span><div><p>If Tiny Explorer or another Node.js product is already on the box, install GrinScan first next time — its installer removes any Node.js older than 24 before installing 24 from NodeSource. Everything else in the toolkit runs on 24, so nothing breaks, but a running service keeps the old binary until restarted.</p></div></aside>
+<h2 id="the-menu">The menu<a class="anchor" href="#the-menu" aria-label="Link to this section">#</a></h2>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">  B) GrinScan — Lightweight Block Explorer
+
+  Node.js / Express + SQLite — works with a pruned node
+  Testnet port: 3010  ·  Mainnet port: 3011
+
+                        testnet              mainnet
+  1)   Install         Node.js + npm deps + systemd units
+  2)   Configure       write config.json  [test: ✗ · main: ✗]
+  3)   Service Control Start / Stop / Remove  [test: stopped · main: stopped]
+  4)   Setup Nginx     HTTPS reverse proxy + certbot  [test: not configured · main: not configured]
+  5)   Auto-Start      systemctl enable (survive reboots)
+  6)   Status
+  7)   View Logs
+  8)   Backup / Restore DB  migrate to a new server without re-crawling
+  U)   Update App      redeploy server.js + web files from toolkit, refresh npm deps
+  Z)   Nuke            stop + remove service, data dir, nginx config (clean rebuild)
+
+  0) Back
+  [Enter] Refresh menu
+  DNS: ensure A-record points to this server before running Setup Nginx (4)</code></pre></div>
+<p>Every key that acts on a network first asks <strong>which network</strong> — <code>1</code> testnet, <code>2</code> mainnet, <code>3</code> both — except Install, which sets up both services at once, and Status, which shows both.</p>
+<h2 id="setup-step-by-step">Setup, step by step<a class="anchor" href="#setup-step-by-step" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Step</th><th>What happens</th><th>What you do</th></tr></thead><tbody><tr><td><code>1</code> Install</td><td>Looks for an archive node (<code>FULLMAIN_GRIN_DIR</code> in <code>/opt/grin/conf/grin_instances_location.conf</code> with <code>archive_mode = true</code> in its <code>grin-server.toml</code>) and warns if there is none; ensures Node.js 24; copies the app and runs <code>npm install</code>; creates <code>/opt/grin/grinscan/{test,main}/</code>; writes both systemd units</td><td><code>y</code> to continue on a pruned node if asked</td></tr><tr><td><code>2</code> Configure</td><td>Per network: asks the node URL (default <code>http://127.0.0.1:&lt;port&gt;/v2/foreign</code>), tests the node through its Owner API, asks for a GA4 ID (mainnet only) and the <strong>sibling URL</strong> — the other network's public address, which powers the mainnet/testnet switch in the header; detects archive mode; copies the node's secrets into the data directory (owned by <code>www-data</code>, mode 600); writes <code>config.json</code> and a sample <code>banners.json</code>; installs the secret self-heal timer</td><td>Enter for the default URL; the sibling URL if you will run both</td></tr><tr><td><code>3</code> Service Control → <code>S</code></td><td>Starts the service and waits up to 10 s for the port. The database is created on first start — there is no import step</td><td>Watch for <code>Port :3011 is listening</code></td></tr><tr><td><code>4</code> Setup Nginx</td><td>Per network: the domain and, on the first certbot run, an email; creates the <code>grinscan_api</code> rate-limit zone and the <code>grinscan-proxy.conf</code> snippet; writes the HTTP vhost, tests, reloads, runs certbot with redirect, writes logrotate</td><td>Domain, maybe email</td></tr><tr><td><code>5</code> Auto-Start</td><td><code>systemctl enable</code> for the chosen network(s)</td><td>—</td></tr><tr><td><code>6</code> Status</td><td>Per network: service, port, config, block count and tip height in the database, last price, nginx domain, certificate</td><td>Read it</td></tr></tbody></table></div>
+<p>The <code>config.json</code> written in step 2, with the values you may want to change:</p>
+<div class="code" data-lang="json"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-json">{
+  &quot;network&quot;:          &quot;mainnet&quot;,
+  &quot;node_url&quot;:         &quot;http://127.0.0.1:3413/v2/foreign&quot;,
+  &quot;node_owner_url&quot;:   &quot;http://127.0.0.1:3413/v2/owner&quot;,
+  &quot;port&quot;:             3011,
+  &quot;poll_interval_ms&quot;: 30000,
+  &quot;blocks_cache&quot;:     500,
+  &quot;history_days&quot;:     50,
+  &quot;backfill_history&quot;: false,
+  &quot;ga4_measurement_id&quot;: &quot;&quot;,
+  &quot;sibling_url&quot;:      &quot;https://test.yourdomain.com&quot;,
+  &quot;archive_mode&quot;:     true
+}</code></pre></div>
+<p><code>blocks_cache</code> is how far back the explorer keeps bodies in its own database; <code>history_days</code> (at most 50) only matters when <code>backfill_history</code> is <code>true</code>, which makes the service import that many days of blocks at start-up to pre-warm the charts. The service reads the file once at start, so restart after editing (<code>3</code> → <code>T</code>, then <code>S</code>).</p>
+<aside class="callout callout-note"><span class="callout-label">Note</span><div><p><code>archive_mode</code> in the config is informational — the service decides for itself at start-up by trying to fetch block 1, and reports the result as <code>node_mode</code> in <code>/api/stats</code> and <code>/healthz</code>.</p></div></aside>
+<h3 id="partner-banners">Partner banners<a class="anchor" href="#partner-banners" aria-label="Link to this section">#</a></h3>
+<p>Configure also writes <code>/opt/grin/grinscan/&lt;net&gt;/banners.json</code> with one inactive example. Set <code>&quot;active&quot;: true</code> and fill in <code>src</code>, <code>href</code> and <code>alt</code> for an image banner (put the image under <code>app/public/img/partners/</code>), or <code>type: &quot;code&quot;</code> with <code>html</code> for an ad-network embed. Banners are spliced into the page by the server, re-read every 5 minutes — no restart, no public endpoint.</p>
+<h2 id="after-it-finishes">After it finishes<a class="anchor" href="#after-it-finishes" aria-label="Link to this section">#</a></h2>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash">curl -s http://127.0.0.1:3011/healthz                  # {&quot;status&quot;:&quot;ok&quot;,&quot;network&quot;:&quot;mainnet&quot;}
+curl -s http://127.0.0.1:3011/api/stats | head -c 300   # tip_height, hashrate_gps, node_mode…
+tail -n 20 /opt/grin/grinscan/main/grinscan-main.log    # &quot;Backfilling …&quot; then &quot;Backfill complete.&quot;</code></pre></div>
+<p>Then open <code>https://scan.yourdomain.com</code>. The first start logs <code>Backfilling &lt;tip−500&gt; → &lt;tip&gt;</code> and shows blocks as they land — allow a minute or two; the page's live stream fills in the rest. <code>node_mode</code> in <code>/api/stats</code> tells you which kind of node it found.</p>
+<h3 id="pages-and-api">Pages and API<a class="anchor" href="#pages-and-api" aria-label="Link to this section">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>URL</th><th>What it is</th></tr></thead><tbody><tr><td><code>/</code>, <code>/block.html?h=…</code>, <code>/kernel.html?ex=…</code>, <code>/output.html?c=…</code></td><td>Home with the latest blocks and charts; one page per block, kernel and output. The search box takes a height, a block hash, a kernel excess or an output commitment</td></tr><tr><td><code>/info.html</code>, <code>/api.html</code></td><td>About the network, and the API reference</td></tr><tr><td><code>/rest/stats.json</code>, <code>supply.json</code>, <code>height.json</code>, <code>difficulty.json</code>, <code>emission.json</code>, <code>node.json</code>, <code>price.json</code></td><td>Compact JSON for other sites and scripts — rate-limited to 30 requests a minute per visitor, cached 30 s</td></tr><tr><td><code>/api/tip</code>, <code>/api/stats</code>, <code>/api/blocks</code>, <code>/api/block/&lt;ref&gt;</code>, <code>/api/kernel/&lt;excess&gt;</code>, <code>/api/output/&lt;commit&gt;</code>, <code>/api/history</code>, <code>/api/price</code>, <code>/api/peers</code></td><td>The pages' own API</td></tr><tr><td><code>/events</code></td><td>The live-update stream (server-sent events) the pages subscribe to</td></tr></tbody></table></div>
+<p>Price comes from Gate.io (GRIN/USDT) and CoinGecko (GRIN/BTC), refreshed every 10 minutes and kept in the database, so the charts can show price alongside hashrate. Hashrate uses the standard Cuckatoo32 formula (difficulty delta × 42 ÷ seconds ÷ 16 384), the same as the dashboard of Script 06 and the grincoin.org explorer.</p>
+<aside class="callout callout-note"><span class="callout-label">Note</span><div><p>Two items from the toolkit's <a href="https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script06_security_audit.md" target="_blank" rel="noopener">security audit</a> are still open: the <code>/api/…</code> routes that reach the node are not rate-limited by nginx (only <code>/rest/</code> is), and <code>/api/peers</code> and <code>/rest/node.json</code> publish your node's connected peers with their addresses. On a public explorer, expect both.</p></div></aside>
+<h3 id="what-was-created">What was created<a class="anchor" href="#what-was-created" aria-label="Link to this section">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Path</th><th>Purpose</th></tr></thead><tbody><tr><td><code>/opt/grin/grinscan/app/</code></td><td>The application and its <code>node_modules</code></td></tr><tr><td><code>/opt/grin/grinscan/&lt;net&gt;/config.json</code></td><td>Settings for that network (<code>net</code> = <code>test</code> or <code>main</code>)</td></tr><tr><td><code>…/grinscan.db</code></td><td>The database: cached blocks, the daily rollup, prices</td></tr><tr><td><code>…/.foreign_api_secret</code>, <code>…/.api_secret</code></td><td>Copies of the node's secrets for <code>www-data</code>; refreshed by the self-heal timer after a node rebuild</td></tr><tr><td><code>…/banners.json</code></td><td>Partner banners</td></tr><tr><td><code>…/grinscan-&lt;net&gt;.log</code></td><td>The service log, rotated 14 days by <code>/etc/logrotate.d/grinscan-&lt;net&gt;</code></td></tr><tr><td><code>/opt/grin/grinscan/backups/</code></td><td>Database snapshots from key <code>8</code></td></tr><tr><td><code>/etc/systemd/system/grinscan-test.service</code>, <code>…/grinscan-main.service</code></td><td>The services</td></tr><tr><td><code>/etc/nginx/sites-available/grinscan-test</code>, <code>…/grinscan-main</code></td><td>The vhosts; <code>/etc/nginx/snippets/grinscan-proxy.conf</code> and <code>/etc/nginx/conf.d/grinscan-rate-limit.conf</code> are shared by both</td></tr></tbody></table></div>
+<h2 id="moving-to-a-new-server">Moving to a new server<a class="anchor" href="#moving-to-a-new-server" aria-label="Link to this section">#</a></h2>
+<p>The database is the only part of GrinScan that is slow to rebuild, and key <code>8</code> exists so a move never re-crawls the chain:</p>
+<ol><li>Old server: <code>8</code> → <code>B</code> <strong>Backup DB</strong> — a consistent snapshot (<code>sqlite3 .backup</code>, integrity-checked, gzipped) lands in <code>/opt/grin/grinscan/backups/</code> as <code>grinscan-&lt;net&gt;-&lt;date&gt;.db.gz</code>. Safe while the service runs.</li><li>Copy the file down and up with <code>scp</code>; the screen prints both commands.</li><li>New server: <code>1</code> Install → <code>2</code> Configure.</li><li>New server: <code>8</code> → <code>R</code> <strong>Restore DB</strong> — pick the file, confirm. The backup is verified before it replaces anything, the service is stopped for the swap, and the previous database is kept beside it as <code>grinscan.db.pre-restore.&lt;date&gt;</code>.</li><li><code>3</code> → <code>S</code>.</li></ol>
+<p>The daily chart history goes back only as far as the blocks the database has accumulated; it is not reconstructed from genesis on a new install — which is exactly what the backup preserves.</p>
+<h2 id="day-to-day-operations">Day-to-day operations<a class="anchor" href="#day-to-day-operations" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>I want to…</th><th>Do this</th></tr></thead><tbody><tr><td>Restart after editing <code>config.json</code></td><td><code>3</code> → pick the network → <code>T</code>, then <code>S</code></td></tr><tr><td>Read the log</td><td><code>7</code> (choose the network, <code>F</code> to follow) or <code>journalctl -u grinscan-main -n 50</code></td></tr><tr><td>Ship a new version after <code>git pull</code> in the toolkit</td><td><code>U</code> — redeploys the app, refreshes <code>npm</code> packages, restarts. Config, database and secrets stay</td></tr><tr><td>Pre-warm the charts with history on an archive node</td><td>Set <code>&quot;backfill_history&quot;: true</code> in <code>config.json</code>, restart, watch the log — gentle, but expect it to run a while</td></tr><tr><td>Add the network switch between mainnet and testnet</td><td><code>2</code> again and enter the sibling URL, then restart</td></tr><tr><td>Remove one network</td><td><code>3</code> → <code>R</code> removes the service; answer <code>y</code> to delete its database and config too. Or <code>Z</code> for a full clean</td></tr><tr><td>Remove everything</td><td><code>Z</code> → <code>3</code> both → type <code>nuke</code>; it also removes the shared nginx snippet and offers to delete the app directory</td></tr></tbody></table></div>
+<h2 id="troubleshooting">Troubleshooting<a class="anchor" href="#troubleshooting" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead><tbody><tr><td><code>Node API port :3011 not listening — is the node running?</code> at Configure</td><td>Wrong network chosen for the node you have, or the node is down. Start it (<a href="01-build-node.html">Script 01</a> → <code>S</code>), or answer <code>n</code> and configure the other network</td></tr><tr><td><code>Node not reachable at http://127.0.0.1:3413/v2/owner</code></td><td>The node is up but rejected the secret — usually a node rebuilt while a stale secret sat in the data dir. <code>grin-secret-sync</code> from a root shell, then Configure again</td></tr><tr><td><code>Port :3011 not yet listening after 10s</code></td><td>The service crashed at start: <code>journalctl -u grinscan-main -n 20</code>. Typical causes: a Node.js older than 24 (<code>node --version</code>), or a bad <code>config.json</code> after a hand edit</td></tr><tr><td>Old blocks say <em>not found</em></td><td>Pruned node — see <a href="#pruned-or-archive-node">Pruned or archive node?</a>. <code>/api/stats</code> shows <code>&quot;node_mode&quot;:&quot;pruned&quot;</code></td></tr><tr><td>The node becomes slow or swaps after GrinScan starts</td><td>Someone (or a crawler) is pulling many old blocks from an archive node on a small box. Restrict with a firewall or fail2ban for now; the audit item above is the durable fix</td></tr><tr><td><code>Certbot failed — check connectivity and DNS.</code></td><td>The subdomain does not resolve to this server yet. Fix DNS, then <code>4</code> again</td></tr><tr><td>The mainnet/testnet switch in the header is missing</td><td>No sibling URL was given at Configure. <code>2</code> again, then restart</td></tr><tr><td><code>Restore aborted — backup failed integrity check</code></td><td>The file is truncated or not a GrinScan database. Re-copy it; <code>gzip -t file.db.gz</code> on the source</td></tr></tbody></table></div>
+<h2 id="related">Related<a class="anchor" href="#related" aria-label="Link to this section">#</a></h2>
+<ul><li><a href="06-global-health.html">Script 06</a> — the hub this lives in: the network dashboard, the grincoin.org explorer and the Tiny Explorer</li><li><a href="01-build-node.html">Script 01</a> — building the archive node that lets GrinScan serve every block</li><li><a href="reference-ports-and-paths.html">Ports and paths</a> — 3010/3011 and the <code>/opt/grin/grinscan</code> tree</li><li>Deeper reading in the toolkit repository: <a href="https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script06b_design.md" target="_blank" rel="noopener">script06b_design.md</a> and <a href="https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script06b_implementation.md" target="_blank" rel="noopener">script06b_implementation.md</a></li></ul>
+      </article>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="06-global-health.html"><span>Previous</span><strong>Network dashboard, peer map and a tiny explorer</strong></a><a class="pager-next" href="07-mining-services.html"><span>Next</span><strong>Mine Grin on your own node (solo)</strong></a></nav>
+    </main>
+
+    <aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav><a href="#what-it-does">What it does</a><a href="#pruned-or-archive-node">Pruned or archive node?</a><a href="#before-you-start">Before you start</a><a href="#the-menu">The menu</a><a href="#setup-step-by-step">Setup, step by step</a><a href="#after-it-finishes">After it finishes</a><a href="#moving-to-a-new-server">Moving to a new server</a><a href="#day-to-day-operations">Day-to-day operations</a><a href="#troubleshooting">Troubleshooting</a><a href="#related">Related</a></nav></aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
+      });
+      var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
+      btn.addEventListener("click", function () {
+        var open = side.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.querySelectorAll(".copy").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var code = b.parentNode.querySelector("code").textContent;
+          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
+          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+        });
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      if (links.length && "IntersectionObserver" in window) {
+        var map = {};
+        links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { links.forEach(function (a) { a.classList.remove("active"); }); var a = map[en.target.id]; if (a) a.classList.add("active"); }
+          });
+        }, { rootMargin: "-80px 0px -70% 0px" });
+        Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+    })();
+  </script>
+</body>
+</html>

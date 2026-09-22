@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Getting started — Grin Node Toolkit Manual</title>
+  <meta name="description" content="What server to rent, which Linux to install, how to run the Grin Node Toolkit for the first time, and how its menu, logs and directories work.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/docs/getting-started.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="Getting started — Grin Node Toolkit Manual">
+  <meta property="og:description" content="What server to rent, which Linux to install, how to run the Grin Node Toolkit for the first time, and how its menu, logs and directories work.">
+  <meta property="og:url" content="https://grinnode.org/docs/getting-started.html">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Getting started — Grin Node Toolkit Manual">
+  <meta name="twitter:description" content="What server to rent, which Linux to install, how to run the Grin Node Toolkit for the first time, and how its menu, logs and directories work.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <link rel="stylesheet" href="docs.css">
+  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"Getting started","description":"What server to rent, which Linux to install, how to run the Grin Node Toolkit for the first time, and how its menu, logs and directories work.","url":"https://grinnode.org/docs/getting-started.html","dateModified":"2026-09-19","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"},{"@type":"ListItem","position":3,"name":"Getting started","item":"https://grinnode.org/docs/getting-started.html"}]}]</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="links">
+        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Manual contents">
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="index.html">Grin Node Toolkit Manual</a><a href="getting-started.html" aria-current="page">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node.html"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver.html"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data.html"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api.html"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services.html"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="06-global-health.html"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan.html"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services.html"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool.html"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance.html"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="051-fidelius.html"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce.html"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop.html"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="089-backup-restore.html"><span class="nav-label">Script 089</span>Back up and restore</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths.html">Ports and paths</a></div></nav>
+    </aside>
+
+    <main id="main">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://grinnode.org/">GrinNode.org</a><span class="crumb-sep" aria-hidden="true">›</span><a href="https://grinnode.org/docs/">Manual</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page">Getting started</span></nav>
+      <article>
+        <div class="kicker">Start here</div>
+        <h1>Getting started</h1>
+        <p class="lead">What server to rent, which Linux to install, how to run the Grin Node Toolkit for the first time, and how its menu, logs and directories work.</p>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-09-19">19 Sept 2026</time></span><span>Page updated <time datetime="2026-09-19">19 Sept 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+<p>By the end of this page you will have the toolkit installed on a server and its main menu open. Building the node itself is the next page, <a href="01-build-node.html">Script 01</a>.</p>
+<h2 id="what-you-need">What you need<a class="anchor" href="#what-you-need" aria-label="Link to this section">#</a></h2>
+<p><strong>A VPS (virtual private server).</strong> A small, always-on Linux box rented from a hosting provider. You connect to it over SSH from your own computer; the node runs there 24/7. A low-cost SSD or NVMe VPS is plenty — around <strong>US$30 a year</strong> buys enough for a pruned node. <a href="https://lowendtalk.com" target="_blank" rel="noopener">LowEndTalk</a> and <a href="https://lowendbox.com" target="_blank" rel="noopener">LowEndBox</a> list deals.</p>
+<div class="table-wrap"><table><thead><tr><th>Resource</th><th>Minimum</th><th>Comfortable</th></tr></thead><tbody><tr><td>Disk</td><td><strong>10 GB free</strong> for one pruned node (Script 01 checks this). 25 GB for a full archive; Super Auto asks for 20 GB</td><td>40 GB+ if you also want to share snapshots or run an explorer</td></tr><tr><td>RAM</td><td>Works on 2 GB — the toolkit adds a swapfile (2 GB, or 4 GB on boxes under 2 GB RAM) because a Grin node's start-up is memory-heavy</td><td>4 GB if you run mainnet and testnet together or add web services</td></tr><tr><td>CPU</td><td>1 vCPU</td><td>2 vCPU — node start-up pegs one core for a few minutes</td></tr><tr><td>Network</td><td>Inbound port 3414 (mainnet) / 13414 (testnet) reachable, so other nodes can connect to yours</td><td></td></tr></tbody></table></div>
+<p><strong>A supported Linux.</strong> The toolkit downloads the official pre-built Grin binary, which is compiled against <strong>glibc 2.38 or newer</strong>. That is a hard floor: on an older system the node exits immediately with <code>version 'GLIBC_2.38' not found</code>. Check yours with <code>ldd --version</code>.</p>
+<div class="table-wrap"><table><thead><tr><th>Distribution</th><th>Status</th></tr></thead><tbody><tr><td><strong>Ubuntu 24.04 / 26.04 LTS</strong></td><td><strong>Tested and recommended</strong></td></tr><tr><td>Ubuntu 22.04 LTS</td><td><strong>Not supported</strong> — glibc 2.35. Many providers still default to it; pick 24.04 when you order</td></tr><tr><td>Debian 13 (trixie) or newer</td><td>Best effort, not fully tested. Debian 12 has glibc 2.36 — too old</td></tr><tr><td>Other Debian-based (Mint, Pop!_OS, Kali…)</td><td>Best effort; must still meet the glibc floor</td></tr><tr><td>Rocky Linux / AlmaLinux 10+</td><td>Runs, not fully tested</td></tr><tr><td>Rocky / Alma 9 or older</td><td>Not supported (glibc 2.34); the script prints upgrade instructions</td></tr><tr><td>Fedora, Arch, others</td><td>Not supported — the script exits</td></tr></tbody></table></div>
+<aside class="callout callout-danger"><span class="callout-label">Danger</span><div><p>On Ubuntu 22.04 (or any glibc below 2.38) <strong>do not try to upgrade glibc.</strong> <code>libc.so.6</code> is the library every program on the machine links against; installing a newer <code>libc6</code> from another release breaks the system, usually beyond SSH. Reinstall the VPS on Ubuntu 24.04, or compile the node yourself with Script 01 → key <code>G</code> (build from source), which links against whatever glibc you have. Note that the wallet products download the same kind of pre-built binary, so a source build is only a partial escape.</p></div></aside>
+<p><strong>Root access.</strong> Every script runs with <code>sudo</code>. The toolkit creates a dedicated <code>grin</code> system user and runs the node as that user — you never run the node as root yourself.</p>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p>Use a <strong>clean, empty server.</strong> Some scripts install packages, set the clock to UTC, change firewall rules and write to <code>/etc/nginx</code>. They could affect or delete existing data. Do not run the toolkit on a server that already hosts something you cannot afford to lose.</p></div></aside>
+<h2 id="install-the-toolkit">Install the toolkit<a class="anchor" href="#install-the-toolkit" aria-label="Link to this section">#</a></h2>
+<p>Connect to the server over SSH, then paste these four lines:</p>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash">git clone https://github.com/noobvie/Grin-Node-Toolkit.git
+cd Grin-Node-Toolkit
+chmod +x grin-node-toolkit.sh scripts/*.sh
+sudo ./grin-node-toolkit.sh</code></pre></div>
+<p>What each line does:</p>
+<ol><li><code>git clone</code> downloads the toolkit into a folder named <code>Grin-Node-Toolkit</code> in your current directory (install <code>git</code> first if the command is missing: <code>sudo apt install git</code>).</li><li><code>cd</code> moves into that folder. You run the toolkit from here every time.</li><li><code>chmod +x</code> marks the scripts as executable.</li><li><code>sudo ./grin-node-toolkit.sh</code> starts the main menu as root.</li></ol>
+<p>The toolkit itself lives where you cloned it; everything it <em>installs</em> goes under <code>/opt/grin/</code> (see <a href="#where-things-live-on-the-server">Where things live</a>). Deleting the clone does not remove a node.</p>
+<h2 id="your-first-run">Your first run<a class="anchor" href="#your-first-run" aria-label="Link to this section">#</a></h2>
+<p>On start the main script checks your operating system. Unsupported distributions exit with a message; older Rocky/Alma releases get upgrade instructions. Then the menu appears:</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text"> Grin Node Toolkit v2026.09.20
+ Keeping Grin shining bright...
+
+  Core Features
+
+  1) Build/Control Grin Node
+  2) Manage Nginx Server
+  3) Share Grin Chain Data / Schedule
+
+  Addons
+
+  4) Publish Grin Node API
+  5) Grin Wallet &amp; Payment Services (DEV)
+  6) Global Grin Health
+  7) Grin Mining Pool Deployment (DEV)
+  9) Grin Connectivity Hub (DEV)
+
+  8) Admin &amp; Maintenance
+
+  0) Exit
+
+Select an option [0-9]:</code></pre></div>
+<p>Press <strong>1</strong> to build your node. The next page, <a href="01-build-node.html">Script 01</a>, walks through what it asks.</p>
+<h3 id="how-the-menus-work">How the menus work<a class="anchor" href="#how-the-menus-work" aria-label="Link to this section">#</a></h3>
+<ul><li><strong>Numbers</strong> are the main actions; <strong>letters</strong> are secondary ones (<code>B</code> back, <code>R</code> refresh, <code>D</code> delete, <code>L</code> logs, and so on). <strong><code>0</code></strong> always goes back or exits. <code>Enter</code> on an empty prompt takes the default shown in brackets — <code>[A/1/G/0, Enter = 1]</code> means plain Enter picks <code>1</code>.</li><li><strong>Backing out.</strong> When a script asks you to type a value (a domain, a path), use the cancel key it shows — <code>q</code> in newer prompts, <code>0</code> in menus. Avoid <code>Ctrl+C</code> mid-action: it kills the script, and a half-finished action may need cleaning up.</li><li><strong>Hubs</strong> (5, 7, 8, 9) print their own sub-menu with the live status of each product — installed, running, version — so you can see the state of the server before choosing.</li><li><strong>A product's screen shows its number</strong> in the banner (<code>01) Grin Node Setup</code>), which is the same number as its script file in the repository. Sub-menu keys are separate from those numbers and can differ between hubs.</li><li><strong>Every action writes a log</strong>, named by script and timestamp, under <code>/opt/grin/logs/</code> — for example <code>/opt/grin/logs/01_build_new_grin_node_20260919_142201.log</code>. The script prints the path when it finishes. Attach it when you report a problem.</li></ul>
+<h2 id="mainnet-and-testnet">Mainnet and testnet<a class="anchor" href="#mainnet-and-testnet" aria-label="Link to this section">#</a></h2>
+<p>Grin has two networks: <strong>mainnet</strong>, where GRIN has value, and <strong>testnet</strong>, a parallel chain of worthless test coins (<strong>tGRIN</strong>) for trying things out. The toolkit treats them as two independent installations that can live on one server: separate directories, separate ports, separate wallets. Nothing on testnet touches mainnet.</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>Mainnet</th><th>Testnet</th></tr></thead><tbody><tr><td>Node directory</td><td><code>/opt/grin/node/mainnet-prune</code> (or <code>mainnet-full</code>)</td><td><code>/opt/grin/node/testnet-prune</code></td></tr><tr><td>P2P port (must be reachable)</td><td>3414</td><td>13414</td></tr><tr><td>Node API port (localhost)</td><td>3413</td><td>13413</td></tr><tr><td>Wallet Foreign / Owner API</td><td>3415 / 3420</td><td>13415 / 13420</td></tr><tr><td>Built-in stratum (mining)</td><td>3416</td><td>13416</td></tr><tr><td>tmux session name</td><td><code>grin_pruned_mainnet</code> / <code>grin_full_mainnet</code></td><td><code>grin_pruned_testnet</code></td></tr></tbody></table></div>
+<p>If you are new, build <strong>both</strong> (Super Auto does) and use testnet to rehearse anything you are unsure about — <a href="05-wallet-services.html">wallet setup</a>, sending, mining — before doing it on mainnet. The complete list of ports and directories, including which ports must be open at the provider, is on <a href="reference-ports-and-paths.html">Ports and paths</a>.</p>
+<h2 id="where-things-live-on-the-server">Where things live on the server<a class="anchor" href="#where-things-live-on-the-server" aria-label="Link to this section">#</a></h2>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">/opt/grin/
+├── node/
+│   ├── mainnet-prune/        the node: grin binary, grin-server.toml, chain_data/,
+│   │                         grin-server.log, .api_secret, .foreign_api_secret
+│   └── testnet-prune/        same layout for testnet
+├── conf/                     small config files the scripts share
+│   └── grin_instances_location.conf   where each node is installed
+├── keys/&lt;network&gt;/           the node API secrets, kept across rebuilds
+├── logs/                     one log per script run
+├── lib/                      helper libraries installed for cron jobs
+└── &lt;product&gt;/                each add-on gets its own folder (fidelius/, drop-main/ …)</code></pre></div>
+<p>Two files in a node directory matter for everything else you install later:</p>
+<ul><li><strong><code>.api_secret</code></strong> protects the node's <em>Owner</em> API — management calls such as status and peer lists. Only trusted local programs use it.</li><li><strong><code>.foreign_api_secret</code></strong> protects the <em>Foreign</em> API — the public chain-data calls that wallets and explorers make. <a href="04-publish-node-api.html">Script 04</a> publishes exactly this API over HTTPS.</li></ul>
+<p>The values are generated once and kept in <code>/opt/grin/keys/</code>, so rebuilding a node does not change them and nothing that depends on them stops working. You will not normally need to touch either file.</p>
+<h2 id="watching-the-node">Watching the node<a class="anchor" href="#watching-the-node" aria-label="Link to this section">#</a></h2>
+<p>The node runs inside a <strong>tmux</strong> session owned by the <code>grin</code> user. Because that session lives on the <code>grin</code> user's tmux server, a plain <code>tmux ls</code> as root does not show it; use the <code>gtmux</code> helper the toolkit installs:</p>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash">gtmux ls                              # list node sessions
+gtmux attach -t grin_pruned_mainnet   # watch the live node output</code></pre></div>
+<p>Inside tmux, press <strong>Ctrl+B, then D</strong> to detach and leave the node running. Do not press Ctrl+C in the session — that stops the node.</p>
+<p>The node's own log is <code>grin-server.log</code> in the node directory. A one-line health check that works on any toolkit-built node:</p>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash">cd /opt/grin/node/mainnet-prune
+curl -s -u &quot;grin:$(cat .api_secret)&quot; -H 'Content-Type: application/json' \
+  -d '{&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;method&quot;:&quot;get_status&quot;,&quot;params&quot;:[],&quot;id&quot;:1}' \
+  http://127.0.0.1:3413/v2/owner</code></pre></div>
+<p>The reply includes the current <code>height</code> and the number of connected peers. For testnet, use <code>testnet-prune</code> and port <code>13413</code>. <strong><a href="08-admin-maintenance.html#node-status-sync-key-5">Admin &amp; Maintenance → Node Status &amp; Sync</a></strong> shows the same information for every node on one screen without any typing.</p>
+<aside class="callout callout-tip"><span class="callout-label">Tip</span><div><p>Do not start the node by hand as root &quot;just to test&quot;. A root-run node writes root-owned files into the node directory and the next start as the <code>grin</code> user fails with <em>permission denied</em>. Always start and stop nodes through the menu.</p></div></aside>
+<h2 id="keeping-the-toolkit-up-to-date">Keeping the toolkit up to date<a class="anchor" href="#keeping-the-toolkit-up-to-date" aria-label="Link to this section">#</a></h2>
+<p>The toolkit changes often. Update it from the menu — <strong><a href="08-admin-maintenance.html#self-update-key-8">Admin &amp; Maintenance → Self-update</a></strong> (which also lets you pick a branch) — or by hand from the clone directory:</p>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash">cd ~/Grin-Node-Toolkit &amp;&amp; git pull</code></pre></div>
+<p>Updating the toolkit does not touch your node; updating the <em>node binary</em> is a separate action inside Script 01 (key <code>B</code>).</p>
+<h2 id="removing-everything">Removing everything<a class="anchor" href="#removing-everything" aria-label="Link to this section">#</a></h2>
+<p><strong><a href="08-admin-maintenance.html#full-grin-cleanup-key-del">Admin &amp; Maintenance → DEL</a></strong> runs the full cleanup: it stops every Grin process and tmux session, then removes the node and wallet directories, the nginx sites and web roots, binaries, and the toolkit's logs. It asks you to type <code>DESTROY</code> to begin and then confirms each step individually. <strong><a href="089-backup-restore.html">Back up wallet seeds first</a></strong> — this cannot be undone. The clone directory is left for you to delete.</p>
+<h2 id="common-first-run-problems">Common first-run problems<a class="anchor" href="#common-first-run-problems" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead><tbody><tr><td><code>version 'GLIBC_2.38' not found</code></td><td>Your distribution is too old for the pre-built binary. Reinstall on Ubuntu 24.04, or use Script 01 → <code>G</code> to build from source. See <a href="#what-you-need">What you need</a>.</td></tr><tr><td><code>The Grin Node Toolkit must be run as root</code></td><td>Start with <code>sudo ./grin-node-toolkit.sh</code>.</td></tr><tr><td><code>Unsupported OS</code> at start</td><td>Fedora, Arch and similar are not supported. Rocky/Alma 9 needs an upgrade to 10.</td></tr><tr><td><code>command not found: jq</code> (or <code>tmux</code>, <code>curl</code>…)</td><td>Script 01 installs its dependencies in Step 2. If a package fails to install, run <code>sudo apt update</code> and retry.</td></tr><tr><td>The menu is missing key 5, 7 or 9 features</td><td>Products marked <strong>(DEV)</strong> are still being built. Everything under 1–4, 6 and 8 is stable.</td></tr><tr><td>Nothing listens on 3414 after the build</td><td>The node may still be starting — a Grin node takes a few minutes to open its ports after launch. Check with <code>gtmux attach -t grin_pruned_mainnet</code>.</td></tr></tbody></table></div>
+      </article>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="index.html"><span>Previous</span><strong>Grin Node Toolkit Manual</strong></a><a class="pager-next" href="01-build-node.html"><span>Next</span><strong>Build or control a Grin node</strong></a></nav>
+    </main>
+
+    <aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav><a href="#what-you-need">What you need</a><a href="#install-the-toolkit">Install the toolkit</a><a href="#your-first-run">Your first run</a><a href="#mainnet-and-testnet">Mainnet and testnet</a><a href="#where-things-live-on-the-server">Where things live on the server</a><a href="#watching-the-node">Watching the node</a><a href="#keeping-the-toolkit-up-to-date">Keeping the toolkit up to date</a><a href="#removing-everything">Removing everything</a><a href="#common-first-run-problems">Common first-run problems</a></nav></aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
+      });
+      var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
+      btn.addEventListener("click", function () {
+        var open = side.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.querySelectorAll(".copy").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var code = b.parentNode.querySelector("code").textContent;
+          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
+          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+        });
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      if (links.length && "IntersectionObserver" in window) {
+        var map = {};
+        links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { links.forEach(function (a) { a.classList.remove("active"); }); var a = map[en.target.id]; if (a) a.classList.add("active"); }
+          });
+        }, { rootMargin: "-80px 0px -70% 0px" });
+        Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+    })();
+  </script>
+</body>
+</html>

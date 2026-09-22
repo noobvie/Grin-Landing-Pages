@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Share your chain data with the community — Grin Node Toolkit Manual</title>
+  <meta name="description" content="How Script 03 packs your node's chain data into a snapshot, publishes it on your nginx host on a schedule, mirrors it over SSH and adds reboot autostart.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/docs/03-share-chain-data.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="Share your chain data with the community — Grin Node Toolkit Manual">
+  <meta property="og:description" content="How Script 03 packs your node's chain data into a snapshot, publishes it on your nginx host on a schedule, mirrors it over SSH and adds reboot autostart.">
+  <meta property="og:url" content="https://grinnode.org/docs/03-share-chain-data.html">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Share your chain data with the community — Grin Node Toolkit Manual">
+  <meta name="twitter:description" content="How Script 03 packs your node's chain data into a snapshot, publishes it on your nginx host on a schedule, mirrors it over SSH and adds reboot autostart.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <link rel="stylesheet" href="docs.css">
+  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"Share your chain data with the community","description":"How Script 03 packs your node's chain data into a snapshot, publishes it on your nginx host on a schedule, mirrors it over SSH and adds reboot autostart.","url":"https://grinnode.org/docs/03-share-chain-data.html","dateModified":"2026-09-20","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"},{"@type":"ListItem","position":3,"name":"Share your chain data with the community","item":"https://grinnode.org/docs/03-share-chain-data.html"}]}]</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="links">
+        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Manual contents">
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="index.html">Grin Node Toolkit Manual</a><a href="getting-started.html">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node.html"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver.html"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data.html" aria-current="page"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api.html"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services.html"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="06-global-health.html"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan.html"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services.html"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool.html"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance.html"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="051-fidelius.html"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce.html"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop.html"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="089-backup-restore.html"><span class="nav-label">Script 089</span>Back up and restore</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths.html">Ports and paths</a></div></nav>
+    </aside>
+
+    <main id="main">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://grinnode.org/">GrinNode.org</a><span class="crumb-sep" aria-hidden="true">›</span><a href="https://grinnode.org/docs/">Manual</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page">Share your chain data with the community</span></nav>
+      <article>
+        <div class="kicker">Scripts · Script 03</div>
+        <h1>Share your chain data with the community</h1>
+        <p class="lead">How Script 03 packs your node's chain data into a snapshot, publishes it on your nginx host on a schedule, mirrors it over SSH and adds reboot autostart.</p>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-09-19">19 Sept 2026</time></span><span>Page updated <time datetime="2026-09-20">20 Sept 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+<p>Script 03 is how a node becomes a <strong>snapshot host</strong>: it packs the node's <code>chain_data</code> folder into a <code>.tar.gz</code>, writes it into the web folder Script 02 set up, and does it again on a schedule so the snapshot never goes stale. Other people's Script 01 then downloads from you. The same script also holds three small scheduling chores that any node benefits from — starting the node on reboot, cleaning up state-sync leftovers, and copying the finished archive to mirror servers.</p>
+<p>You need a <strong>synced</strong> node from <a href="01-build-node.html">Script 01</a> and, for publishing, the matching domain from <a href="02-nginx-fileserver.html">Script 02</a>. The reboot autostart (key <code>G</code>) needs neither.</p>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p>Producing a snapshot <strong>stops the node</strong> for as long as the compression takes, and everything that depends on the node — the public API, a wallet listener, the explorer, the stats collector, a mining pool — is interrupted with it. The node is restarted automatically at the end. Plan for the node being down for tens of minutes: a full archive took 20–40 minutes with the old single-threaded compressor and now uses every core, and a pruned snapshot is a few GB and finishes far sooner; the exact time depends on your CPU and disk. Pick a schedule time when nobody minds.</p></div></aside>
+<h2 id="what-it-does">What it does<a class="anchor" href="#what-it-does" aria-label="Link to this section">#</a></h2>
+<p>For each network you share, one run of the pipeline:</p>
+<ol><li>Finds the running node on its P2P port (3414 or 13414), reads its <code>grin-server.toml</code> to learn the network, whether it is pruned or archive, and where <code>chain_data</code> is, and records that in <code>/opt/grin/conf/grin_instances_location.conf</code>.</li><li>Verifies the node is <strong>fully synced</strong> — the Owner API's <code>get_status</code> must say <code>no_sync</code>, or <code>grin client status</code> must; either passing is enough. An unsynced node is never snapshotted.</li><li>Checks that the web folder's disk can hold the new archive (chain size × an estimated ratio + 512 MiB headroom). If there is room for the old and the new archive, the old one <strong>keeps serving during the build</strong>; if not, it is removed first; if there is room for neither, the run aborts before anything is touched.</li><li>Stops the node (SIGTERM, up to 120 s, then SIGKILL), deletes <code>txhashset_snapshot_*.zip</code> files from <code>chain_data</code> (multi-gigabyte leftovers the node creates when other nodes state-sync from it), and writes a status note telling visitors not to download yet.</li><li>Compresses <code>chain_data</code> with <code>tar</code> piped into <strong>pigz</strong> (parallel gzip, installed on demand; plain gzip if it cannot be) at low CPU and IO priority, into a hidden temporary file, then computes the SHA256 and <strong>swaps</strong> the new archive, checksum, <code>README.txt</code> and <code>chaindata.json</code> manifest into place in one move — so a downloader never sees a half-written file.</li><li>Hands the files to the web user and <strong>restarts the node</strong> as the <code>grin</code> user in its tmux session — on the failure path too, so a compression that dies never leaves the node down.</li></ol>
+<p>The output in the web folder is <code>grin_pruned_mainnet_20260919.tar.gz</code> (or <code>grin_full_mainnet_…</code>, <code>grin_pruned_testnet_…</code>), its <code>.sha256</code>, <code>README.txt</code> with download instructions, <code>check_status_before_download.txt</code> and <code>chaindata.json</code>. Script 01 reads the manifest first and the file list as a fallback.</p>
+<aside class="callout callout-note"><span class="callout-label">Note</span><div><p>The pipeline sets the server's timezone to <strong>UTC</strong> on every run, without asking. Every snapshot host is kept on one clock so the archive's timestamps — which other servers use to judge whether your snapshot is fresh — mean the same thing everywhere.</p></div></aside>
+<h2 id="before-you-start">Before you start<a class="anchor" href="#before-you-start" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>You need</th><th>Why</th></tr></thead><tbody><tr><td>A running, synced node</td><td>Both the setup (key <code>A</code>) and the pipeline look for a live process on the P2P port. A node that is still syncing fails the sync check and nothing is published</td></tr><tr><td>A Grin domain from Script 02</td><td>Key <code>A</code> reads the nginx sites to find <code>/var/www/fullmain</code>, <code>/var/www/prunemain</code> or <code>/var/www/prunetest</code>; with none configured it sends you to Script 02</td></tr><tr><td>Free disk on the web folder's partition about the size of <code>chain_data</code></td><td>The archive compresses only a little (the chain is mostly cryptographic data). The pre-flight check refuses to start a run that cannot finish</td></tr><tr><td><code>cron</code> installed</td><td>Every schedule on this menu is a root crontab entry. Script 01 installs <code>cron</code>; the script says so if <code>crontab</code> is missing</td></tr><tr><td>For mirrors: a second server with SSH access</td><td>Optional. The remote-copy feature pushes the finished archive to other hosts over <code>rsync</code>; the key setup is guided</td></tr></tbody></table></div>
+<h2 id="the-menu">The menu<a class="anchor" href="#the-menu" aria-label="Link to this section">#</a></h2>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 03) Grin Node Share &amp; Schedule Manager
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Note that sharing script below will stop your Grin node
+ and interrupt addons services like Grin API/wallet/explorer/health/mining...
+ Grin process must be running to let the script schedule jobs for you.
+Current Grin share schedule(s) in crontab:
+
+  No Grin share cron jobs found.
+
+Options:
+
+  A) Create Nginx config        [not configured]
+  B) Share chain data now! [depends on A]
+
+  C) Remote copy setup          [not configured]  (mirrors, keys, schedule)
+  D) Copy to mirrors now        [depends on A + C]  (node keeps running)
+
+  E) Schedule to share chain data
+  F) Disable to share chain data
+
+  G) Auto startup Grin node
+  H) Disable auto startup Grin node
+
+  I) Auto-delete txhashset snapshots  (schedule cleanup cron)
+  J) Compression benchmark            (picks the level; node keeps running)
+
+  → Want to become Grin Master Node? Contribute your sub.domain to the registry:
+    extensions/grinmasternodes.json  (see README.md for details)
+
+  0) Back to master script
+
+Select [A-J / 0]:</code></pre></div>
+<p>The block under the banner lists every toolkit cron line currently installed — share schedules, autostart entries, cleanup and copy jobs — so the menu doubles as the place to see what is scheduled.</p>
+<div class="table-wrap"><table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody><tr><td><code>A</code></td><td><a href="#a-create-the-share-configuration">Detect nodes and domains</a> and save which networks to share. Required once before <code>B</code> or <code>E</code></td></tr><tr><td><code>B</code></td><td><a href="#b-share-chain-data-now">Run the pipeline now</a> for mainnet, testnet or both — stops the node</td></tr><tr><td><code>C</code></td><td><a href="#c-and-d-mirrors-over-ssh">Set up mirrors</a>: SSH key, remote hosts, copy schedule</td></tr><tr><td><code>D</code></td><td>Push the current archive to every enabled mirror now — the node keeps running</td></tr><tr><td><code>E</code></td><td><a href="#e-schedule-the-snapshot">Schedule the pipeline</a> — one cron line per network, staggered</td></tr><tr><td><code>F</code></td><td>Remove the share schedule for all networks, or one</td></tr><tr><td><code>G</code></td><td><a href="#g-and-h-start-the-node-on-reboot">Start the node on reboot</a></td></tr><tr><td><code>H</code></td><td>Remove the reboot entry</td></tr><tr><td><code>I</code></td><td><a href="#i-clean-up-txhashset-snapshots">Schedule cleanup</a> of the node's own state-sync zips</td></tr><tr><td><code>J</code></td><td><a href="#j-compression-benchmark">Benchmark</a> compression levels on a sample of your chain data — read-only</td></tr><tr><td><code>0</code></td><td>Back to the main menu</td></tr></tbody></table></div>
+<h2 id="a-create-the-share-configuration">A) Create the share configuration<a class="anchor" href="#a-create-the-share-configuration" aria-label="Link to this section">#</a></h2>
+<p><code>A</code> asks nothing you could get wrong. It scans both P2P ports, prints what it found — network, pruned or full, the <code>chain_data</code> path and size, free disk on <code>/</code> and <code>/var/www</code> — then reads <code>/etc/nginx/sites-enabled/</code> for the Grin domains Script 02 created and pairs each with its node.</p>
+<div class="table-wrap"><table><thead><tr><th>Situation</th><th>What the script does</th></tr></thead><tbody><tr><td>No node on either port</td><td>Asks you to start one and press Enter to retry, or <code>0</code> to cancel</td></tr><tr><td>A domain exists for a network whose node is not running</td><td>Stops with <em>Nginx has a mainnet domain configured but no mainnet node is running</em> — start it with Script 01 → <code>S</code> and run <code>A</code> again</td></tr><tr><td>No Grin domain at all</td><td>Sends you to Script 02</td></tr><tr><td>Domains for both networks</td><td>Asks <em>Which networks to share?</em> — <code>1</code> both (default), <code>2</code> mainnet only, <code>3</code> testnet only</td></tr><tr><td>A domain for one network</td><td>Selects it automatically</td></tr></tbody></table></div>
+<p>The result is saved to <code>/opt/grin/conf/grin_share_nginx.conf</code>: the networks chosen, the web folder per node, the web user that will own the files, and the 120-second stop timeout. Re-run <code>A</code> whenever you add a domain or a node.</p>
+<h2 id="b-share-chain-data-now">B) Share chain data now<a class="anchor" href="#b-share-chain-data-now" aria-label="Link to this section">#</a></h2>
+<p><code>B</code> runs the pipeline immediately. With both networks configured it first asks which to run — <code>1</code> mainnet only, <code>2</code> testnet only, <code>3</code> both (mainnet first, then testnet, never at the same time) — then warns once more and asks <code>Continue? [Y/n/0]</code>.</p>
+<p>Progress is printed step by step and written to <code>/opt/grin/logs/share_nginx_&lt;network&gt;_&lt;type&gt;_&lt;date&gt;.log</code>. The steps are numbered 0a (disk pre-flight), 0 (clear old files), 1 (stop node), 2 (delete txhashset zips), 3 (peer list kept on purpose — it gives downloaders working peers if the DNS seeds are down), 4 (status: in progress), 5 (compress + swap), 6 (README), 7 (manifest + status: completed), 8 (ownership), 9 (restart node).</p>
+<p>The first run is the one to watch. Do it with <code>B</code> before you schedule anything, and read the summary line at the end: <code>Nginx share complete: mainnet / pruned → local: /var/www/prunemain</code>.</p>
+<h2 id="after-a-run">After a run<a class="anchor" href="#after-a-run" aria-label="Link to this section">#</a></h2>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash"># archive, .sha256, README, manifest and status note are all there
+ls -lh /var/www/prunemain/
+# &quot;Sync completed. You may download the pruned mainnet archive. …&quot;
+cat /var/www/prunemain/check_status_before_download.txt
+# the manifest: name, size, sha256 and the build time others judge freshness by
+curl -s https://prunemain.yourdomain.com/chaindata.json
+# the node is back in its session
+gtmux ls</code></pre></div>
+<p>The proof that everything works end to end is Script 01 on another machine: run it, pick your zone, and your hostname should appear among the fresh hosts once you are in the registry — or paste <code>https://prunemain.yourdomain.com</code> as a custom URL.</p>
+<h3 id="what-was-created">What was created<a class="anchor" href="#what-was-created" aria-label="Link to this section">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Path</th><th>Purpose</th></tr></thead><tbody><tr><td><code>/opt/grin/conf/grin_share_nginx.conf</code></td><td>The share configuration from <code>A</code></td></tr><tr><td><code>/opt/grin/conf/grin_instances_location.conf</code></td><td>Where each node lives — refreshed on every run, and used to find a node that is not running</td></tr><tr><td><code>/var/www/&lt;site_key&gt;/grin_&lt;type&gt;_&lt;network&gt;_&lt;date&gt;.tar.gz</code> + <code>.sha256</code></td><td>The snapshot and its checksum</td></tr><tr><td><code>/var/www/&lt;site_key&gt;/chaindata.json</code></td><td>Manifest: archive name, size, SHA256, build time. Present only when the archive is complete</td></tr><tr><td><code>/var/www/&lt;site_key&gt;/check_status_before_download.txt</code></td><td>Human-readable status; <em>Sync completed.</em> is the phrase other tools look for</td></tr><tr><td><code>/var/www/&lt;site_key&gt;/README.txt</code></td><td>Download and install instructions, for Linux, Windows and the Grim wallet</td></tr><tr><td><code>/opt/grin/logs/share_nginx_*.log</code>, <code>cron_nginx.log</code>, <code>schedule.log</code></td><td>Per-run logs, the cron job's log, and a log of every schedule change</td></tr><tr><td>root crontab entries tagged <code># grin-node-toolkit: …</code></td><td>Every schedule this menu installs; <code>crontab -l</code> shows them</td></tr></tbody></table></div>
+<h2 id="e-schedule-the-snapshot">E) Schedule the snapshot<a class="anchor" href="#e-schedule-the-snapshot" aria-label="Link to this section">#</a></h2>
+<p><code>E</code> installs <strong>one cron line per network</strong>, so mainnet and testnet never stop-and-compress at the same time. It asks for the cron log path (default <code>/opt/grin/logs/cron_nginx.log</code>), then for each network shows a preset list. Times are UTC.</p>
+<p>For a <strong>pruned</strong> node:</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">  1) Mon &amp; Thu at 00:00  (0 0 * * 1,4)  [Default — fixed]
+  2) 3x/week — Tue, Thu, Sat at 13:42  (42 13 * * 2,4,6)  [random]
+  3) Daily at 13:42  (42 13 * * *)  [random]
+  4) 2x/week — Tue, Sat at 13:42  (42 13 * * 2,6)  [random]
+  0) Cancel / skip this network</code></pre></div>
+<p>Testnet's fixed default is <strong>Tue &amp; Fri at 06:00</strong> so it never coincides with mainnet's. Presets 2–4 draw a random time and random days each time the menu opens, which is what spreads the load between networks and between hosts.</p>
+<p>For a <strong>full archive</strong> node the presets are rarer, because the archive is ~20 GB and the node is down for the whole compression: the default is the <strong>1st and 15th at 00:00</strong>, then biweekly or monthly at a random time, and a twice-weekly option marked <em>heavy</em>.</p>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p>Keep the cadence inside what downloaders accept. Script 01 on other servers skips a <strong>pruned</strong> snapshot older than <strong>5 days</strong> and a <strong>full</strong> archive older than <strong>70 days</strong> — a pruned node cannot use a snapshot beyond the chain's cut-through horizon, so a stale one wastes the whole download. The fixed defaults and the daily and three-times-a-week presets stay inside those limits. The <strong>twice-weekly</strong> preset can leave a six-day gap when the two random days it draws are adjacent (Mon &amp; Tue, say) — check the days it shows before accepting, or pick again. A cron line written by hand is your own responsibility.</p></div></aside>
+<p><code>F</code> removes the schedule for both networks (default), or mainnet or testnet alone. The cron lines are tagged <code>grin_share_nginx_main</code> / <code>grin_share_nginx_test</code>; the job runs <code>bash …/03_grin_share_chain_data.sh --cron-nginx-main</code> (or <code>-test</code>), and if the node is not running when the job fires it tries to start it first.</p>
+<h2 id="c-and-d-mirrors-over-ssh">C and D) Mirrors over SSH<a class="anchor" href="#c-and-d-mirrors-over-ssh" aria-label="Link to this section">#</a></h2>
+<p>One box can only serve so much bandwidth. The remote-copy feature pushes the <strong>finished archive</strong> — never the raw chain data — from your web folder to other servers with <code>rsync</code> over SSH, so several hosts publish the same snapshot while only one of them ever stops its node. A mirror needs nothing but nginx (Script 02) and SSH access; it does not need a node.</p>
+<p><code>C</code> opens its own menu, in the order you should do things:</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">  Set up a mirror — in this order
+  1) SSH access — create a key, install it on the mirror, verify
+  2) Add a mirror — do 1 for that host first
+  3) Test every configured mirror (connection + identity)
+
+  Manage
+  4) Enable / disable a mirror
+  5) Remove a mirror
+  6) Schedule the copy (N hours after the build)
+  7) Remove a copy schedule
+
+  0) Back</code></pre></div>
+<ul><li><strong>SSH access (1)</strong> creates a dedicated key, <code>/root/.ssh/grin_share_ed25519</code>, on <em>this</em> server, installs its public half on the mirror (automatically with <code>ssh-copy-id</code>, which prompts for the mirror's password in your terminal — the script never reads it — or manually with commands it prints for you to run <em>on the mirror</em>), then verifies a password-less login. Every prompt says which machine the step belongs on.</li><li><strong>Add a mirror (2)</strong> asks which archive it serves (<code>fullmain</code> / <code>prunemain</code> / <code>prunetest</code>), a short name, <code>user@ip</code>, port, key path, the remote folder (default <code>/var/www/&lt;site_key&gt;</code>) and an optional bandwidth cap in KB/s, then tests the connection. Mirrors are stored one per line in <code>/opt/grin/conf/grin_share_targets.conf</code>.</li><li><strong>Schedule the copy (6)</strong> does not ask for a second clock: it takes the build schedule from <code>E</code> and adds the offset you give (default 3 hours), refusing an offset that would cross midnight. The job — <code>--cron-remote &lt;site_key&gt;</code>, logged to <code>/opt/grin/logs/cron_remote.log</code> — is safe to fire when nothing changed: a mirror that already holds the current build is skipped, and a copy that overlaps a build notices the archive changed under it and stops rather than publish a mixed set.</li></ul>
+<p><code>D</code> runs the copy right now for every enabled mirror, with a <code>Force re-upload? [y/N]</code> option for a mirror that was wiped. Copies are logged to <code>/opt/grin/logs/remote_&lt;site_key&gt;_&lt;date&gt;.log</code>, and if the Provider Access Watch (Admin &amp; Maintenance) has an alert channel set up, a failed scheduled copy is reported there.</p>
+<p><code>rsync</code> verifies every file it transfers; a separate SHA256 pass over the 17–20 GB archive is off by default to spare the disk (<code>RC_VERIFY_LOCAL</code> / <code>RC_VERIFY_REMOTE</code> turn it on). The <code>.sha256</code> travels with the archive either way.</p>
+<h2 id="g-and-h-start-the-node-on-reboot">G and H) Start the node on reboot<a class="anchor" href="#g-and-h-start-the-node-on-reboot" aria-label="Link to this section">#</a></h2>
+<p>A node started by the custom wizard in Script 01 does not come back after a reboot. <code>G</code> fixes that with a root <code>@reboot</code> crontab entry — <strong>the same entry Super Auto installs</strong>, so the two never fight.</p>
+<p>Choose <code>1</code> mainnet, <code>2</code> testnet or <code>3</code> both. For each, the script finds the node — the running process, or the installed directory (<code>/opt/grin/node/mainnet-full</code>, <code>mainnet-prune</code>, <code>testnet-prune</code>) if it is stopped — and asks for a <strong>boot delay</strong>: default <strong>5 seconds</strong> for mainnet, <strong>1000 seconds</strong> (about 17 minutes) for testnet, because a small VPS cannot boot two Grin nodes at once and mainnet's start-up must be over before testnet begins. The entry then starts the node the right way: as the <code>grin</code> user, in its tmux session (<code>grin_pruned_mainnet</code> and so on), after fixing file ownership. The <code>gtmux</code> viewer is installed at the same time.</p>
+<p>If an entry already exists you are asked whether to replace it. <code>H</code> lists the entries present and removes one or both.</p>
+<aside class="callout callout-tip"><span class="callout-label">Tip</span><div><p>Autostart brings a node back after a reboot; it does not notice a node that has <em>crashed</em> while the server stayed up. That is the sync watchdog's job — installed from <strong><a href="07-mining-services.html#watchdogs-and-autostart">Script 07 → Solo mining → Watchdogs</a></strong>, and useful on any node.</p></div></aside>
+<h2 id="i-clean-up-txhashset-snapshots">I) Clean up txhashset snapshots<a class="anchor" href="#i-clean-up-txhashset-snapshots" aria-label="Link to this section">#</a></h2>
+<p>When another node performs a state sync from yours, your node writes a <code>txhashset_snapshot_&lt;height&gt;.zip</code> into <code>chain_data</code> to serve it, and never deletes it. On a busy public node these add up to gigabytes. The share pipeline removes them before every compression; <code>I</code> schedules a standalone sweep as well — every <strong>4 hours</strong> (default), 12 or 24 — across all three standard node directories, logged to <code>/opt/grin/logs/cron_clean_txhashset.log</code>. The node keeps running; the zips are not part of the chain.</p>
+<h2 id="j-compression-benchmark">J) Compression benchmark<a class="anchor" href="#j-compression-benchmark" aria-label="Link to this section">#</a></h2>
+<p>Compression level is a trade-off: chain data is mostly cryptographic material and barely compresses, so a full archive is packed at level 1 (fast) and a pruned snapshot, downloaded far more often, at level 6. <code>J</code> lets you check that on your own data: it compresses a sample (default 400 MB) of the largest files at several levels and prints ratio and time for each, without stopping the node or writing to the web folder. It prints ratio, seconds and MB/s per level and a projected archive size. If the numbers say a different level is worth it, set <code>COMPRESS_LEVEL_FULL=…</code> or <code>COMPRESS_LEVEL_PRUNED=…</code> as a <code>NAME=value</code> line at the top of the root crontab (<code>crontab -e</code>), which applies to the scheduled job; <code>COMPRESS_THREADS=…</code> caps how many cores the compressor takes so other services keep some.</p>
+<h2 id="join-the-community-registry">Join the community registry<a class="anchor" href="#join-the-community-registry" aria-label="Link to this section">#</a></h2>
+<p>Once your host has served its first snapshot, add it to the list Script 01 picks download hosts from:</p>
+<ol><li>Fork the <a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">toolkit repository</a> and open <code>extensions/grinmasternodes.json</code>.</li><li>Add your hostname under your <strong>zone</strong> (<code>america</code>, <code>asia</code>, <code>europe</code>, <code>africa</code>) and <strong>site key</strong> — <code>prunemain.yourdomain.com</code> goes in the <code>prunemain</code> list, and so on.</li><li>Add a <code>_contacts</code> entry keyed by your base domain (<code>yourdomain.com</code>) with an owner name and a way to reach you — used to tell you if your host goes stale.</li><li>Open a pull request.</li></ol>
+<p>Every listed host is checked by the toolkit's remote node monitor (<strong><a href="08-admin-maintenance.html#remote-node-manager-key-1">Admin &amp; Maintenance → Remote Node Manager</a></strong>, script 081): reachable over HTTPS, archive no older than the limit for its site key (5 days pruned, 70 days full), and the status note reading <em>Sync completed.</em> Keep your schedule inside those limits and your host stays in rotation.</p>
+<h2 id="day-to-day-operations">Day-to-day operations<a class="anchor" href="#day-to-day-operations" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>I want to…</th><th>Do this</th></tr></thead><tbody><tr><td>See what is scheduled</td><td>Open Script 03 — the menu banner lists every toolkit cron line; or <code>crontab -l</code></td></tr><tr><td>Publish a fresh snapshot right now</td><td>Script 03 → <code>B</code> (the node stops for the duration)</td></tr><tr><td>Change the snapshot schedule</td><td>Script 03 → <code>E</code> again — it replaces the existing line for that network</td></tr><tr><td>Stop sharing but keep the site</td><td>Script 03 → <code>F</code>. The last archive stays online and ages out of the registry check by itself</td></tr><tr><td>Stop sharing and take the site down</td><td><code>F</code> here, then Script 02 → <code>4</code></td></tr><tr><td>Add a second server as a mirror</td><td>Script 03 → <code>C</code> → <code>1</code>, <code>2</code>, <code>3</code> in that order, then <code>6</code> to schedule</td></tr><tr><td>Make a node survive reboots</td><td>Script 03 → <code>G</code></td></tr><tr><td>Check the last scheduled run</td><td><code>tail -50 /opt/grin/logs/cron_nginx.log</code>, then the per-run <code>share_nginx_*.log</code> it names</td></tr><tr><td>Read how the snapshot is built and why</td><td><a href="https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script03_design.md" target="_blank" rel="noopener">Script 03 design</a> in the repository</td></tr></tbody></table></div>
+<h2 id="troubleshooting">Troubleshooting<a class="anchor" href="#troubleshooting" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead><tbody><tr><td><code>Nginx not configured. Run option A first.</code></td><td><code>B</code> and <code>E</code> need the configuration <code>A</code> writes. Run <code>A</code></td></tr><tr><td><code>No Grin domains configured in nginx</code></td><td>Script 02 has not created a <code>fullmain</code>/<code>prunemain</code>/<code>prunetest</code> site yet</td></tr><tr><td><code>Nginx has a mainnet domain configured but no mainnet node is running</code></td><td><code>A</code> insists every configured network has a live node. Script 01 → <code>S</code>, wait for it to open its ports, retry</td></tr><tr><td><code>SYNC CHECK FAILED — BACKUP ABORTED</code></td><td>The node is not at the chain tip (API <code>sync_status</code> ≠ <code>no_sync</code> and <code>grin client status</code> agrees). Nothing was stopped or deleted. Wait for the sync to finish — a fresh node needs a few minutes even from a snapshot</td></tr><tr><td><code>not enough space on … even after reclaiming</code></td><td>The web folder's partition cannot hold the new archive. Nothing was touched and the node was not stopped. Free space, or move the site to a bigger disk</td></tr><tr><td>The log says <code>SKIPPED mainnet: nothing listening on port 3414 and no usable entry in …</code></td><td>A scheduled run found no node and could not start one. Start it with Script 01 → <code>S</code> and check <code>G</code> autostart is in place</td></tr><tr><td><code>compression failed (tar=N compressor=M) — partial archive removed</code></td><td>Usually the disk filled mid-run or an IO error. The previous archive is untouched and the node was restarted. Check <code>df -h</code> and the per-run log</td></tr><tr><td><code>Grin did not start within 5s — check: gtmux attach -t …</code></td><td>The restart at step 9 is slow on a small box rather than failed. <code>gtmux ls</code> a minute later; if the session is gone, Script 01 → <code>S</code></td></tr><tr><td>Status file says <em>DO NOT download</em> long after the run should have ended</td><td>A run died before step 7. <code>gtmux ls</code> to confirm the node is up, then <code>B</code> again; the pipeline overwrites the note on success</td></tr><tr><td><code>crontab unavailable — install cronie/cron and retry</code></td><td><code>apt install cron</code> (Ubuntu/Debian) or <code>dnf install cronie</code> (Rocky/Alma), then rerun</td></tr><tr><td>Copy to a mirror fails with a permission or connection error</td><td>Script 03 → <code>C</code> → <code>3</code> tests every mirror. Redo <code>1</code> step 3 (verify) for that host; the key must be installed for the exact <code>user@ip</code> the mirror line uses</td></tr><tr><td><code>an offset of Nh from H:00 crosses midnight</code></td><td>The copy would land on the next calendar day and cron's day-of-month field cannot follow. Use a smaller offset, or schedule the build earlier in the day</td></tr></tbody></table></div>
+<h2 id="related">Related<a class="anchor" href="#related" aria-label="Link to this section">#</a></h2>
+<ul><li><a href="01-build-node.html">Script 01</a> — builds the node; its <code>_max_age</code> rules decide which snapshot hosts downloaders trust</li><li><a href="02-nginx-fileserver.html">Script 02</a> — the web host this script publishes into, and its rate caps and landing page</li><li><a href="07-mining-services.html#watchdogs-and-autostart">Script 07</a> — the sync watchdog that restarts a stuck node, next to solo mining</li><li><a href="08-admin-maintenance.html">Script 08</a> — the <a href="08-admin-maintenance.html#remote-node-manager-key-1">remote node monitor</a> that checks every registry host, and the <a href="08-admin-maintenance.html#provider-access-watch-key-2">Provider Access Watch</a> alert channel used by mirror copies</li></ul>
+      </article>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="02-nginx-fileserver.html"><span>Previous</span><strong>Host a file server for chain snapshots</strong></a><a class="pager-next" href="04-publish-node-api.html"><span>Next</span><strong>Publish your node's API for wallets and explorers</strong></a></nav>
+    </main>
+
+    <aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav><a href="#what-it-does">What it does</a><a href="#before-you-start">Before you start</a><a href="#the-menu">The menu</a><a href="#a-create-the-share-configuration">A) Create the share configuration</a><a href="#b-share-chain-data-now">B) Share chain data now</a><a href="#after-a-run">After a run</a><a href="#e-schedule-the-snapshot">E) Schedule the snapshot</a><a href="#c-and-d-mirrors-over-ssh">C and D) Mirrors over SSH</a><a href="#g-and-h-start-the-node-on-reboot">G and H) Start the node on reboot</a><a href="#i-clean-up-txhashset-snapshots">I) Clean up txhashset snapshots</a><a href="#j-compression-benchmark">J) Compression benchmark</a><a href="#join-the-community-registry">Join the community registry</a><a href="#day-to-day-operations">Day-to-day operations</a><a href="#troubleshooting">Troubleshooting</a><a href="#related">Related</a></nav></aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
+      });
+      var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
+      btn.addEventListener("click", function () {
+        var open = side.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.querySelectorAll(".copy").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var code = b.parentNode.querySelector("code").textContent;
+          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
+          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+        });
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      if (links.length && "IntersectionObserver" in window) {
+        var map = {};
+        links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { links.forEach(function (a) { a.classList.remove("active"); }); var a = map[en.target.id]; if (a) a.classList.add("active"); }
+          });
+        }, { rootMargin: "-80px 0px -70% 0px" });
+        Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+    })();
+  </script>
+</body>
+</html>

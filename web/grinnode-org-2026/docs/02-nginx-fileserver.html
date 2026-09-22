@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Host a file server for chain snapshots — Grin Node Toolkit Manual</title>
+  <meta name="description" content="How Script 02 sets up an nginx file server with a Let's Encrypt certificate to distribute Grin chain snapshots, plus rate caps, fail2ban and IP blocking.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/docs/02-nginx-fileserver.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="Host a file server for chain snapshots — Grin Node Toolkit Manual">
+  <meta property="og:description" content="How Script 02 sets up an nginx file server with a Let's Encrypt certificate to distribute Grin chain snapshots, plus rate caps, fail2ban and IP blocking.">
+  <meta property="og:url" content="https://grinnode.org/docs/02-nginx-fileserver.html">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Host a file server for chain snapshots — Grin Node Toolkit Manual">
+  <meta name="twitter:description" content="How Script 02 sets up an nginx file server with a Let's Encrypt certificate to distribute Grin chain snapshots, plus rate caps, fail2ban and IP blocking.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <link rel="stylesheet" href="docs.css">
+  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"Host a file server for chain snapshots","description":"How Script 02 sets up an nginx file server with a Let's Encrypt certificate to distribute Grin chain snapshots, plus rate caps, fail2ban and IP blocking.","url":"https://grinnode.org/docs/02-nginx-fileserver.html","dateModified":"2026-09-19","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"},{"@type":"ListItem","position":3,"name":"Host a file server for chain snapshots","item":"https://grinnode.org/docs/02-nginx-fileserver.html"}]}]</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="links">
+        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Manual contents">
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="index.html">Grin Node Toolkit Manual</a><a href="getting-started.html">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node.html"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver.html" aria-current="page"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data.html"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api.html"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services.html"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="06-global-health.html"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan.html"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services.html"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool.html"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance.html"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="051-fidelius.html"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce.html"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop.html"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="089-backup-restore.html"><span class="nav-label">Script 089</span>Back up and restore</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths.html">Ports and paths</a></div></nav>
+    </aside>
+
+    <main id="main">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://grinnode.org/">GrinNode.org</a><span class="crumb-sep" aria-hidden="true">›</span><a href="https://grinnode.org/docs/">Manual</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page">Host a file server for chain snapshots</span></nav>
+      <article>
+        <div class="kicker">Scripts · Script 02</div>
+        <h1>Host a file server for chain snapshots</h1>
+        <p class="lead">How Script 02 sets up an nginx file server with a Let's Encrypt certificate to distribute Grin chain snapshots, plus rate caps, fail2ban and IP blocking.</p>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-09-19">19 Sept 2026</time></span><span>Page updated <time datetime="2026-09-19">19 Sept 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+<p>Script 02 turns your server into a web host for the chain snapshots that Script 03 produces. It installs <strong>nginx</strong> (a web server), asks for a domain name, gets a free HTTPS certificate from <strong>Let's Encrypt</strong>, and publishes a folder as a plain, browsable download page. Anyone running Script 01 anywhere in the world can then fetch your snapshot instead of syncing from genesis — the same way you fetched one when you built your node.</p>
+<p>You need a synced node from <a href="01-build-node.html">Script 01</a> and a domain name whose DNS you control. Script 02 sets up the <em>web host</em>; <a href="03-share-chain-data.html">Script 03</a> then fills it with an archive and keeps it fresh.</p>
+<h2 id="what-it-does">What it does<a class="anchor" href="#what-it-does" aria-label="Link to this section">#</a></h2>
+<ol><li>Installs nginx and <strong>certbot</strong> (the Let's Encrypt client) if they are missing, and opens ports 80 and 443 in the firewall.</li><li>Checks that a Grin node for the chosen network is actually running on this server, and works out from its configuration whether it is a pruned or a full archive node.</li><li>Creates the web folder — <code>/var/www/fullmain</code>, <code>/var/www/prunemain</code> or <code>/var/www/prunetest</code> — and writes an nginx site for your domain, first over plain HTTP.</li><li>Obtains the certificate, then rewrites the site for HTTPS only: HTTP redirects to HTTPS, HSTS is enabled, and the folder is served as a <strong>directory listing</strong> — a bare page of file names, sizes and dates.</li><li>Confirms certificate auto-renewal is in place.</li></ol>
+<p>Everything else on the menu is optional protection for a public download host: per-IP speed caps, request throttling with fail2ban, IP blocking, and a styled landing page in place of the bare listing.</p>
+<h2 id="before-you-start">Before you start<a class="anchor" href="#before-you-start" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>You need</th><th>Why</th></tr></thead><tbody><tr><td>A running, synced node for the network you will share</td><td>The script refuses to set up a Grin domain when no node is listening on 3414 (mainnet) or 13414 (testnet), and derives the required subdomain from the node it finds</td></tr><tr><td>A domain name and access to its DNS</td><td>You will create an <strong>A record</strong> — <code>prunemain.yourdomain.com → your server's IP</code> — before running the script. Certificates are issued to the domain, not the IP</td></tr><tr><td>Ports <strong>80</strong> and <strong>443</strong> reachable from the internet</td><td>Let's Encrypt proves you own the domain by connecting to port 80; visitors download over 443. Open both in your provider's firewall or security group — the script handles the server-side firewall (ufw or firewalld) itself</td></tr><tr><td>An email address</td><td>Let's Encrypt sends certificate-expiry warnings there. Renewal is automatic; the email is a safety net</td></tr><tr><td>Free disk on <code>/var/www</code> at least the size of <code>chain_data</code></td><td>The archive Script 03 writes here is close to the size of the chain data (the script checks and offers to clear the folder if it is short)</td></tr></tbody></table></div>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p>If your DNS is on Cloudflare, set the record to <strong>DNS only</strong> (grey cloud), not <em>Proxied</em>. Proxying hides your real IP: certbot cannot reach port 80 to validate the domain, and — for the Grin subdomains — other nodes connect directly to your IP to use your node as a peer, which the proxy breaks. Keep a Grin subdomain unproxied permanently. A custom domain can go back to <em>Proxied</em> once the certificate is issued.</p></div></aside>
+<h2 id="choices-you-will-make">Choices you will make<a class="anchor" href="#choices-you-will-make" aria-label="Link to this section">#</a></h2>
+<h3 id="which-kind-of-site-a-grin-snapshot-host-or-a-custom-folder">Which kind of site: a Grin snapshot host or a custom folder<a class="anchor" href="#which-kind-of-site-a-grin-snapshot-host-or-a-custom-folder" aria-label="Link to this section">#</a></h3>
+<p>The menu separates the two:</p>
+<ul><li><strong>Grin Master Node domains</strong> (menu 1 and 2) are for chain snapshots. The subdomain <strong>must</strong> start with one of three fixed prefixes, the folder is chosen for you, and the script checks that the matching node is running. These are the sites Script 03 publishes into and Script 01 downloads from.</li><li><strong>Custom domains</strong> (menu 3) serve any folder you like under any other name — <code>files.yourdomain.com</code> — with no Grin checks. Useful for sharing anything else from the same box.</li></ul>
+<h3 id="the-three-subdomain-prefixes">The three subdomain prefixes<a class="anchor" href="#the-three-subdomain-prefixes" aria-label="Link to this section">#</a></h3>
+<p>The first label of the hostname is a <strong>site key</strong> that tells every other part of the toolkit what the snapshot is. It has to match the node on this server: the script reads the node's <code>grin-server.toml</code> and only accepts the prefix that fits.</p>
+<div class="table-wrap"><table><thead><tr><th>Prefix</th><th>Serves</th><th>Web folder</th><th>Node it requires</th></tr></thead><tbody><tr><td><code>fullmain.</code></td><td>Mainnet full archive snapshot</td><td><code>/var/www/fullmain</code></td><td>Mainnet, <code>archive_mode = true</code></td></tr><tr><td><code>prunemain.</code></td><td>Mainnet pruned snapshot</td><td><code>/var/www/prunemain</code></td><td>Mainnet, pruned</td></tr><tr><td><code>prunetest.</code></td><td>Testnet pruned snapshot</td><td><code>/var/www/prunetest</code></td><td>Testnet, pruned</td></tr></tbody></table></div>
+<p>So a server running a pruned mainnet node and a pruned testnet node gets two domains — <code>prunemain.yourdomain.com</code> and <code>prunetest.yourdomain.com</code> — one per menu entry. A server can hold at most one mainnet domain and one testnet domain; to change one, remove it first (menu 4).</p>
+<p>These prefixes are reserved: a custom domain (menu 3) cannot use them, and cannot point at the three folders above.</p>
+<h2 id="the-menu">The menu<a class="anchor" href="#the-menu" aria-label="Link to this section">#</a></h2>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">╔════════════════════════════════════════════════════════════════╗
+║     02)   Nginx Server Management Script                       ║
+╚════════════════════════════════════════════════════════════════╝
+
+Select an action:
+
+  1) Setup 1st Grin Master Node domain  - Mainnet  (fullmain / prunemain)
+  2) Setup 2nd Grin Master Node domain  - Testnet  (prunetest)
+  3) Add Custom Domain                  - Any non-Grin domain
+  4) Remove Domain                      - Remove domain and its configuration
+  5) List Domains                       - Show all configured domains
+
+  6) Limit Rate / Bandwidth     - Set per-IP speed cap (anti-DDoS / abuse)
+  7) Lift Rate / Bandwidth      - Remove or reset per-IP speed cap
+  8) Install fail2ban           - Install &amp; configure fail2ban for nginx
+  9) Fail2ban Management        - Status, unban IPs, list bans
+ 10) IP Filtering               - Block / Unblock IPs via ufw or iptables
+
+ 11) Landing Page               - Styled download page instead of the bare file list
+
+  0) Exit
+
+Enter choice [0-11]:</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody><tr><td><code>1</code></td><td>Set up the <strong>mainnet</strong> snapshot domain — <code>fullmain.</code> or <code>prunemain.</code>, whichever matches the running node</td></tr><tr><td><code>2</code></td><td>Set up the <strong>testnet</strong> snapshot domain — <code>prunetest.</code></td></tr><tr><td><code>3</code></td><td>Serve any other folder under any other domain; optionally with a monthly per-IP download quota</td></tr><tr><td><code>4</code></td><td>Remove a domain: its nginx site, certificate and logs. The files are kept unless you say otherwise</td></tr><tr><td><code>5</code></td><td>List every nginx site on the server with its folder, whether it is enabled and whether it has a certificate</td></tr><tr><td><code>6</code> / <code>7</code></td><td>Add or lift <a href="#per-ip-speed-caps-menu-6-and-7">download speed caps</a>, per IP or for everyone</td></tr><tr><td><code>8</code> / <code>9</code></td><td>Install <a href="#request-throttling-and-fail2ban-menu-8-and-9">fail2ban with request throttling</a>, then check its status and unban addresses</td></tr><tr><td><code>10</code></td><td><a href="#blocking-addresses-menu-10">Block or unblock</a> an IP or a network range in the firewall</td></tr><tr><td><code>11</code></td><td>Replace the bare file list with a <a href="#the-landing-page-menu-11">styled landing page</a></td></tr><tr><td><code>0</code></td><td>Back to the main menu</td></tr></tbody></table></div>
+<p>The script returns to this menu after every action. Each session is logged to <code>/opt/grin/logs/nginx-session-&lt;date&gt;.log</code>.</p>
+<h2 id="setting-up-a-grin-domain-step-by-step">Setting up a Grin domain, step by step<a class="anchor" href="#setting-up-a-grin-domain-step-by-step" aria-label="Link to this section">#</a></h2>
+<p>Create the DNS A record first, wait until <code>ping prunemain.yourdomain.com</code> answers with your server's IP, then pick <code>1</code> (mainnet) or <code>2</code> (testnet).</p>
+<div class="table-wrap"><table><thead><tr><th>Step</th><th>What happens</th><th>What you do</th></tr></thead><tbody><tr><td>1</td><td>nginx and certbot are checked; if either is missing you get one <code>Install now?</code> prompt. Ports 80/443 are opened in ufw or firewalld if one is active</td><td><code>Y</code></td></tr><tr><td>2</td><td>The script looks for a Grin node on the network's P2P port. With none running it stops: <em>No mainnet Grin node detected on port 3414</em></td><td>Start or build the node with Script 01, then come back</td></tr><tr><td>3</td><td>If this network already has a domain, it is shown and the script stops — remove it with <code>4</code> first if you want to change it</td><td>—</td></tr><tr><td>4</td><td>Domain prompt. It prints the prefix your node requires (only <code>fullmain</code> for an archive node, only <code>prunemain</code> for a pruned one) and rejects anything else</td><td>Type the full hostname, e.g. <code>prunemain.yourdomain.com</code>; <code>0</code> cancels</td></tr><tr><td>5</td><td>Email prompt for Let's Encrypt</td><td>Type an address you read</td></tr><tr><td>6</td><td>The web folder is set from the prefix and shown. The script compares the node's <code>chain_data</code> size with free space on <code>/var/www</code>; if there is not enough it offers to empty the folder</td><td>Accept the cleanup if offered, or free space first</td></tr><tr><td>7</td><td>Summary: domain, email, folder</td><td><code>Proceed with setup? (Y/n/0)</code> — <code>Y</code></td></tr><tr><td>8</td><td>The folder is created and handed to the web user (<code>www-data</code> on Ubuntu/Debian, <code>nginx</code> on Rocky/Alma). An HTTP-only nginx site is written, enabled and loaded</td><td>Wait</td></tr><tr><td>9</td><td><code>certbot --nginx</code> requests the certificate. If it fails the script prints the four usual causes (DNS not pointing here, 80/443 closed, a firewall, Cloudflare proxy on) and <strong>exits</strong> — fix the cause and run the option again</td><td>Wait</td></tr><tr><td>10</td><td>The site is rewritten for HTTPS: port 80 redirects, port 443 serves the folder with HSTS and security headers, human-readable sizes, local times. <code>nginx -t</code> is run before the reload; on failure the previous config is restored</td><td>Wait</td></tr><tr><td>11</td><td>Auto-renewal check: certbot's systemd timer (or cron job) is confirmed and a <code>certbot renew --dry-run</code> is tried</td><td>Wait</td></tr><tr><td>12</td><td>Summary: URL, folder, how to add files, log paths</td><td>Read it</td></tr></tbody></table></div>
+<p>The HTTP-first-then-HTTPS order is deliberate: nginx refuses to start a site that references a certificate file which does not exist yet, so the site goes live on port 80, certbot uses it to prove ownership, and only then is the HTTPS version written.</p>
+<h2 id="after-it-finishes">After it finishes<a class="anchor" href="#after-it-finishes" aria-label="Link to this section">#</a></h2>
+<p>Open <code>https://prunemain.yourdomain.com/</code> in a browser. You should see an empty directory listing over a valid certificate — empty because nothing has been published yet; that is Script 03's job. From a shell:</p>
+<div class="code" data-lang="bash"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-bash">curl -sI https://prunemain.yourdomain.com/ | head -1     # HTTP/2 200
+curl -sI http://prunemain.yourdomain.com/  | head -1     # HTTP/1.1 301 (redirect to https)
+sudo nginx -t                                            # syntax is ok / test is successful</code></pre></div>
+<p>Once Script 03 has run, the listing shows the archive and its companions, and a visitor sees exactly what you saw when Script 01 downloaded your snapshot:</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">chaindata.json                          machine-readable manifest — Script 01 reads this first
+check_status_before_download.txt        &quot;Sync completed…&quot; or &quot;Sync is in progress. DO NOT download…&quot;
+grin_pruned_mainnet_20260919.tar.gz     the snapshot
+grin_pruned_mainnet_20260919.sha256     its checksum
+README.txt                              download and install instructions for humans</code></pre></div>
+<p><a href="https://prunemain.grin.money" target="_blank" rel="noopener">prunemain.grin.money</a> is a live example — with the landing page from menu <code>11</code> installed rather than the bare list.</p>
+<h3 id="what-was-created">What was created<a class="anchor" href="#what-was-created" aria-label="Link to this section">#</a></h3>
+<div class="table-wrap"><table><thead><tr><th>Path</th><th>Purpose</th></tr></thead><tbody><tr><td><code>/etc/nginx/sites-available/&lt;domain&gt;</code></td><td>The site configuration (symlinked from <code>sites-enabled/</code>)</td></tr><tr><td><code>/var/www/fullmain</code>, <code>/var/www/prunemain</code> or <code>/var/www/prunetest</code></td><td>The web root Script 03 publishes into</td></tr><tr><td><code>/etc/letsencrypt/live/&lt;domain&gt;/</code></td><td>The certificate and key, renewed by certbot's timer</td></tr><tr><td><code>/var/log/nginx/&lt;domain&gt;-access.log</code>, <code>&lt;domain&gt;-error.log</code></td><td>Per-site request and error logs</td></tr><tr><td><code>/opt/grin/logs/nginx-session-&lt;date&gt;.log</code></td><td>This session's log</td></tr></tbody></table></div>
+<p>Custom domains (menu <code>3</code>) default to <code>/var/www/fileserver</code> or a folder you name. With the quota option on they also get <code>/usr/local/bin/nginx-bandwidth-limiter.sh</code>, a <code>/etc/cron.d/nginx-bandwidth-limiter</code> job every 5 minutes with a monthly reset, and a <code>/var/log/nginx/&lt;domain&gt;-bandwidth.log</code>.</p>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p>Answer <strong>N</strong> to <em>Enable bandwidth limiting?</em> when adding a custom domain. The quota feature places an nginx <code>map</code> block inside the site's <code>server</code> block, which nginx rejects, so the setup stops at the <em>Enhancing Nginx configuration</em> step with the certificate already issued. This is a toolkit bug, noted for the maintainers. For per-IP caps use menu <code>6</code> instead — that path is separate and works on any site the script created.</p></div></aside>
+<h2 id="protecting-a-public-download-host">Protecting a public download host<a class="anchor" href="#protecting-a-public-download-host" aria-label="Link to this section">#</a></h2>
+<p>A snapshot host serves multi-gigabyte files to strangers. The rest of the menu lets you limit what one visitor can take and shut out abusers. None of it is required; a small host with a modest bandwidth allowance will want at least a default speed cap.</p>
+<h3 id="per-ip-speed-caps-menu-6-and-7">Per-IP speed caps (menu 6 and 7)<a class="anchor" href="#per-ip-speed-caps-menu-6-and-7" aria-label="Link to this section">#</a></h3>
+<p>Speed caps are applied with nginx's <code>limit_rate</code>, which caps <strong>each connection</strong> — a client opening two connections gets twice the rate. Values are written as <code>500k</code> (500 KB/s) or <code>5m</code> (5 MB/s).</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">  1) Set per-IP speed cap          - cap a specific IP address
+  2) Set default rate for all IPs  - apply a global cap to all visitors
+  3) Enable for a domain           - inject rate limit into a site config
+  0) Back to main menu</code></pre></div>
+<p>The caps live in one file, <code>/etc/nginx/conf.d/grin_ip_limits.conf</code>, as a table from IP to bytes per second with a default of <code>0</code> (unlimited). Setting a cap with <code>1</code> or <code>2</code> also injects the <code>limit_rate</code> directive into every site the script created; <code>3</code> does that injection alone, for a site added later. The screen above the menu always shows the current default, the per-IP overrides and which sites have the directive.</p>
+<p>Menu <code>7</code> undoes it: lift one IP's cap, clear every cap (default back to unlimited), or take the directive out of one site.</p>
+<h3 id="request-throttling-and-fail2ban-menu-8-and-9">Request throttling and fail2ban (menu 8 and 9)<a class="anchor" href="#request-throttling-and-fail2ban-menu-8-and-9" aria-label="Link to this section">#</a></h3>
+<p><strong>fail2ban</strong> watches log files and temporarily bans addresses that misbehave. Menu <code>8</code> runs four steps in one go:</p>
+<ol><li>Installs fail2ban (<code>apt</code>; on Rocky/Alma via the EPEL repository).</li><li>Creates an nginx request-rate zone, <code>grin_req</code>, at <strong>20 requests per second</strong> per IP (<code>/etc/nginx/conf.d/script02-fileserver.conf</code>), and adds <code>limit_req zone=grin_req burst=30 nodelay</code> to every site the script created. Above the limit a client gets HTTP 429 and nginx logs the event.</li><li>Writes <code>/etc/fail2ban/jail.d/nginx-grin.conf</code> with three jails: <code>nginx-limit-req</code> (10 rate-limit hits within 60 s → banned 10 min), <code>nginx-botsearch</code> (2 requests for known exploit paths → banned 1 h), and <code>nginx-http-auth</code> (3 failed logins → banned 1 h; rarely relevant on a file server).</li><li>Enables and restarts fail2ban, then reloads nginx.</li></ol>
+<aside class="callout callout-note"><span class="callout-label">Note</span><div><p>There is no menu action that removes the request limit again — menu <code>7</code> only lifts the <em>speed</em> caps from menu <code>6</code>. To turn throttling off, delete the two <code>limit_req</code> lines from the site in <code>/etc/nginx/sites-available/</code>, run <code>nginx -t</code> and reload nginx.</p></div></aside>
+<p>Menu <code>9</code> is the day-to-day view:</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">  A) Overall status          - All jails (nginx-botsearch / nginx-http-auth / nginx-limit-req / sshd)
+  B) Check nginx-http-auth   - Detailed status of nginx-http-auth jail
+  C) Unban an IP             - Remove a ban from nginx-http-auth
+  D) List banned IPs         - Top 50 IPs banned in nginx-http-auth
+  0) Back to main menu</code></pre></div>
+<p>Each report is also saved under <code>/opt/grin/logs/fail2ban_*.log</code>. <code>C</code> and <code>D</code> act on the <code>nginx-http-auth</code> jail only; for the jail that actually bans downloaders use the CLI: <code>fail2ban-client set nginx-limit-req unbanip 1.2.3.4</code>.</p>
+<h3 id="blocking-addresses-menu-10">Blocking addresses (menu 10)<a class="anchor" href="#blocking-addresses-menu-10" aria-label="Link to this section">#</a></h3>
+<p>Blocks a single IP or a CIDR range (<code>1.2.3.0/24</code>) in whichever firewall is active — firewalld, ufw, or raw iptables — with an optional note, and records it in <code>/etc/grin-toolkit/blocked_ips.list</code> so you can unblock or list later. Blocks are server-wide, not just for nginx. With no firewall installed, blocking is unavailable and the script says so.</p>
+<h2 id="the-landing-page-menu-11">The landing page (menu 11)<a class="anchor" href="#the-landing-page-menu-11" aria-label="Link to this section">#</a></h2>
+<p>The bare directory listing works but tells a visitor nothing. Menu <code>11</code> replaces it, for one of your snapshot sites, with a styled download page that:</p>
+<ul><li>shows the latest snapshot — name, size, checksum, how long ago it was built — with a download button, copy-ready install commands for Linux/macOS, Windows and streaming extraction, and a table of every file;</li><li>polls the site every 20 seconds, so while Script 03 is rebuilding the archive the page <strong>blocks the download</strong> and points visitors at the other mirrors from the community registry (<code>mirrors.json</code>, copied from <code>extensions/grinmasternodes.json</code>);</li><li>adds <code>robots.txt</code>, <code>sitemap.xml</code> and a logo, and optionally a Google Analytics 4 tag (asked once, kept in <code>/etc/grin-toolkit/landing.conf</code>; leave blank for none).</li></ul>
+<p>Pick the site, and the script writes <code>index.html</code> and the support files into the web root and patches the nginx site. Script 01 and other tools still get the plain listing: the root URL serves the page only to browsers and the file list to everything else, and a JSON listing is exposed at <code>/__listing/</code>. For an already-installed page the menu offers <strong>Regenerate</strong> (refresh page, mirror list and SEO files) or <strong>Remove</strong> (back to the bare listing).</p>
+<p>Script 03 deliberately leaves <code>index.html</code> and these support files alone when it clears old archives, so the page survives every rebuild.</p>
+<h2 id="day-to-day-operations">Day-to-day operations<a class="anchor" href="#day-to-day-operations" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>I want to…</th><th>Do this</th></tr></thead><tbody><tr><td>See which sites exist and whether they have certificates</td><td>Script 02 → <code>5</code></td></tr><tr><td>Check the certificate will renew</td><td><code>sudo certbot renew --dry-run</code>. Renewal runs from certbot's own timer; nothing in the toolkit needs to run</td></tr><tr><td>Move the snapshot site to a new domain</td><td>Script 02 → <code>4</code> to remove the old one (keep the files), fix DNS, then <code>1</code> or <code>2</code> with the new name</td></tr><tr><td>Slow everyone down to protect my bandwidth allowance</td><td>Script 02 → <code>6</code> → <code>2</code>, e.g. <code>5m</code></td></tr><tr><td>Give one address a lower cap without affecting others</td><td>Script 02 → <code>6</code> → <code>1</code></td></tr><tr><td>See who is hammering the server</td><td><code>tail -f /var/log/nginx/&lt;domain&gt;-access.log</code>, and Script 02 → <code>9</code> → <code>A</code> if fail2ban is installed</td></tr><tr><td>Block a persistent abuser outright</td><td>Script 02 → <code>10</code> → <code>1</code></td></tr><tr><td>Share a different folder under another name</td><td>Script 02 → <code>3</code> (answer <code>N</code> to bandwidth limiting)</td></tr><tr><td>Get listed as a community snapshot host</td><td>Run Script 03 until the listing shows an archive, then follow the registry steps on <a href="03-share-chain-data.html#join-the-community-registry">its page</a></td></tr></tbody></table></div>
+<h2 id="troubleshooting">Troubleshooting<a class="anchor" href="#troubleshooting" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead><tbody><tr><td><code>No mainnet Grin node detected on port 3414</code> (or testnet on 13414)</td><td>The Grin domain options need the node running, not just installed. Script 01 → <code>S</code> starts it; give it a few minutes to open its ports, then retry</td></tr><tr><td><code>Prefix 'files' is not valid for mainnet</code> / <code>…reserved for Grin Master Nodes</code></td><td>Grin domains must start with <code>fullmain</code>, <code>prunemain</code> or <code>prunetest</code> and must match the node; custom domains may not use those names. Use the other menu entry</td></tr><tr><td><code>Failed to obtain SSL certificate</code></td><td>The domain does not resolve to this server yet, port 80 is closed in the provider firewall, or Cloudflare proxy is on. The script exits after this message; fix the cause and run the option again — the HTTP-only site it left behind is harmless</td></tr><tr><td><code>A Grin mainnet domain is already configured</code></td><td>One per network. Script 02 → <code>4</code> removes the old one; keep the files when asked if the snapshot folder should stay</td></tr><tr><td><code>Nginx configuration test failed</code></td><td>Another site or a hand-edited file is broken. Run <code>nginx -t</code> yourself — it names the file and line. The script restores its own previous config before reporting this</td></tr><tr><td><code>Insufficient free space — chain_data (~N GiB) exceeds available</code></td><td>Script 03 will not be able to write the archive. Accept the folder cleanup if offered, or free space on the partition holding <code>/var/www</code></td></tr><tr><td>Visitors get HTTP 429</td><td>The request limit from menu <code>8</code> (20 requests/s) is triggering — usually a download manager opening many connections. Raise the rate in <code>/etc/nginx/conf.d/script02-fileserver.conf</code> or remove the <code>limit_req</code> lines from the site</td></tr><tr><td>A legitimate address is banned</td><td>Script 02 → <code>9</code> → <code>C</code> for the <code>nginx-http-auth</code> jail, or <code>fail2ban-client set nginx-limit-req unbanip &lt;ip&gt;</code> for the request-limit jail</td></tr><tr><td><code>fail2ban is not installed. Run option 7 (Install fail2ban) first</code></td><td>The message's number is stale — installing fail2ban is menu <code>8</code></td></tr><tr><td><code>No file-server domains found</code> in menu <code>11</code></td><td>The landing page only installs on a site with directory listing on — a Grin or custom domain created by menu <code>1</code>–<code>3</code>. Set one up first</td></tr></tbody></table></div>
+<h2 id="related">Related<a class="anchor" href="#related" aria-label="Link to this section">#</a></h2>
+<ul><li><a href="01-build-node.html">Script 01</a> — the node whose snapshot you will share must be running on this server</li><li><a href="03-share-chain-data.html">Script 03</a> — compresses the chain data into this web folder and keeps it fresh on a schedule</li><li><a href="04-publish-node-api.html">Script 04</a> — publishes the node API over HTTPS on another subdomain, alongside this file server</li><li><a href="08-admin-maintenance.html">Script 08</a> — <a href="08-admin-maintenance.html#nginx-extended-features-key-4">Nginx extended features</a>, and the <a href="08-admin-maintenance.html#remote-node-manager-key-1">Remote Node Manager</a> that checks every community snapshot host</li></ul>
+      </article>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="01-build-node.html"><span>Previous</span><strong>Build or control a Grin node</strong></a><a class="pager-next" href="03-share-chain-data.html"><span>Next</span><strong>Share your chain data with the community</strong></a></nav>
+    </main>
+
+    <aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav><a href="#what-it-does">What it does</a><a href="#before-you-start">Before you start</a><a href="#choices-you-will-make">Choices you will make</a><a href="#the-menu">The menu</a><a href="#setting-up-a-grin-domain-step-by-step">Setting up a Grin domain, step by step</a><a href="#after-it-finishes">After it finishes</a><a href="#protecting-a-public-download-host">Protecting a public download host</a><a href="#the-landing-page-menu-11">The landing page (menu 11)</a><a href="#day-to-day-operations">Day-to-day operations</a><a href="#troubleshooting">Troubleshooting</a><a href="#related">Related</a></nav></aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
+      });
+      var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
+      btn.addEventListener("click", function () {
+        var open = side.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.querySelectorAll(".copy").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var code = b.parentNode.querySelector("code").textContent;
+          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
+          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+        });
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      if (links.length && "IntersectionObserver" in window) {
+        var map = {};
+        links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { links.forEach(function (a) { a.classList.remove("active"); }); var a = map[en.target.id]; if (a) a.classList.add("active"); }
+          });
+        }, { rootMargin: "-80px 0px -70% 0px" });
+        Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+    })();
+  </script>
+</body>
+</html>

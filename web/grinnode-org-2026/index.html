@@ -213,7 +213,7 @@
     <nav class="nav" aria-label="Primary navigation">
       <a class="brand" href="#top" aria-label="GrinNode.org home"><img src="favicon.svg" width="36" height="36" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a>
       <div class="links">
-        <a href="#why-nodes">Why nodes</a><a href="#run">Run a node</a><a href="#toolkit">Toolkit</a><a href="#grim">Wallets &amp; Docker</a><a href="#why-grin">Why Grin</a><a href="#status">Status</a>
+        <a href="#why-nodes">Why nodes</a><a href="#run">Run a node</a><a href="#toolkit">Toolkit</a><a href="docs/">Manual</a><a href="#grim">Wallets &amp; Docker</a><a href="#why-grin">Why Grin</a><a href="#status">Status</a>
       </div>
       <div class="actions">
         <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
@@ -286,7 +286,7 @@
           <h3>Linux server path</h3>
           <p class="lead">Best for VPS operators, public services, snapshots, monitoring, and community infrastructure.</p>
           <ul class="routeList">
-            <li><span>1</span><div>Clone Grin Node Toolkit and run the interactive Bash menu.</div></li>
+            <li><span>1</span><div>Clone Grin Node Toolkit and run the interactive Bash menu &mdash; the <a href="docs/getting-started.html" style="color:var(--green)">manual</a> walks through it.</div></li>
             <li><span>2</span><div>Build or install a node, then bootstrap chain data from a trusted snapshot.</div></li>
             <li><span>3</span><div>Publish API, file server, explorer, stats, mining, or wallet services as needed.</div></li>
           </ul>
@@ -322,8 +322,11 @@
           <div class="projectTop"><span class="label">noobvie/Grin-Node-Toolkit</span><div class="title">Linux node infrastructure</div></div>
           <div class="projectBody">
             <p>Reduce the painful first-sync bottleneck with pre-synced chain snapshots, then keep the node useful with API publishing, snapshot sharing, health views, admin tasks, and service setup.</p>
-            <div class="tags"><span class="tag">Ubuntu 22.04+</span><span class="tag">Rocky 10+</span><span class="tag">AlmaLinux 10+</span><span class="tag">Nginx</span><span class="tag">Tor / API</span><span class="tag">Snapshots</span></div>
-            <a class="btn primary" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Node Toolkit repo &rarr;</a>
+            <div class="tags"><span class="tag">Ubuntu 24.04+</span><span class="tag">Rocky 10+</span><span class="tag">AlmaLinux 10+</span><span class="tag">Nginx</span><span class="tag">Tor / API</span><span class="tag">Snapshots</span></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <a class="btn primary" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Node Toolkit repo &rarr;</a>
+              <a class="btn ghost" href="docs/">Read the manual</a>
+            </div>
           </div>
         </article>
         <div class="code"><pre>git clone https://github.com/noobvie/Grin-Node-Toolkit.git

@@ -23,9 +23,13 @@ Grin-Landing-Pages/
 │   └── installer.conf             # install.ps1 publishing config
 ├── snippets/
 │   └── ga4.html                   # GA4 reference (documentation only)
+├── docs-src/
+│   └── grinnode-org/              # Markdown source of the toolkit manual
+├── tools/
+│   └── build-docs.mjs             # renders docs-src → web/grinnode-org-2026/docs/
 └── web/
     ├── grin-money-2026/           # grin.money
-    └── grinnode-org-2026/         # grinnode.org
+    └── grinnode-org-2026/         # grinnode.org  (+ docs/ = the generated manual)
 ```
 
 Config files in `deploy/` are committed with working defaults — edit in place.
@@ -38,6 +42,33 @@ Config files in `deploy/` are committed with working defaults — edit in place.
 |---|---|---|
 | `web/grin-money-2026/` | [grin.money](https://grin.money) | Main landing — wallets, ecosystem, toolkit |
 | `web/grinnode-org-2026/` | [grinnode.org](https://grinnode.org) | Node operator hub — Linux toolkit, Grim wallet |
+| `web/grinnode-org-2026/docs/` | [grinnode.org/docs/](https://grinnode.org/docs/) | Grin Node Toolkit manual — **generated, do not edit the HTML by hand** (only `docs.css` is hand-maintained; see below) |
+
+---
+
+## Toolkit manual (`docs-src/` → `web/grinnode-org-2026/docs/`)
+
+The manual at grinnode.org/docs/ is written in Markdown under
+`docs-src/grinnode-org/`, one file per page, and rendered to static HTML by a
+zero-dependency Node script. The rendered HTML **is committed**, so the server
+still deploys plain files and nothing runs there.
+
+```bash
+node tools/build-docs.mjs            # render every page + sitemap.xml + robots.txt
+node tools/build-docs.mjs --check    # validate only (dead links, front matter), write nothing
+```
+
+Run the build after editing any `.md` and commit the output with it. Each page
+starts with a front-matter block (`title`, `description`, `section`, `order`,
+optional `label`, `covers`, `updated`) — the sidebar, prev/next links, JSON-LD
+and sitemap are all derived from it, so a new page needs nothing but a new
+`.md` file. Supported Markdown: headings, paragraphs, fenced code (with a copy
+button), inline code/bold/italic/links, lists, pipe tables, and `> **Note:**` /
+`**Tip:**` / `**Warning:**` / `**Danger:**` blockquotes, which become callouts.
+
+`covers` is the date the page was checked against the toolkit's code; `updated`
+is when the page text last changed. Both are printed on the page — keep them
+honest rather than fresh.
 
 ---
 

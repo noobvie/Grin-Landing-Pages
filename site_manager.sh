@@ -341,7 +341,7 @@ show_main_menu() {
 ╔════════════════════════════════════════════════════════════════╗
 ║                                                                ║
 ║     site_manager.sh  —  Static Site Deployment Manager         ║
-║                    V.20260807                                  ║
+║                    V.20260927                                  ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
 EOF
@@ -1518,10 +1518,15 @@ gtag('config', '$ga4_id');
 GA4_EOF
     chmod 644 "$ga4_js"
 
-    local html_file basename_f html_id
-    for html_file in "$target_dir"/*.html; do
+    # Top-level pages plus one level of sub-pages (web/<site>/docs/*.html — the
+    # generated manual). A sub-page loads the shared ga4.js via a relative
+    # "../js/" so the same file serves both depths; nothing is duplicated.
+    local html_file basename_f html_id js_rel
+    for html_file in "$target_dir"/*.html "$target_dir"/*/*.html; do
         [[ -f "$html_file" ]] || continue
-        basename_f="$(basename "$html_file")"
+        basename_f="${html_file#"$target_dir"/}"
+        js_rel="js/ga4.js"
+        [[ "$basename_f" == */* ]] && js_rel="../js/ga4.js"
 
         # Detect our loader specifically — not the loose word "gtag", which can
         # legitimately appear in page copy and would fool the check.
@@ -1543,7 +1548,7 @@ GA4_EOF
             print_warn "GA4: no </head> in $basename_f — tag NOT injected"
             continue
         fi
-        sed -i.bak "s|</head>|  <!-- Google tag (gtag.js) -->\n  <script async src=\"https://www.googletagmanager.com/gtag/js?id=${ga4_id}\"></script>\n  <script src=\"js/ga4.js\"></script>\n</head>|" "$html_file"
+        sed -i.bak "s|</head>|  <!-- Google tag (gtag.js) -->\n  <script async src=\"https://www.googletagmanager.com/gtag/js?id=${ga4_id}\"></script>\n  <script src=\"${js_rel}\"></script>\n</head>|" "$html_file"
         rm -f "${html_file}.bak"
         print_info "GA4: injected into $basename_f"
     done

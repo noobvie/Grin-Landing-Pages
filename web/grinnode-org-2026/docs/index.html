@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grin Node Toolkit Manual — GrinNode.org</title>
+  <meta name="description" content="A plain-language guide to installing and running a Grin node and its services on a Linux VPS with the Grin Node Toolkit — for first-time operators.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/docs/">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="Grin Node Toolkit Manual — GrinNode.org">
+  <meta property="og:description" content="A plain-language guide to installing and running a Grin node and its services on a Linux VPS with the Grin Node Toolkit — for first-time operators.">
+  <meta property="og:url" content="https://grinnode.org/docs/">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Grin Node Toolkit Manual — GrinNode.org">
+  <meta name="twitter:description" content="A plain-language guide to installing and running a Grin node and its services on a Linux VPS with the Grin Node Toolkit — for first-time operators.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <link rel="stylesheet" href="docs.css">
+  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"Grin Node Toolkit Manual","description":"A plain-language guide to installing and running a Grin node and its services on a Linux VPS with the Grin Node Toolkit — for first-time operators.","url":"https://grinnode.org/docs/","dateModified":"2026-09-20","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"}]}]</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="links">
+        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Manual contents">
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="index.html" aria-current="page">Grin Node Toolkit Manual</a><a href="getting-started.html">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node.html"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver.html"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data.html"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api.html"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services.html"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="06-global-health.html"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan.html"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services.html"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool.html"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance.html"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="051-fidelius.html"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce.html"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop.html"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="089-backup-restore.html"><span class="nav-label">Script 089</span>Back up and restore</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths.html">Ports and paths</a></div></nav>
+    </aside>
+
+    <main id="main">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://grinnode.org/">GrinNode.org</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page">Manual</span></nav>
+      <article>
+        <div class="kicker">Start here</div>
+        <h1>Grin Node Toolkit Manual</h1>
+        <p class="lead">A plain-language guide to installing and running a Grin node and its services on a Linux VPS with the Grin Node Toolkit — for first-time operators.</p>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-09-19">19 Sept 2026</time></span><span>Page updated <time datetime="2026-09-20">20 Sept 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+<p>The <a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> is a set of Bash scripts, driven from one interactive menu, that installs and manages a <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a> node and everything you might want to run next to it: an HTTPS API for wallets, chain-snapshot sharing, a block explorer, a network dashboard, wallet services, a mining pool, and the admin chores that keep a server healthy.</p>
+<p>This manual explains each part in plain language. It assumes you can open an SSH session to a Linux server and copy commands; it does not assume you have run a Grin node before.</p>
+<h2 id="where-to-start">Where to start<a class="anchor" href="#where-to-start" aria-label="Link to this section">#</a></h2>
+<div class="cards">
+<a class="card" href="getting-started.html"><div class="card-label">Start here</div><h3>Getting started</h3><p>What server you need, how to install the toolkit, and how the menu works.</p></a>
+<a class="card" href="01-build-node.html"><div class="card-label">Script 01</div><h3>Build or control a Grin node</h3><p>From an empty VPS to a synced node in under an hour, using a chain snapshot.</p></a>
+</div>
+<p>The shortest path to a running node is <strong>Getting started → Script 01 → Super Auto</strong>. Everything else in the toolkit is optional and builds on that node.</p>
+<h2 id="what-the-toolkit-does-for-you">What the toolkit does for you<a class="anchor" href="#what-the-toolkit-does-for-you" aria-label="Link to this section">#</a></h2>
+<ul><li><strong>Skips the slow first sync.</strong> Syncing Grin from genesis can take days and the current PIBD mechanism can stall. The toolkit downloads a verified, pre-synced chain snapshot from a community host instead, so a node is running in well under an hour.</li><li><strong>Keeps the node alive.</strong> Autostart on reboot, a sync watchdog, log rotation, swap tuning and a Tor <code>.onion</code> mirror are set up for you.</li><li><strong>Turns a node into infrastructure.</strong> Publish the node API over HTTPS, share your own snapshots with the community, run an explorer or a network map, host a web wallet, a giveaway portal, or a mining pool — each one a menu option.</li><li><strong>Runs mainnet and testnet side by side.</strong> Every service uses separate ports and directories per network, so one server can serve both.</li></ul>
+<h2 id="the-menu">The menu<a class="anchor" href="#the-menu" aria-label="Link to this section">#</a></h2>
+<p>The toolkit has two levels. The main menu lists the products; most of the <em>Add-ons</em> are hubs that open their own sub-menu with live status of what is installed.</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">Grin Node Toolkit
+│
+├── Core
+│   ├── 1) Build / Control Grin Node
+│   ├── 2) Manage Nginx Server
+│   └── 3) Share Grin Chain Data / Schedule
+│
+├── Add-ons
+│   ├── 4) Publish Grin Node API
+│   ├── 5) Grin Wallet &amp; Payment Services   (hub)
+│   ├── 6) Global Grin Health               (+ GrinScan explorer, Tiny Explorer)
+│   ├── 7) Grin Mining Pool Deployment      (hub: solo mining or public pool)
+│   ├── 8) Admin &amp; Maintenance              (hub)
+│   └── 9) Grin Connectivity Hub            (hub)
+│
+└── 0) Exit</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>Menu</th><th>Product</th><th>What it is for</th><th>Manual</th></tr></thead><tbody><tr><td>1</td><td>Build / Control Grin Node</td><td>Install the node binary, bootstrap chain data from a snapshot, start, rebuild or update a node</td><td><a href="01-build-node.html">Script 01</a></td></tr><tr><td>2</td><td>Manage Nginx Server</td><td>An nginx file server with Let's Encrypt SSL for distributing chain snapshots; rate caps, fail2ban, IP filtering</td><td><a href="02-nginx-fileserver.html">Script 02</a></td></tr><tr><td>3</td><td>Share Grin Chain Data</td><td>Compress and publish your node's chain data on a schedule, over nginx or SSH; reboot autostart</td><td><a href="03-share-chain-data.html">Script 03</a></td></tr><tr><td>4</td><td>Publish Grin Node API</td><td>Expose the node's public (Foreign) API over HTTPS so wallets and explorers can use your node</td><td><a href="04-publish-node-api.html">Script 04</a></td></tr><tr><td>5</td><td>Grin Wallet &amp; Payment Services</td><td>Hub for wallet products: a personal web wallet, a self-custodial public web wallet, a WooCommerce gateway, a giveaway portal, a CLI wallet quick setup</td><td><a href="05-wallet-services.html">Script 05</a> · <a href="051-fidelius.html">Fidelius</a> · <a href="053-woocommerce.html">WooCommerce</a> · <a href="059-grin-drop.html">Grin Drop</a></td></tr><tr><td>6</td><td>Global Grin Health</td><td>A network-stats dashboard with a peer map, plus the GrinScan block explorer and a tiny stateless explorer</td><td><a href="06-global-health.html">Script 06</a> · <a href="06b-grinscan.html">GrinScan</a></td></tr><tr><td>7</td><td>Grin Mining Pool Deployment</td><td>Solo mining against your own node, or a full public pool with Tor payouts</td><td><a href="07-mining-services.html">Solo mining</a> · <a href="07-public-pool.html">Public pool</a></td></tr><tr><td>8</td><td>Admin &amp; Maintenance</td><td>Remote node monitor, host-tamper watch, status screen, nginx extras, SSH hardening, backups, disk cleanup, self-update, full uninstall</td><td><a href="08-admin-maintenance.html">Script 08</a> · <a href="089-backup-restore.html">Backup &amp; restore</a></td></tr><tr><td>9</td><td>Grin Connectivity Hub</td><td>Privacy and transport layer: a Nostr relay for Goblin wallets, a store-and-forward slate queue</td><td><em>coming</em></td></tr></tbody></table></div>
+<p><strong>Reference pages:</strong> <a href="reference-ports-and-paths.html">Ports and paths</a> — every port, which must be open, and where each script keeps its files. A glossary and a symptom index are <em>coming</em>.</p>
+<aside class="callout callout-note"><span class="callout-label">Note</span><div><p>The <strong>menu key is not the script number.</strong> Inside a hub, keys are assigned per hub (the wallet hub uses fixed slots, the admin hub matches each sub-script's last digit). This manual names products, not keys, wherever a key could move. What each number <em>means</em> is stable and is what the file names in the repository use.</p></div></aside>
+<h2 id="requirements-in-one-line">Requirements in one line<a class="anchor" href="#requirements-in-one-line" aria-label="Link to this section">#</a></h2>
+<p>A clean Linux VPS running <strong>Ubuntu 24.04 LTS</strong> (or another distribution with glibc 2.38 or newer), root access, and at least <strong>10 GB</strong> of free disk for a pruned node. The full list, including which distributions do <em>not</em> work and why, is in <a href="getting-started.html#what-you-need">Getting started</a>.</p>
+<h2 id="sites-built-with-the-toolkit">Sites built with the toolkit<a class="anchor" href="#sites-built-with-the-toolkit" aria-label="Link to this section">#</a></h2>
+<p>Everything below was deployed semi-automatically with the menu — they double as live examples of what each script produces.</p>
+<div class="table-wrap"><table><thead><tr><th>Site</th><th>Built with</th></tr></thead><tbody><tr><td><a href="https://prunemain.grin.money" target="_blank" rel="noopener">prunemain.grin.money</a> / <a href="https://prunetest.grin.money" target="_blank" rel="noopener">prunetest.grin.money</a> / <a href="https://fullmain.grin.money" target="_blank" rel="noopener">fullmain.grin.money</a></td><td>Scripts 01 + 02 + 03 — pruned mainnet, pruned testnet and archive mainnet nodes sharing chain snapshots</td></tr><tr><td><a href="https://api.grin.money" target="_blank" rel="noopener">api.grin.money</a> / <a href="https://testapi.grin.money" target="_blank" rel="noopener">testapi.grin.money</a></td><td>Script 04 — public node API</td></tr><tr><td><a href="https://world.grin.money" target="_blank" rel="noopener">world.grin.money</a></td><td>Script 06 — global health dashboard and peer map</td></tr><tr><td><a href="https://grinscan.org" target="_blank" rel="noopener">grinscan.org</a> / <a href="https://test.grinscan.org" target="_blank" rel="noopener">test.grinscan.org</a></td><td>Script 06b — GrinScan block explorer</td></tr><tr><td><a href="https://scan.grin.money" target="_blank" rel="noopener">scan.grin.money</a></td><td>Script 06d — Tiny Explorer</td></tr><tr><td><a href="https://drop.grin.money" target="_blank" rel="noopener">drop.grin.money</a></td><td>Script 059 — Grin Drop giveaway portal</td></tr><tr><td><a href="https://solo.grin.money" target="_blank" rel="noopener">solo.grin.money</a></td><td>Script 07 — solo mining stats page</td></tr><tr><td><a href="https://grinium.com" target="_blank" rel="noopener">grinium.com</a></td><td>Script 07 — public mining pool <em>(in development)</em></td></tr><tr><td><a href="https://relay.grin.money" target="_blank" rel="noopener">relay.grin.money</a></td><td>Script 091 — Floonet Nostr relay</td></tr></tbody></table></div>
+<h2 id="getting-help">Getting help<a class="anchor" href="#getting-help" aria-label="Link to this section">#</a></h2>
+<ul><li><strong>Bugs and questions about the toolkit:</strong> open an issue on <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">GitHub</a>. Include the log file the script names at the end of its run — every action writes one under <code>/opt/grin/logs/</code>.</li><li><strong>Grin itself:</strong> the <a href="https://forum.grin.mw" target="_blank" rel="noopener">Grin forum</a> and the <a href="https://docs.grin.mw" target="_blank" rel="noopener">official documentation</a>.</li><li><strong>Source of truth:</strong> the toolkit's <a href="https://github.com/noobvie/Grin-Node-Toolkit#readme" target="_blank" rel="noopener">README</a> and the design documents in its <code>docs/generated/</code> folder go deeper than this manual on architecture and security.</li></ul>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p>The toolkit is under active development and performs system-level operations — it installs packages, changes firewall rules and writes to <code>/etc/nginx</code>. Run it on a <strong>clean server</strong> you can afford to rebuild, never on a box with data you cannot lose.</p></div></aside>
+      </article>
+      <nav class="pager" aria-label="Previous and next page"><span></span><a class="pager-next" href="getting-started.html"><span>Next</span><strong>Getting started</strong></a></nav>
+    </main>
+
+    <aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav><a href="#where-to-start">Where to start</a><a href="#what-the-toolkit-does-for-you">What the toolkit does for you</a><a href="#the-menu">The menu</a><a href="#requirements-in-one-line">Requirements in one line</a><a href="#sites-built-with-the-toolkit">Sites built with the toolkit</a><a href="#getting-help">Getting help</a></nav></aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
+      });
+      var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
+      btn.addEventListener("click", function () {
+        var open = side.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.querySelectorAll(".copy").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var code = b.parentNode.querySelector("code").textContent;
+          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
+          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+        });
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      if (links.length && "IntersectionObserver" in window) {
+        var map = {};
+        links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { links.forEach(function (a) { a.classList.remove("active"); }); var a = map[en.target.id]; if (a) a.classList.add("active"); }
+          });
+        }, { rootMargin: "-80px 0px -70% 0px" });
+        Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+    })();
+  </script>
+</body>
+</html>

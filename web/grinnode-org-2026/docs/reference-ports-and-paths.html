@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ports and paths — Grin Node Toolkit Manual</title>
+  <meta name="description" content="Every port the Grin Node Toolkit uses, which ones must be open in the provider firewall, and where each script keeps its files, configs and logs on the server.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/docs/reference-ports-and-paths.html">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="Ports and paths — Grin Node Toolkit Manual">
+  <meta property="og:description" content="Every port the Grin Node Toolkit uses, which ones must be open in the provider firewall, and where each script keeps its files, configs and logs on the server.">
+  <meta property="og:url" content="https://grinnode.org/docs/reference-ports-and-paths.html">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ports and paths — Grin Node Toolkit Manual">
+  <meta name="twitter:description" content="Every port the Grin Node Toolkit uses, which ones must be open in the provider firewall, and where each script keeps its files, configs and logs on the server.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <link rel="stylesheet" href="docs.css">
+  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"Ports and paths","description":"Every port the Grin Node Toolkit uses, which ones must be open in the provider firewall, and where each script keeps its files, configs and logs on the server.","url":"https://grinnode.org/docs/reference-ports-and-paths.html","dateModified":"2026-09-20","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"},{"@type":"ListItem","position":3,"name":"Ports and paths","item":"https://grinnode.org/docs/reference-ports-and-paths.html"}]}]</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="links">
+        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Manual contents">
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="index.html">Grin Node Toolkit Manual</a><a href="getting-started.html">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node.html"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver.html"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data.html"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api.html"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services.html"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="06-global-health.html"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan.html"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services.html"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool.html"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance.html"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="051-fidelius.html"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce.html"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop.html"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="089-backup-restore.html"><span class="nav-label">Script 089</span>Back up and restore</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths.html" aria-current="page">Ports and paths</a></div></nav>
+    </aside>
+
+    <main id="main">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://grinnode.org/">GrinNode.org</a><span class="crumb-sep" aria-hidden="true">›</span><a href="https://grinnode.org/docs/">Manual</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page">Ports and paths</span></nav>
+      <article>
+        <div class="kicker">Reference</div>
+        <h1>Ports and paths</h1>
+        <p class="lead">Every port the Grin Node Toolkit uses, which ones must be open in the provider firewall, and where each script keeps its files, configs and logs on the server.</p>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-09-19">19 Sept 2026</time></span><span>Page updated <time datetime="2026-09-20">20 Sept 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+<p>One page to look things up: the port each service listens on, which of them need a hole in the firewall, and the directories the toolkit creates. Every value here was checked against the scripts' own constants; where a script lets you change a port, the table gives the default.</p>
+<h2 id="which-ports-must-be-open-at-the-provider">Which ports must be open at the provider<a class="anchor" href="#which-ports-must-be-open-at-the-provider" aria-label="Link to this section">#</a></h2>
+<p>Almost everything the toolkit runs binds to <strong>localhost only</strong> (<code>127.0.0.1</code>) and is reached through nginx on 443, so it never needs a firewall rule. The exceptions — the only inbound ports you open in the provider's firewall or security group — are:</p>
+<ul><li><strong>80 and 443</strong> — nginx. 443 is HTTPS for every public site (chain snapshots, node API, explorer, dashboard, wallets); 80 is needed for Let's Encrypt to issue and renew certificates, and redirects to HTTPS.</li><li><strong>3414</strong> (mainnet) and <strong>13414</strong> (testnet) — the node's <strong>P2P</strong> port, so other nodes can connect to yours. A node with this port closed still syncs, but only makes outbound connections and contributes less to the network.</li><li><strong>A published stratum port</strong>, only if you run mining: <strong>3333</strong> / <strong>13333</strong> for the public pool, or the node's own <strong>3416</strong> / <strong>13416</strong> if you open solo mining to the internet.</li><li><strong>51820/udp</strong> (and <strong>51821/udp</strong>), only if you run WireGuard — the pool's regional gateways, or Fidelius' private access.</li></ul>
+<p>Everything else on this page that is not marked <em>(public)</em> stays closed. If a port here is already taken by something else on your server, the service's own config usually lets you move it — the toolkit picked unusual numbers (7420, 7456, 8181, 8471…) to avoid the common clashes.</p>
+<h2 id="grin-node-and-wallet">Grin node and wallet<a class="anchor" href="#grin-node-and-wallet" aria-label="Link to this section">#</a></h2>
+<p>Per network. The node and the wallet are separate programs with separate ports; the wallet's two APIs are on ports of their own.</p>
+<div class="table-wrap"><table><thead><tr><th>Port</th><th>Mainnet / Testnet</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody><tr><td>3413 / 13413</td><td>node</td><td>HTTP</td><td>Node API v2 — <code>/v2/foreign</code> (public chain data) and <code>/v2/owner</code> (management) on one port, localhost. <a href="04-publish-node-api.html">Script 04</a> publishes <code>/v2/foreign</code> through nginx</td></tr><tr><td>3414 / 13414</td><td>node</td><td>TCP (P2P)</td><td>Peer connections — <strong>public</strong></td></tr><tr><td>3416 / 13416</td><td>node</td><td>TCP</td><td>The node's built-in stratum server for mining: solo miners connect here; the public pool uses it as its upstream. Localhost unless solo mining is published</td></tr><tr><td>3415 / 13415</td><td>wallet</td><td>HTTP</td><td>Wallet Foreign API — receives transactions and <code>build_coinbase</code> calls from the node, localhost</td></tr><tr><td>3420 / 13420</td><td>wallet</td><td>HTTP</td><td>Wallet Owner API — the wallet's management API used by the toolkit's services (Drop, WooCommerce, the pool, the Transporter), localhost</td></tr></tbody></table></div>
+<h2 id="node-api-extras-script-04">Node API extras (Script 04)<a class="anchor" href="#node-api-extras-script-04" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody><tr><td>8413 / 18413</td><td>HTTP</td><td>nginx's localhost listener behind the Tor onion of the mainnet / testnet node API — Tor maps the <code>.onion</code>'s port 80 here</td></tr></tbody></table></div>
+<h2 id="web-and-wallet-services">Web and wallet services<a class="anchor" href="#web-and-wallet-services" aria-label="Link to this section">#</a></h2>
+<p>All localhost, all fronted by nginx on 443.</p>
+<div class="table-wrap"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody><tr><td>3004 / 3005</td><td>HTTP</td><td>Grin Drop (059) — testnet / mainnet</td></tr><tr><td>3006 / 3007</td><td>HTTP</td><td>WooCommerce bridge (053) — mainnet / testnet</td></tr><tr><td>3010 / 3011</td><td>HTTP</td><td>GrinScan explorer (06b) — testnet / mainnet</td></tr><tr><td>5060</td><td>HTTP</td><td>Global Grin Health (06) — the &quot;submit your node&quot; form server behind the dashboard</td></tr><tr><td>7420</td><td>HTTP</td><td>Fidelius web wallet (051)</td></tr><tr><td>7480 / 7490</td><td>HTTP</td><td>Accio gateway (052) — testnet / mainnet. <em>Written, never deployed</em></td></tr><tr><td>7580 / 7590</td><td>HTTP</td><td>Accio gateway, onion side — testnet / mainnet. <em>Written, never deployed</em></td></tr><tr><td>7581 / 7591</td><td>HTTP</td><td>Accio nginx onion front — testnet / mainnet. <em>Written, never deployed</em></td></tr><tr><td>8471</td><td>HTTP</td><td>Tiny Explorer (06d), mainnet only</td></tr></tbody></table></div>
+<h2 id="connectivity-hub-script-09">Connectivity hub (Script 09)<a class="anchor" href="#connectivity-hub-script-09" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody><tr><td>8181</td><td>HTTP / <code>wss</code></td><td>Floonet Nostr relay (091), localhost, nginx front-end; configurable — 8181 was chosen to dodge the common 8080 clash</td></tr><tr><td>7456 / 7466</td><td>HTTP</td><td>Grin Transporter (093) — mainnet / testnet, localhost. <em>Built standalone, never VPS-deployed</em></td></tr><tr><td>7556 / 7566</td><td>HTTP</td><td>Grin Transporter's onion front — mainnet / testnet. <em>Same status</em></td></tr></tbody></table></div>
+<h2 id="public-mining-pool-script-07">Public mining pool (Script 07)<a class="anchor" href="#public-mining-pool-script-07" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody><tr><td>3333 / 13333</td><td>TCP</td><td>Public pool stratum — miners connect here, mainnet / testnet install — <strong>public</strong></td></tr><tr><td>3416 / 13416</td><td>TCP</td><td>The node's built-in stratum the pool feeds from, localhost</td></tr><tr><td>8080 / 8090</td><td>HTTP</td><td>Pool central API — mainnet / testnet, localhost, nginx-proxied</td></tr><tr><td>3391+ / 13391+</td><td>TCP</td><td>One internal port per regional gateway, reached only over WireGuard</td></tr><tr><td>51820 / 51821</td><td>UDP</td><td>WireGuard between the central hub and its regional gateways — mainnet / testnet — <strong>public</strong> on the hub</td></tr></tbody></table></div>
+<p>Solo mining (the other half of Script 07) needs no pool ports: miners connect straight to the node's 3416 / 13416.</p>
+<aside class="callout callout-warning"><span class="callout-label">Warning</span><div><p><strong>51820/udp is used twice.</strong> The pool hub's WireGuard (mainnet) and Fidelius' WireGuard private access both default to it, on different interfaces (<code>wg-grinpool</code> vs <code>wg0</code>). Two interfaces cannot share one UDP port, so run one of the two per server or change one side's port.</p></div></aside>
+<h2 id="nginx">nginx<a class="anchor" href="#nginx" aria-label="Link to this section">#</a></h2>
+<div class="table-wrap"><table><thead><tr><th>Port</th><th>Protocol</th><th>Purpose</th></tr></thead><tbody><tr><td>80</td><td>HTTP</td><td>Let's Encrypt validation; redirects to HTTPS — <strong>public</strong></td></tr><tr><td>443</td><td>HTTPS</td><td>Every public site and API the toolkit serves — <strong>public</strong></td></tr></tbody></table></div>
+<h2 id="grin-node-directories">Grin node directories<a class="anchor" href="#grin-node-directories" aria-label="Link to this section">#</a></h2>
+<p>One directory per node, named after the network and mode. A server has at most one node per network, so at most two of these exist at once (mainnet pruned <em>or</em> full, plus testnet).</p>
+<div class="table-wrap"><table><thead><tr><th>Network</th><th>Mode</th><th>Directory</th><th>tmux session</th></tr></thead><tbody><tr><td>Mainnet</td><td>Pruned</td><td><code>/opt/grin/node/mainnet-prune/</code></td><td><code>grin_pruned_mainnet</code></td></tr><tr><td>Mainnet</td><td>Full archive</td><td><code>/opt/grin/node/mainnet-full/</code></td><td><code>grin_full_mainnet</code></td></tr><tr><td>Testnet</td><td>Pruned</td><td><code>/opt/grin/node/testnet-prune/</code></td><td><code>grin_pruned_testnet</code></td></tr></tbody></table></div>
+<p>Full archive mode on testnet is not offered — its chain is too large for a practical archive. Inside each directory: the <code>grin</code> binary, <code>grin-server.toml</code>, <code>chain_data/</code>, <code>grin-server.log</code>, and the two secret files <code>.api_secret</code> and <code>.foreign_api_secret</code>. The sessions live on the <code>grin</code> user's tmux server — list them with <code>gtmux ls</code>, not <code>tmux ls</code>.</p>
+<h2 id="where-things-live-under-opt-grin">Where things live under <code>/opt/grin</code><a class="anchor" href="#where-things-live-under-opt-grin" aria-label="Link to this section">#</a></h2>
+<p>Everything the toolkit installs goes under <code>/opt/grin/</code>, one folder per product. The clone of the toolkit itself is wherever you ran <code>git clone</code>, and can be deleted or moved without affecting anything below.</p>
+<div class="code" data-lang="text"><button type="button" class="copy" aria-label="Copy to clipboard">Copy</button><pre><code class="lang-text">/opt/grin/
+├── node/                     the nodes (table above)
+├── keys/&lt;network&gt;/           node API secrets, kept across rebuilds        Script 01
+├── conf/                     small config files the scripts share (table below)
+├── logs/                     one log per script run, plus cron/watchdog logs
+├── lib/                      helper libraries installed for cron and timers
+├── backups/                  local backup archives, onion identities          089, 04, 059, 07
+├── temp/                     backup archives from before the shared engine (legacy)
+├── reports/                  host-optimisation reports                       083
+├── grin-api-collector/       REST collectors for the published node API      04
+├── grin-stats/               dashboard collector: stats.db, config.env       06
+├── grin-price/               price collector: grin-price.db                  06
+├── grinscan/{main,test}/     GrinScan config, DB and copied node secrets     06b
+├── tiny-explorer/            Tiny Explorer app, config.json, log             06d
+├── cmdwallet/&lt;network&gt;/      the CMD wallet quick setup                       05
+├── wallet-bin/&lt;tag&gt;/         verified grin-wallet binaries, one per version   05 (shared)
+├── fidelius/                 Fidelius app, config.conf, wallet_&lt;net&gt;_&lt;name&gt;/  051
+├── webwallet/xp-mainnet/     XP-themed wallet config                          051x
+├── accio-{main,test}/        Accio gateway + gateway-state/ (never deployed)  052
+├── woocommerce/&lt;network&gt;/    WooCommerce bridge, bridge.conf, bridge.log      053
+├── drop-{main,test}/         Grin Drop app + wallet, grin_drop_&lt;net&gt;.conf     059
+├── drop-{main,test}-data/    Grin Drop database — survives a wallet reinstall 059
+├── solowallet/&lt;network&gt;/     solo-mining wallet                               07 solo
+├── solo-stats/               solo-mining collector state and SQLite DB        07 solo
+├── pubpool/&lt;network&gt;/        public pool app                                  07 pool
+├── pubpoolwallet/&lt;network&gt;/  public pool wallet                               07 pool
+├── floonet/src/              Floonet relay source checkout (binary → /usr/local/bin)  091
+├── transporter-{main,test}/  Grin Transporter app + DB (never deployed)       093
+└── access-watch.sh           Provider Access Watch probe script               082</code></pre></div>
+<p>Web roots are separate, under <code>/var/www/</code>: <code>fullmain</code>, <code>prunemain</code>, <code>prunetest</code> (chain snapshots, Script 02/03), <code>grin-node-api</code> and <code>grin-node-api-testnet</code> (Script 04), <code>grin-stats</code> (06), <code>web-wallet-xp</code> (051x), <code>grin-drop-home</code> (059), <code>grin-pool</code> and <code>grin-pool-testnet</code> (07), <code>floonet-relay</code> (091).</p>
+<p>Tor identities are under <code>/var/lib/tor/</code>: <code>grin-&lt;network&gt;-raw-tcp/</code> (Script 01's private node mirror), <code>grin-&lt;network&gt;-nginx/</code> (Script 04's public API onion), and per-product directories for Accio and the Transporter. The <code>hostname</code> file in each holds the <code>.onion</code> address; the <code>hs_ed25519_secret_key</code> beside it <em>is</em> the identity.</p>
+<h2 id="runtime-config-created-on-first-run">Runtime config created on first run<a class="anchor" href="#runtime-config-created-on-first-run" aria-label="Link to this section">#</a></h2>
+<p>Small files under <code>/opt/grin/conf/</code> that scripts write the first time they run and read afterwards. They are the toolkit's memory of what you chose; a backup of <code>/opt/grin/conf/</code> plus the wallet seeds is most of what a rebuild needs.</p>
+<div class="table-wrap"><table><thead><tr><th>File</th><th>Purpose</th><th>Written by</th></tr></thead><tbody><tr><td><code>grin_instances_location.conf</code></td><td>Where each node is installed — read by nearly every other script</td><td>01 (refreshed by 03)</td></tr><tr><td><code>grin_node_watchdog.json</code></td><td>Sync-watchdog settings</td><td>01 / 07</td></tr><tr><td><code>grin_share_nginx.conf</code></td><td>Chain-snapshot sharing over nginx: networks, web folders, timeout</td><td>03</td></tr><tr><td><code>grin_share_ssh.conf</code></td><td>Chain-snapshot sharing over SSH</td><td>03</td></tr><tr><td><code>grin_share_targets.conf</code></td><td>Remote mirror list for the copy job, one per line</td><td>03</td></tr><tr><td><code>grin_wallets_location.conf</code></td><td>Registry of wallet directories, used by backups</td><td>05 / 051x</td></tr><tr><td><code>grin_solo_payment.json</code></td><td>Solo-mining payout settings</td><td>07 solo</td></tr><tr><td><code>grin_solo_backup.conf</code>, <code>grin_solo_quiet.conf</code></td><td>Solo-mining backup schedule; quiet-hours for its alerts</td><td>07 solo</td></tr><tr><td><code>grin_pubpool.json</code>, <code>grin_pubpool_testnet.json</code></td><td>Public pool settings per network</td><td>07 pool</td></tr><tr><td><code>grin_pubpool_backup.conf</code> (+ <code>_testnet</code>)</td><td>Pool backup schedule</td><td>07 pool</td></tr><tr><td><code>grin_gateway.json</code>, <code>wg/</code>, <code>wg-testnet/</code></td><td>Regional-gateway settings and WireGuard material</td><td>07 pool</td></tr><tr><td><code>host_monitor_port.conf</code></td><td>Custom hosts for the remote node monitor</td><td>081</td></tr><tr><td><code>host_monitor_last_state.conf</code></td><td>Last-known port state, for change alerts</td><td>081</td></tr><tr><td><code>mass_deploy.conf</code></td><td>Fleet server list for mass deployment</td><td>081</td></tr><tr><td><code>access-watch/</code></td><td>Provider Access Watch baseline and alert channel</td><td>082</td></tr><tr><td><code>grin_backup.conf</code>, <code>grin_backup_remote.conf</code></td><td>The one backup key file and the off-box push target</td><td>089</td></tr><tr><td><code>grin_drop_backup.conf</code>, <code>drop_shared.conf</code></td><td>Grin Drop backup schedule; settings shared by both networks</td><td>059</td></tr><tr><td><code>grin_floonet.conf</code></td><td>Floonet relay settings</td><td>091</td></tr><tr><td><code>grin_transporter.conf</code></td><td>Grin Transporter settings</td><td>093</td></tr><tr><td><code>github_repo.conf</code></td><td>Repository override for self-update (optional)</td><td>08</td></tr></tbody></table></div>
+<p>Product-specific configs that live <em>with</em> the product rather than here:</p>
+<div class="table-wrap"><table><thead><tr><th>File</th><th>Product</th></tr></thead><tbody><tr><td><code>/opt/grin/fidelius/config.conf</code> + <code>wallets_info.json</code></td><td>Fidelius (051)</td></tr><tr><td><code>/opt/grin/drop-&lt;net&gt;/grin_drop_&lt;net&gt;.conf</code></td><td>Grin Drop (059)</td></tr><tr><td><code>/opt/grin/grin-stats/config.env</code></td><td>Global Grin Health (06)</td></tr><tr><td><code>/opt/grin/tiny-explorer/config.json</code></td><td>Tiny Explorer (06d)</td></tr><tr><td><code>/opt/grin/woocommerce/&lt;net&gt;/bridge.conf</code></td><td>WooCommerce bridge (053)</td></tr></tbody></table></div>
+<h2 id="system-wide-files-the-toolkit-adds">System-wide files the toolkit adds<a class="anchor" href="#system-wide-files-the-toolkit-adds" aria-label="Link to this section">#</a></h2>
+<p>For completeness — the places outside <code>/opt/grin</code> and <code>/var/www</code> a script may have touched, so you know where to look.</p>
+<div class="table-wrap"><table><thead><tr><th>Where</th><th>What</th></tr></thead><tbody><tr><td><code>/etc/nginx/sites-available/</code>, <code>sites-enabled/</code></td><td>One site per public service (<code>grin-node-api</code>, <code>grin-fidelius</code>, <code>web-wallet-xp</code>, the snapshot hosts…)</td></tr><tr><td><code>/etc/nginx/conf.d/</code></td><td>Shared rate-limit and connection zones (<code>grin-rate-limit.conf</code>, <code>grin-conn-limit.conf</code>, per-product <code>script##-…</code> files)</td></tr><tr><td><code>/etc/nginx/snippets/cloudflare-realip.conf</code></td><td>Real-IP restoration behind Cloudflare</td></tr><tr><td><code>/etc/letsencrypt/live/&lt;domain&gt;/</code></td><td>Certificates, renewed by certbot's own timer</td></tr><tr><td><code>/etc/systemd/system/</code></td><td><code>grin-secret-sync.timer</code>, <code>grin-fidelius.service</code>, <code>grinscan-{main,test}.service</code>, <code>grin-wallet-bridge-{main,test}.service</code>, <code>grin-access-watch.timer</code>, <code>floonet-rs.service</code>, <code>grin-transporter-*.service</code></td></tr><tr><td><code>/etc/cron.d/</code></td><td><code>grin-node-sync-watchdog</code>, <code>grin-node-api-rest</code> / <code>-node</code>, <code>grin-solo-*</code>, <code>grin-stratum-watchdog</code>, <code>grin-auto-cleanup</code>, backup jobs — one file per job, named after it</td></tr><tr><td><code>/etc/tor/torrc</code></td><td>Hidden-service stanzas between <code># &gt;&gt;&gt; grin-toolkit:… &gt;&gt;&gt;</code> markers; nothing outside the markers is touched</td></tr><tr><td><code>/usr/local/bin/</code></td><td><code>gtmux</code>, <code>grin-secret-sync</code>, <code>grin-stats-collector</code>, <code>grin-price-collector</code>, <code>grin-node-submit</code>, <code>grin-solo-mining-collector</code>, <code>grin-stratum-watchdog</code>, <code>grin-backup-push</code>, <code>grin-gateway-ctl</code>, <code>floonet-rs</code></td></tr><tr><td><code>/etc/logrotate.d/</code></td><td>Rotation for <code>grin-server.log</code> (Super Auto) and for the node-API nginx logs</td></tr><tr><td>A <code>grin</code> system user</td><td>Owns <code>/opt/grin</code> and runs the nodes; never log in as it</td></tr></tbody></table></div>
+<h2 id="logs">Logs<a class="anchor" href="#logs" aria-label="Link to this section">#</a></h2>
+<p>Every interactive run writes a log under <code>/opt/grin/logs/</code>, named <code>&lt;script&gt;_&lt;date&gt;_&lt;time&gt;.log</code>, and prints the path when it finishes — attach that file when you report a problem. Long-running jobs use one fixed name each (<code>cron_nginx.log</code>, <code>stratum-watchdog.log</code>, <code>access-watch.log</code>…) and are rotated by logrotate. The node's own log is <code>grin-server.log</code> in the node directory; nginx sites log to <code>/var/log/nginx/</code> as <code>&lt;site&gt;.access.log</code>.</p>
+<h2 id="related">Related<a class="anchor" href="#related" aria-label="Link to this section">#</a></h2>
+<ul><li><a href="getting-started.html#mainnet-and-testnet">Getting started</a> — the short version of this page for a first node</li><li><a href="01-build-node.html#what-was-created">Script 01</a> — what a node build creates</li><li><a href="04-publish-node-api.html">Script 04</a> — the node API ports in use</li><li><a href="06-global-health.html">Script 06</a> and <a href="06b-grinscan.html">GrinScan</a> — the explorer and dashboard ports 3010/3011, 5060, 8000, 8471</li><li><a href="05-wallet-services.html">Wallet hub</a> — the wallet ports 3415/3420 and the listener modes that use them; <a href="051-fidelius.html">Fidelius</a> allocates them per wallet</li><li><a href="07-mining-services.html">Script 07</a> — solo mining: the node's stratum 3416 / 13416 published to miners, the reward wallet on 3420 / 13420</li><li><a href="07-public-pool.html">Public pool</a> — Script 07's pool: 3333 / 13333, the 8080 / 8090 API, region ports and the WireGuard tunnels</li><li><a href="08-admin-maintenance.html#node-status-sync-key-5">Script 08</a> — the status screen that shows which of these ports are actually listening; <a href="089-backup-restore.html">Back up and restore</a></li></ul>
+      </article>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="089-backup-restore.html"><span>Previous</span><strong>Back up and restore</strong></a></nav>
+    </main>
+
+    <aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav><a href="#which-ports-must-be-open-at-the-provider">Which ports must be open at the provider</a><a href="#grin-node-and-wallet">Grin node and wallet</a><a href="#node-api-extras-script-04">Node API extras (Script 04)</a><a href="#web-and-wallet-services">Web and wallet services</a><a href="#connectivity-hub-script-09">Connectivity hub (Script 09)</a><a href="#public-mining-pool-script-07">Public mining pool (Script 07)</a><a href="#nginx">nginx</a><a href="#grin-node-directories">Grin node directories</a><a href="#where-things-live-under-opt-grin">Where things live under <code>/opt/grin</code></a><a href="#runtime-config-created-on-first-run">Runtime config created on first run</a><a href="#system-wide-files-the-toolkit-adds">System-wide files the toolkit adds</a><a href="#logs">Logs</a><a href="#related">Related</a></nav></aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
+      });
+      var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
+      btn.addEventListener("click", function () {
+        var open = side.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.querySelectorAll(".copy").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var code = b.parentNode.querySelector("code").textContent;
+          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
+          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+        });
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      if (links.length && "IntersectionObserver" in window) {
+        var map = {};
+        links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { links.forEach(function (a) { a.classList.remove("active"); }); var a = map[en.target.id]; if (a) a.classList.add("active"); }
+          });
+        }, { rootMargin: "-80px 0px -70% 0px" });
+        Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+    })();
+  </script>
+</body>
+</html>
