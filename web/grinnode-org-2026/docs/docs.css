@@ -117,9 +117,33 @@ table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{padding:10px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
 th{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--panel2);white-space:nowrap}
 tbody tr:last-child td{border-bottom:0}
-td code{white-space:nowrap}
+/* Inline code may wrap in prose: a paragraph cannot scroll, so a long path or message would push the page sideways on a phone */
+article p code,article li code{white-space:normal;overflow-wrap:anywhere;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+/* In tables code wraps at spaces (a quoted error message must not take the whole width and leave the fix a
+   sliver) but never inside a word — overflow-wrap:normal keeps a path whole, and the table scrolls instead */
+td code{white-space:normal;overflow-wrap:normal}
+@media (min-width:821px){.symptom-index td:last-child{white-space:nowrap}}
+/* On a phone every long code span in a table would force a sideways scroll, so there they may break anywhere
+   (copying still copies the whole string). The symptom index quotes messages to recognise, so it always may. */
+@media (max-width:820px){td code{overflow-wrap:anywhere}}
+.symptom-index td code{overflow-wrap:anywhere}
 /* A nowrap path in column 1 must not squeeze the prose columns to one word per line on phones — they scroll instead */
 td:not(:first-child){min-width:10em}
+/* Troubleshooting rows carry ids (ts-…) and the symptom index links straight to them */
+tr:target td{background:color-mix(in srgb,var(--gold) 14%,transparent)}
+tr:target td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
+
+/* Symptom index (reference-troubleshooting) — the filter box is revealed by the page script */
+.symptom-filter{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px}
+.symptom-filter[hidden]{display:none}
+.symptom-filter label{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.symptom-filter input{flex:1 1 16em;min-width:0;min-height:44px;padding:8px 12px;border:1px solid var(--line2);border-radius:var(--radius);background:var(--panel);color:var(--text);font:inherit;font-size:15px}
+.symptom-filter input:focus{outline:2px solid var(--green);outline-offset:1px}
+.symptom-count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.symptom-total{color:var(--muted);font-size:14px;margin:0 0 12px}
+.symptom-filter:not([hidden])+.symptom-total{display:none}
+.symptom-index td code{white-space:normal;overflow-wrap:anywhere}
+.symptom-index td:last-child{min-width:7em}
 
 /* Callouts */
 .callout{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0 0 20px;padding:14px 16px;border:1px solid var(--line);border-left:3px solid var(--c,var(--blue));border-radius:var(--radius);background:linear-gradient(90deg,color-mix(in srgb,var(--c,var(--blue)) 9%,transparent),transparent 40%),var(--panel)}

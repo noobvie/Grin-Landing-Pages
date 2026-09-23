@@ -3,8 +3,9 @@ title: Getting started
 description: What server to rent, which Linux to install, how to run the Grin Node Toolkit for the first time, and how its menu, logs and directories work.
 section: Start here
 order: 1
+short: Getting started
 covers: 2026-09-19
-updated: 2026-09-19
+updated: 2026-09-23
 ---
 
 By the end of this page you will have the toolkit installed on a server and its main menu open. Building the node itself is the next page, [Script 01](01-build-node.html).
@@ -174,6 +175,8 @@ Updating the toolkit does not touch your node; updating the *node binary* is a s
 **[Admin & Maintenance → DEL](08-admin-maintenance.html#full-grin-cleanup-key-del)** runs the full cleanup: it stops every Grin process and tmux session, then removes the node and wallet directories, the nginx sites and web roots, binaries, and the toolkit's logs. It asks you to type `DESTROY` to begin and then confirms each step individually. **[Back up wallet seeds first](089-backup-restore.html)** — this cannot be undone. The clone directory is left for you to delete.
 
 ## Common first-run problems
+
+Stuck on something not listed here? [Troubleshooting](reference-troubleshooting.html) indexes every error message in the manual, and the [Glossary](reference-glossary.html) explains the terms.
 
 | Symptom | Cause and fix |
 |---------|---------------|

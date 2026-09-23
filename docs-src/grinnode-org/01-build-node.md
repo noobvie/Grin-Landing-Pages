@@ -3,6 +3,7 @@ title: Build or control a Grin node
 description: How Script 01 installs a Grin node from a chain snapshot in under an hour, what each choice in its wizard means, and how to start, rebuild or update a node.
 section: Scripts
 order: 1
+short: Build a node
 label: Script 01
 covers: 2026-09-19
 updated: 2026-09-20

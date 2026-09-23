@@ -3,6 +3,7 @@ title: GrinScan — a self-hosted block explorer
 description: Run GrinScan, the toolkit's Node.js block explorer for Grin mainnet and testnet — why an archive node matters, and how to move it without re-crawling.
 section: Scripts
 order: 6.5
+short: GrinScan
 label: Script 06b
 covers: 2026-09-20
 updated: 2026-09-20

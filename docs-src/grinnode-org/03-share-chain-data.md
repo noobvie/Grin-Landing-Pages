@@ -3,6 +3,7 @@ title: Share your chain data with the community
 description: How Script 03 packs your node's chain data into a snapshot, publishes it on your nginx host on a schedule, mirrors it over SSH and adds reboot autostart.
 section: Scripts
 order: 3
+short: Share chain data
 label: Script 03
 covers: 2026-09-19
 updated: 2026-09-20

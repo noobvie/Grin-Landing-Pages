@@ -3,6 +3,7 @@ title: Publish your node's API for wallets and explorers
 description: How Script 04 puts your Grin node's public (Foreign) API behind nginx and HTTPS, adds a status page, REST endpoints and a Tor onion, and how to test it.
 section: Scripts
 order: 4
+short: Node API
 label: Script 04
 covers: 2026-09-19
 updated: 2026-09-20

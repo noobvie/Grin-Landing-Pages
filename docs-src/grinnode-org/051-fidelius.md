@@ -2,7 +2,8 @@
 title: Fidelius — your personal web wallet
 description: How Script 051 deploys Fidelius, a browser wallet for your own node with server-held keys behind nginx, Basic Auth and HTTPS, plus WireGuard-only access.
 section: Scripts
-order: 51
+order: 5.1
+short: Fidelius
 label: Script 051
 covers: 2026-09-19
 updated: 2026-09-19
@@ -151,7 +152,7 @@ The page has six tabs: **Wallet**, **Send**, **Receive**, **History**, **Node** 
 | Method | Needs | How it works |
 |--------|-------|--------------|
 | **Send via Tor** | tor running on the host; the recipient online with their Tor listener up | Interactive — enter the recipient's `grin1…` address (or scan/upload a QR), the amount, and it completes in one go. Mainnet and testnet addresses are checked against the wallet's network and a mismatch is refused |
-| **Send via Transporter** | A Transporter URL configured on the Setup tab (from the Connectivity Hub, main menu 9); the recipient must use a Transporter on the same network | Asynchronous — the slate is queued and the recipient can be offline |
+| **Send via Transporter** | A Transporter URL configured on the Setup tab (from the [Connectivity Hub](09-connectivity-hub.html#grin-transporter-093), main menu 9); the recipient must use a Transporter on the same network | Asynchronous — the slate is queued and the recipient can be offline |
 | **Batch Send via Tor (CSV)** | As Tor | Paste lines of `address,amount[,label]`; each row is sent in turn, stopping at the first failure |
 | **Slatepack** | Nothing | Offline exchange: the wallet produces a slatepack text for you to deliver by any channel; paste the recipient's reply back to finalise. Funds are locked as soon as the slatepack is produced, so an unanswered send shows up as a pending transaction you can cancel |
 
@@ -266,6 +267,6 @@ Hub key `3` opens **Grin XP** (script `051x`): a wallet page dressed up as a Win
 - [Script 01](01-build-node.html) — the local node a wallet points at
 - [Script 04](04-publish-node-api.html) — how the public nodes in the wizard's list are made
 - [Ports and paths](reference-ports-and-paths.html) — every port and directory
-- Script 09 — the Connectivity Hub and the Transporter behind the *Send via Transporter* method *(manual page coming)*
+- [Script 09](09-connectivity-hub.html#grin-transporter-093) — the Connectivity Hub and the Transporter behind the *Send via Transporter* method
 - [Public pool](07-public-pool.html) — Script 07's pool, which shares UDP 51820 with private access; do not run both on one server
 - [Back up and restore](089-backup-restore.html) — the toolkit-wide backup (089), which includes every Fidelius wallet directory

@@ -2,7 +2,8 @@
 title: Grin Drop — a giveaway and donation portal
 description: How Script 059 deploys Grin Drop — a rate-limited GRIN faucet and donation page on one domain for testnet and mainnet — with its wallet, limits and backups.
 section: Scripts
-order: 59
+order: 5.9
+short: Grin Drop
 label: Script 059
 covers: 2026-09-20
 updated: 2026-09-20

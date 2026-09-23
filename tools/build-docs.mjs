@@ -18,6 +18,19 @@
 //   covers       toolkit code date the page was written against (YYYY-MM-DD)
 //   updated      date the page text last changed     (YYYY-MM-DD)
 //   label        short kicker, e.g. "Script 01"      (optional)
+//   short        page name in the symptom index      (optional, defaults to title)
+//
+// URLs are extension-less: pages are written as <slug>.html (the source Markdown links
+// to "<slug>.html" too, which is what the dead-link check reads), but every relative
+// href, the canonical, og:url, JSON-LD and the sitemap drop the ".html". nginx serves
+// them with `try_files $uri $uri.html` and 301s the .html form — see the /docs/ location
+// in site_manager.sh. Opening a page from disk still works; following a link from it
+// does not, so preview through the real vhost (or read the pages one at a time).
+//
+// Troubleshooting: every row of a table under a heading named "Troubleshooting" (or
+// "Common first-run problems") gets an anchor id "ts-<symptom words>", and a page that
+// contains the line <div data-symptom-index></div> gets an A–Z table of all of them,
+// generated at build time so the index can never drift from the pages it points into.
 
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from "node:fs";
 import { join, basename, dirname, resolve } from "node:path";
@@ -33,6 +46,7 @@ const DOCS_URL = `${SITE_URL}/docs/`;
 const REPO_URL = "https://github.com/noobvie/Grin-Node-Toolkit";
 const SECTIONS = ["Start here", "Scripts", "Reference"];
 const CHECK    = process.argv.includes("--check");
+const TS_HEADING = /^(troubleshooting|common first-run problems)$/i;
 
 const problems = [];
 const warn = (m) => problems.push(m);
@@ -81,6 +95,18 @@ function inline(text) {
 }
 
 const CALLOUTS = { note: "Note", tip: "Tip", warning: "Warning", danger: "Danger" };
+
+// First free id of the form base, base-2, base-3 … on this page.
+function uniqueId(ctx, base) {
+  if (!ctx.ids.has(base)) return base;
+  let n = 2;
+  while (ctx.ids.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
+// Extension-less URLs: "slug.html#x" → "slug#x", "index.html" → "./". Relative hrefs only.
+const cleanHrefs = (html) => html.replace(/href="([a-z0-9][a-z0-9.-]*?)\.html(#[^"]*)?"/g, (_, s, h = "") => `href="${s === "index" ? "./" : s}${h}"`);
+const pageUrl = (s) => (s === "index" ? DOCS_URL : `${DOCS_URL}${s}`);
 
 function renderMarkdown(md, ctx) {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
@@ -133,7 +159,13 @@ function renderMarkdown(md, ctx) {
     if (m) {
       const level = Math.max(2, m[1].length); // the front-matter title owns h1, so '#' and '##' both render as h2
       const text = inline(m[2]);
-      const id = slug(m[2]);
+      let id = slug(m[2]);
+      if (ctx.ids.has(id)) {
+        warn(`${ctx.file}: duplicate heading id '${id}' — give the heading a unique text (rendered as '${uniqueId(ctx, id)}')`);
+        id = uniqueId(ctx, id);
+      }
+      ctx.ids.add(id);
+      if (level <= 3) ctx.ts = TS_HEADING.test(m[2].trim());
       if (level === 2) headings.push({ id, text });
       out.push(`<h${level} id="${id}">${text}<a class="anchor" href="#${id}" aria-label="Link to this section">#</a></h${level}>`);
       i++; continue;
@@ -164,7 +196,14 @@ function renderMarkdown(md, ctx) {
       const rows = [];
       while (i < lines.length && /^\|/.test(lines[i])) rows.push(cells(lines[i++]));
       const td = (c, j, tag) => `<${tag}${align[j] ? ` style="text-align:${align[j]}"` : ""}>${inline(c)}</${tag}>`;
-      out.push(`<div class="table-wrap"><table><thead><tr>${head.map((c, j) => td(c, j, "th")).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, j) => td(c, j, "td")).join("")}</tr>`).join("")}</tbody></table></div>`);
+      const tr = (r) => {
+        if (!ctx.ts) return "<tr>";
+        const id = uniqueId(ctx, "ts-" + slug(r[0]).split("-").slice(0, 8).join("-").slice(0, 60).replace(/-+$/, ""));
+        ctx.ids.add(id);
+        ctx.tsRows.push({ md: r[0], id });
+        return `<tr id="${id}">`;
+      };
+      out.push(`<div class="table-wrap"><table><thead><tr>${head.map((c, j) => td(c, j, "th")).join("")}</tr></thead><tbody>${rows.map((r) => `${tr(r)}${r.map((c, j) => td(c, j, "td")).join("")}</tr>`).join("")}</tbody></table></div>`);
       continue;
     }
     // List
@@ -209,7 +248,7 @@ function sidebar(pages, current) {
 
 function page(p, pages, idx) {
   const { meta, html, headings, slug: s } = p;
-  const url = s === "index" ? DOCS_URL : `${DOCS_URL}${s}.html`;
+  const url = pageUrl(s);
   const fullTitle = s === "index" ? `${meta.title} — GrinNode.org` : `${meta.title} — Grin Node Toolkit Manual`;
   const prev = pages[idx - 1], next = pages[idx + 1];
   const crumbs = [{ n: "GrinNode.org", u: `${SITE_URL}/` }, { n: "Manual", u: DOCS_URL }];
@@ -228,7 +267,7 @@ function page(p, pages, idx) {
     : "";
   const pager = `<nav class="pager" aria-label="Previous and next page">${prev ? `<a class="pager-prev" href="${prev.slug}.html"><span>Previous</span><strong>${esc(prev.meta.title)}</strong></a>` : "<span></span>"}${next ? `<a class="pager-next" href="${next.slug}.html"><span>Next</span><strong>${esc(next.meta.title)}</strong></a>` : ""}</nav>`;
 
-  return `<!doctype html>
+  return cleanHrefs(`<!doctype html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
@@ -317,6 +356,17 @@ ${html}
           else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
         });
       });
+      var filter = document.getElementById("symptomFilter");
+      if (filter) {
+        var trs = Array.prototype.slice.call(document.querySelectorAll(".symptom-index tbody tr")), count = document.getElementById("symptomCount");
+        var run = function () {
+          var q = filter.value.trim().toLowerCase(), n = 0;
+          trs.forEach(function (r) { var hit = !q || r.textContent.toLowerCase().indexOf(q) > -1; r.hidden = !hit; if (hit) n++; });
+          count.textContent = q ? n + " of " + trs.length + " match" : trs.length + " symptoms";
+        };
+        filter.parentNode.hidden = false;
+        filter.addEventListener("input", run); run();
+      }
       var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
       if (links.length && "IntersectionObserver" in window) {
         var map = {};
@@ -332,7 +382,7 @@ ${html}
   </script>
 </body>
 </html>
-`;
+`);
 }
 
 // ---------------------------------------------------------------------------
@@ -343,11 +393,28 @@ const pages = files.map((f) => {
   const raw = readFileSync(join(SRC_DIR, f), "utf8");
   const { meta, body } = parseFrontMatter(raw, f);
   const s = basename(f, ".md");
-  const { html, headings } = renderMarkdown(body, { file: f });
-  return { file: f, slug: s, meta, html, headings };
+  const ctx = { file: f, ids: new Set(), ts: false, tsRows: [] };
+  const { html, headings } = renderMarkdown(body, ctx);
+  return { file: f, slug: s, meta, html, headings, tsRows: ctx.tsRows };
 });
 pages.sort((a, b) => SECTIONS.indexOf(a.meta.section) - SECTIONS.indexOf(b.meta.section) || a.meta.order - b.meta.order || a.slug.localeCompare(b.slug));
 if (!pages.some((p) => p.slug === "index")) throw new Error("docs-src needs an index.md");
+
+// Symptom index: every troubleshooting row of every page, A–Z, linking to the row itself.
+const SYMPTOM_SLOT = "<div data-symptom-index></div>";
+const sortKey = (md) => md.replace(/[`*_"“”'…]/g, "").replace(/^(the|a|an)\s+/i, "").trim().toLowerCase();
+for (const p of pages.filter((q) => q.html.includes(SYMPTOM_SLOT))) {
+  const rows = pages.filter((q) => q !== p).flatMap((q) => q.tsRows.map((r) => ({ ...r, page: q })))
+    .sort((a, b) => sortKey(a.md).localeCompare(sortKey(b.md), "en"));
+  const from = new Set(rows.map((r) => r.page.slug)).size;
+  p.html = p.html.replace(SYMPTOM_SLOT,
+    `<div class="symptom-filter" hidden><label for="symptomFilter">Filter</label><input id="symptomFilter" type="search" placeholder="Type part of the message, e.g. certbot" autocomplete="off" spellcheck="false"><span id="symptomCount" class="symptom-count" aria-live="polite"></span></div>
+` +
+    `<p class="symptom-total">${rows.length} symptoms from ${from} pages.</p>
+` +
+    `<div class="table-wrap symptom-index"><table><thead><tr><th>Symptom</th><th>Page</th></tr></thead><tbody>${rows.map((r) =>
+      `<tr><td>${inline(r.md)}</td><td><a href="${r.page.slug}.html#${r.id}">${esc(r.page.meta.short || r.page.meta.title)}</a></td></tr>`).join("")}</tbody></table></div>`);
+}
 
 // Dead-link check across the set (relative .html links and #anchors inside a page).
 const slugs = new Set(pages.map((p) => p.slug));
@@ -371,7 +438,7 @@ const rendered = pages.map((p, i) => ({ path: join(OUT_DIR, `${p.slug}.html`), h
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITE_URL}/</loc><lastmod>${gitDate("web/grinnode-org-2026/index.html") || today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-${pages.map((p) => `  <url><loc>${p.slug === "index" ? DOCS_URL : `${DOCS_URL}${p.slug}.html`}</loc><lastmod>${p.meta.updated || today}</lastmod><changefreq>monthly</changefreq><priority>${p.slug === "index" ? "0.9" : "0.8"}</priority></url>`).join("\n")}
+${pages.map((p) => `  <url><loc>${pageUrl(p.slug)}</loc><lastmod>${p.meta.updated || today}</lastmod><changefreq>monthly</changefreq><priority>${p.slug === "index" ? "0.9" : "0.8"}</priority></url>`).join("\n")}
 </urlset>
 `;
 const robots = `User-agent: *

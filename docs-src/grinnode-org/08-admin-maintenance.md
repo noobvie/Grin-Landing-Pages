@@ -3,6 +3,7 @@ title: Admin and maintenance
 description: Script 08: node status, a remote fleet monitor, host-tamper alerts, host tuning advice, nginx extras, key-only SSH, disk cleanup, self-update and uninstall.
 section: Scripts
 order: 8
+short: Admin
 label: Script 08
 covers: 2026-09-20
 updated: 2026-09-20

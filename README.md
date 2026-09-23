@@ -55,20 +55,114 @@ still deploys plain files and nothing runs there.
 
 ```bash
 node tools/build-docs.mjs            # render every page + sitemap.xml + robots.txt
-node tools/build-docs.mjs --check    # validate only (dead links, front matter), write nothing
+node tools/build-docs.mjs --check    # validate only (dead links, anchors, duplicate ids, descriptions), write nothing
 ```
 
 Run the build after editing any `.md` and commit the output with it. Each page
-starts with a front-matter block (`title`, `description`, `section`, `order`,
-optional `label`, `covers`, `updated`) — the sidebar, prev/next links, JSON-LD
-and sitemap are all derived from it, so a new page needs nothing but a new
-`.md` file. Supported Markdown: headings, paragraphs, fenced code (with a copy
-button), inline code/bold/italic/links, lists, pipe tables, and `> **Note:**` /
-`**Tip:**` / `**Warning:**` / `**Danger:**` blockquotes, which become callouts.
+starts with a front-matter block (`title`, `description` ≤160 chars, `section`,
+`order`, optional `label`, `short`, `covers`, `updated`) — the sidebar, prev/next
+links, JSON-LD and sitemap are all derived from it, so a new page needs nothing
+but a new `.md` file. Supported Markdown: headings, paragraphs, fenced code (with
+a copy button), inline code/bold/italic/links, lists, pipe tables, and
+`> **Note:**` / `**Tip:**` / `**Warning:**` / `**Danger:**` blockquotes, which
+become callouts.
 
 `covers` is the date the page was checked against the toolkit's code; `updated`
 is when the page text last changed. Both are printed on the page — keep them
 honest rather than fresh.
+
+### Pages (20, written 2026-09-19 → 09-23)
+
+`index`, `getting-started`; one page per script — `01-build-node`,
+`02-nginx-fileserver`, `03-share-chain-data`, `04-publish-node-api`,
+`05-wallet-services` (hub + CMD wallet + Accio status), `051-fidelius`,
+`053-woocommerce`, `059-grin-drop`, `06-global-health` (dashboard, grincoin
+explorer, Tiny Explorer), `06b-grinscan`, `07-mining-services` (hub + solo),
+`07-public-pool`, `08-admin-maintenance`, `089-backup-restore`,
+`09-connectivity-hub`; and three references — `reference-ports-and-paths`,
+`reference-glossary`, `reference-troubleshooting`. The manual stays **flat**
+(GA4 is injected one directory deep only): a new reference is
+`reference-<topic>.md`, never a sub-folder. Sub-product pages sort under their
+hub with a decimal `order` (051 → 5.1, 06b → 6.5, 089 → 8.9).
+
+### Writing a page
+
+- **Audience:** someone who can SSH into a VPS and paste commands but has never
+  run a Grin node. Second person, plain words, explain a term the first time
+  (or link it to the glossary), exact paths/ports/commands everywhere.
+- **The code wins.** Every key, path, port, cron cadence and claim comes from
+  the script, not the toolkit README or CLAUDE.md — the two were wrong often
+  enough to fill a 100-row log (now the toolkit's
+  `docs/generated/script00_report_manual_findings.md`). When they disagree,
+  write what the code does and add a row there.
+- **Say what has never run.** A product that has not been deployed on a VPS
+  gets a `> **Warning:** Status — …` callout at the top (Accio has no page at
+  all until it has run). Anything read from code but not seen working gets a
+  `> **Note:**`.
+- **Name products, not keys** — keys move. Only hub 05 (fixed slots) and hub 08
+  (key = last digit of the sub-script) have stable keys worth quoting.
+- **Shape of a script page** (copy `01-build-node.md`): intro → status callout →
+  What it does → Before you start → Choices → The menu (real menu in a `text`
+  block + key table) → step table → After it finishes / What was created →
+  Day-to-day → Troubleshooting → Related.
+- **Troubleshooting tables** are two columns, `Symptom | Cause and fix`, under a
+  heading named exactly *Troubleshooting*. The builder gives every row an anchor
+  (`#ts-…`) and lists it in `reference-troubleshooting`'s A–Z index
+  automatically — never copy rows there by hand. Quote the message's first
+  words in code, the rest in prose.
+- **Builder limits:** no backslash escapes (`\|` still splits a table cell, `\*`
+  prints a backslash); a `|` inside backticks in a table splits the cell too;
+  every heading on a page needs a unique text (duplicates are suffixed `-2` and
+  `--check` fails); link unwritten pages as plain text, not links. Tables of
+  three or more columns scroll on phones by design; keep them to four at most.
+- **Verify** with `--check`, then look at the page at 1440 px and at a true
+  390 px. Headless Edge clamps `--window-size` to ~500 px wide, so shoot mobile
+  through an `<iframe width="390">` page with `--allow-file-access-from-files`
+  (delete the helper file afterwards). A scrolling table at desktop width, or
+  anything wider than the page on a phone, is a bug.
+
+### Clean URLs
+
+Links, canonicals, JSON-LD and the sitemap are extension-less
+(`/docs/01-build-node`); the files on disk stay `<slug>.html` and the Markdown
+keeps linking `slug.html` (that is what the dead-link check reads — the builder
+strips the extension on output). nginx adds it back with the `location /docs/`
+block in `site_manager.sh`'s vhost template, which also 301s any `.html` URL to
+the clean one and returns a real 404 for a missing page. Following a link from
+a page opened straight from disk therefore does not work — read pages one at a
+time, or preview through the vhost.
+
+**One-time step on the live server:** vhosts are only generated by *Add
+Domain*, and re-running it re-issues the certificate and overwrites hand edits,
+so paste the block into the existing grinnode.org vhost instead — inside the
+`server { listen 443 … }` block, after `location / { … }` — then
+`nginx -t && systemctl reload nginx`:
+
+```nginx
+location /docs/ {
+    if ($request_uri ~ "^/docs/index(\.html)?(\?.*)?$") { return 301 /docs/$2; }
+    if ($request_uri ~ "^(/docs/[^?]+)\.html(\?.*)?$")  { return 301 $1$2; }
+    try_files $uri $uri.html $uri/ =404;
+    expires 1h;
+}
+```
+
+Check afterwards: `curl -sI https://grinnode.org/docs/01-build-node` → 200,
+`…/01-build-node.html` → 301, `…/docs/nope` → 404. (The block was rendered from
+the template and read, not run through `nginx -t` — do that on the server.)
+
+### Open items
+
+- **Not deployed yet.** grinnode.org/docs/ returned 404 on 2026-09-23. The
+  toolkit README and grin.money's toolkit page already link to it, so deploy
+  this site together with those changes.
+- **Soft 404 elsewhere on the site:** `location /` falls back to `/index.html`,
+  so any missing URL outside `/docs/` returns the home page with HTTP 200.
+  Fine for a one-page site; worth a real 404 if more pages are added.
+- **Nothing in the manual was verified on a VPS** beyond live probes of the
+  demo sites; every "not verified on a server" Note on the pages is still open.
+  Re-verify a page against the code (and bump `covers`) whenever its script
+  changes.
 
 ---
 

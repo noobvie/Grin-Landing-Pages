@@ -4,7 +4,7 @@ description: Every port the Grin Node Toolkit uses, which ones must be open in t
 section: Reference
 order: 1
 covers: 2026-09-19
-updated: 2026-09-20
+updated: 2026-09-23
 ---
 
 One page to look things up: the port each service listens on, which of them need a hole in the firewall, and the directories the toolkit creates. Every value here was checked against the scripts' own constants; where a script lets you change a port, the table gives the default.
@@ -195,6 +195,7 @@ Every interactive run writes a log under `/opt/grin/logs/`, named `<script>_<dat
 
 ## Related
 
+- [Glossary](reference-glossary.html) and [Troubleshooting](reference-troubleshooting.html) — the other two reference pages
 - [Getting started](getting-started.html#mainnet-and-testnet) — the short version of this page for a first node
 - [Script 01](01-build-node.html#what-was-created) — what a node build creates
 - [Script 04](04-publish-node-api.html) — the node API ports in use
@@ -202,4 +203,5 @@ Every interactive run writes a log under `/opt/grin/logs/`, named `<script>_<dat
 - [Wallet hub](05-wallet-services.html) — the wallet ports 3415/3420 and the listener modes that use them; [Fidelius](051-fidelius.html) allocates them per wallet
 - [Script 07](07-mining-services.html) — solo mining: the node's stratum 3416 / 13416 published to miners, the reward wallet on 3420 / 13420
 - [Public pool](07-public-pool.html) — Script 07's pool: 3333 / 13333, the 8080 / 8090 API, region ports and the WireGuard tunnels
+- [Connectivity hub](09-connectivity-hub.html) — Script 09: the Floonet relay on 8181 and the Transporter on 7456 / 7466 (onion fronts 7556 / 7566)
 - [Script 08](08-admin-maintenance.html#node-status-sync-key-5) — the status screen that shows which of these ports are actually listening; [Back up and restore](089-backup-restore.html)

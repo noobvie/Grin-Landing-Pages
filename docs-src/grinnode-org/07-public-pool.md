@@ -3,6 +3,7 @@ title: Run a public mining pool
 description: How Script 07 deploys GRINIUM, a self-hosted PPLNS Grin pool with no miner accounts, Tor and slatepack payouts, an admin panel and optional regional gateways.
 section: Scripts
 order: 7.5
+short: Public pool
 label: Script 07
 covers: 2026-09-20
 updated: 2026-09-20

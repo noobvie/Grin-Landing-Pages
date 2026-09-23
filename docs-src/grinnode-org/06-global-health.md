@@ -3,9 +3,10 @@ title: Network dashboard, peer map and a tiny explorer
 description: How Script 06 deploys a self-hosted Grin network dashboard with a peer map and charts, the Tiny Explorer with its wallet tools, and the grincoin.org explorer.
 section: Scripts
 order: 6
+short: Dashboard
 label: Script 06
 covers: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-23
 ---
 
 Script 06 — *Global Grin Health* in the main menu — is the hub for everything that **shows the network to the public**. Every product in it reads from your own node and is served by nginx over HTTPS on a subdomain you own. Nothing here touches wallets or money; the worst a misconfiguration can do is show stale numbers.
@@ -200,7 +201,7 @@ Option `D` is the toolkit's own explorer, written for one job first: answering *
 
 Kernels resolve on a pruned node too; a spent output whose block has been pruned returns 404, as does any block below the pruning horizon — which is why an archive node is recommended.
 
-### Setup, step by step
+### Tiny Explorer setup, step by step
 
 ```text
   D) Tiny Explorer — single-block deep-link explorer
@@ -236,7 +237,7 @@ The Configure prompts, in order:
 | Peers-stats source URL | Where the "Node peers · 30 d" card on the home page gets its count. Defaults to `https://world.grin.money`; point it at your own dashboard if you run one. When unreachable, the card falls back to your node's own live peer count |
 | Enable the Wallet Checker Tor liveness probe? | The optional second half of the wallet checker. **Yes** needs a Tor SOCKS proxy on `127.0.0.1:9050`; if none is listening the script offers to install and start `tor` for you, and if that fails it asks whether to leave the probe on anyway. The prompt says `(installs tor)` when that is what a yes would do. New installs default to yes; an existing choice in `config.json` is kept |
 
-### After it finishes
+### After the Tiny Explorer install
 
 ```bash
 curl -s http://127.0.0.1:8471/healthz          # {"status":"ok","node_mode":"archive"} or "pruned"
@@ -246,7 +247,7 @@ curl -s https://scan.yourdomain.com/api/tip     # the node's tip through nginx
 
 The nginx step prints the three deep-link forms to try.
 
-#### What was created
+#### Tiny Explorer files
 
 | Path | Purpose |
 |------|---------|

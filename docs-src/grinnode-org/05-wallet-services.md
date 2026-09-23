@@ -3,9 +3,10 @@ title: Wallet & payment services
 description: The wallet hub — what a Grin wallet is, the fixed-slot menu, every wallet and payment product with its status, and the CMD wallet quick setup step by step.
 section: Scripts
 order: 5
+short: CMD wallet
 label: Script 05
 covers: 2026-09-19
-updated: 2026-09-19
+updated: 2026-09-23
 ---
 
 Main-menu option **5** opens the wallet hub: one screen that shows which wallet and payment products are installed and running on the server, and launches the one you pick. Each product is its own script with its own wallet, ports, nginx site and service. The hub itself installs nothing — except the **CMD Wallet quick setup**, which is built into it and is the fastest way to get a working command-line wallet next to your node.
@@ -22,7 +23,7 @@ Three things about Grin surprise people coming from Bitcoin:
 - **Every transaction is a two-way exchange.** The sender's wallet produces a partial transaction (a **slate**), the receiver's wallet signs it and hands it back, and the sender finalises and broadcasts it. Both wallets take part. That exchange can happen automatically when both are online, or by hand: the slate travels as a block of text called a **slatepack** that you copy and paste — in a chat, an email, on paper.
 - **Coins that are sent to you need your wallet to answer.** A wallet that is *listening* — running with its Foreign API open, ideally reachable over Tor at its slatepack address — receives without you doing anything. A wallet that is switched off receives nothing until the sender reaches it another way.
 
-The toolkit's wallets move slates three ways: **Tor** (both wallets online; the sender connects to the receiver's address over the Tor network), **slatepack** text (copy and paste, either side may be offline), and — for products that support it — the **Transporter**, a store-and-forward queue from the Connectivity Hub (main menu 9) so the receiver can be offline at send time.
+The toolkit's wallets move slates three ways: **Tor** (both wallets online; the sender connects to the receiver's address over the Tor network), **slatepack** text (copy and paste, either side may be offline), and — for products that support it — the **Transporter**, a store-and-forward queue from the [Connectivity Hub](09-connectivity-hub.html#grin-transporter-093) (main menu 9) so the receiver can be offline at send time.
 
 Two more terms you will meet on every wallet screen. The **seed phrase** — 24 words printed once when the wallet is created — *is* the wallet; anyone holding it holds the coins, and it is the only way to recover them on another machine. The **passphrase** encrypts the seed file on disk and is asked for every time the wallet is unlocked. The wallet exposes two local APIs of its own: the **Foreign API** (port 3415 / 13415) through which it receives, and the **Owner API** (3420 / 13420) through which it is managed; both stay on localhost and are never opened to the internet.
 
@@ -210,7 +211,7 @@ To pay someone, `./grin-wallet send -d <address> <amount>` (their `grin1…` add
 
 | Symptom | Cause and fix |
 |---------|---------------|
-| `Port 3415 is held by ANOTHER process` at step 7 | Another wallet on this server already listens there — Fidelius's first mainnet wallet, Grin Drop, a solo-mining wallet. The script never kills it. Stop that listener, or change `api_listen_port` (or `owner_api_listen_port` for owner_api mode) in `grin-wallet.toml` and re-run |
+| `Port 3415 is held by ANOTHER process` at step 7 (3420 in `owner_api` mode) | Another wallet on this server already listens there. On 3415 that is usually Fidelius's first mainnet wallet; on 3420 / 13420 it is Grin Drop, a solo-mining wallet or the pool wallet, which all run the combined listener. The script never kills it. Stop that listener, or change `api_listen_port` (or `owner_api_listen_port` for owner_api mode) in `grin-wallet.toml` and re-run |
 | `Listener exited immediately` | The saved passphrase does not open the wallet. Run `/opt/grin/cmdwallet/mainnet/listen.sh` in the foreground to see grin-wallet's error; delete `mainnet_pass_wallet.txt` and re-run the setup to save the right one |
 | `Session … is alive` but `port … not listening yet` | grin-wallet is still starting (Tor bootstrap can take a minute) — or it failed after the session opened. `tmux attach -t grin_mainnet_cmd_wallet` and read |
 | `grin-wallet info failed` — cannot reach the node | The node is not running, or `node_api_secret_path` in the toml points at the wrong file. Check the node ([Script 01](01-build-node.html#after-it-finishes)), then run `grin-secret-sync` |
@@ -238,6 +239,6 @@ Keys `6` (Payment Pro) and `7` (GoblinPay) are **live keys that install nothing*
 - [Grin Drop](059-grin-drop.html) — Script 059, the giveaway and donation portal
 - [Script 01](01-build-node.html) — the node every wallet here talks to
 - [Script 04](04-publish-node-api.html) — the public node API, and how a wallet elsewhere points at your node
-- Script 09 — the Connectivity Hub, home of the Transporter an `owner_api`-mode CMD wallet can sit behind *(manual page coming)*
+- [Script 09](09-connectivity-hub.html) — the Connectivity Hub, home of the Transporter an `owner_api`-mode CMD wallet can sit behind
 - [Ports and paths](reference-ports-and-paths.html) — the wallet ports and every wallet directory
 - [Back up and restore](089-backup-restore.html) — the toolkit-wide backup that includes every wallet directory registered here (and does not restore it automatically — see that page)

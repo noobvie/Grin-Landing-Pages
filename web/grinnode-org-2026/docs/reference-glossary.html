@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glossary — Grin Node Toolkit Manual</title>
+  <meta name="description" content="Plain-language definitions of the Grin, server and web terms this manual uses — node, slatepack, Foreign API, stratum, tmux, vhost and more.">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="GrinNode.org">
+  <meta name="theme-color" content="#3dffa0">
+  <link rel="canonical" href="https://grinnode.org/docs/reference-glossary">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="Glossary — Grin Node Toolkit Manual">
+  <meta property="og:description" content="Plain-language definitions of the Grin, server and web terms this manual uses — node, slatepack, Foreign API, stratum, tmux, vhost and more.">
+  <meta property="og:url" content="https://grinnode.org/docs/reference-glossary">
+  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Glossary — Grin Node Toolkit Manual">
+  <meta name="twitter:description" content="Plain-language definitions of the Grin, server and web terms this manual uses — node, slatepack, Foreign API, stratum, tmux, vhost and more.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <link rel="stylesheet" href="docs.css">
+  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"Glossary","description":"Plain-language definitions of the Grin, server and web terms this manual uses — node, slatepack, Foreign API, stratum, tmux, vhost and more.","url":"https://grinnode.org/docs/reference-glossary","dateModified":"2026-09-23","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"},{"@type":"ListItem","position":3,"name":"Glossary","item":"https://grinnode.org/docs/reference-glossary"}]}]</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="header">
+    <nav class="nav" aria-label="Primary navigation">
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="links">
+        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+      </div>
+      <div class="actions">
+        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
+        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Manual contents">
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="./">Grin Node Toolkit Manual</a><a href="getting-started">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="051-fidelius"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="06-global-health"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="089-backup-restore"><span class="nav-label">Script 089</span>Back up and restore</a><a href="09-connectivity-hub"><span class="nav-label">Script 09</span>Connectivity hub — relay and slate transport</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths">Ports and paths</a><a href="reference-glossary" aria-current="page">Glossary</a><a href="reference-troubleshooting">Troubleshooting</a></div></nav>
+    </aside>
+
+    <main id="main">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="https://grinnode.org/">GrinNode.org</a><span class="crumb-sep" aria-hidden="true">›</span><a href="https://grinnode.org/docs/">Manual</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page">Glossary</span></nav>
+      <article>
+        <div class="kicker">Reference</div>
+        <h1>Glossary</h1>
+        <p class="lead">Plain-language definitions of the Grin, server and web terms this manual uses — node, slatepack, Foreign API, stratum, tmux, vhost and more.</p>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-09-23">23 Sept 2026</time></span><span>Page updated <time datetime="2026-09-23">23 Sept 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+<p>The words this manual uses without stopping to explain them, grouped by topic. Each entry is short and links to the page where the term actually matters; the definitions match the ones given on those pages. Every heading is a link target, so a page can point straight at a term.</p>
+<h2 id="the-node-and-the-chain">The node and the chain<a class="anchor" href="#the-node-and-the-chain" aria-label="Link to this section">#</a></h2>
+<h3 id="node">Node<a class="anchor" href="#node" aria-label="Link to this section">#</a></h3>
+<p>The program — <code>grin</code> — that keeps a copy of the Grin blockchain, checks every block and transaction, and talks to other nodes. It holds no coins and no keys; that is the <a href="#wallet">wallet</a>'s job. The toolkit runs one node per network, as the <code>grin</code> user, in a <a href="#tmux-and-gtmux">tmux</a> session. <a href="01-build-node">Script 01</a> builds it.</p>
+<h3 id="mainnet-testnet-and-tgrin">Mainnet, testnet and tGRIN<a class="anchor" href="#mainnet-testnet-and-tgrin" aria-label="Link to this section">#</a></h3>
+<p><strong>Mainnet</strong> is the real Grin network, where GRIN has value. <strong>Testnet</strong> is a parallel chain whose coins, <strong>tGRIN</strong>, are worthless — made for rehearsing. The toolkit keeps the two completely apart: separate directories, ports and wallets. Rehearse anything unfamiliar on testnet first. See <a href="getting-started#mainnet-and-testnet">Getting started</a>.</p>
+<h3 id="pruned-node-and-archive-node">Pruned node and archive node<a class="anchor" href="#pruned-node-and-archive-node" aria-label="Link to this section">#</a></h3>
+<p>A <strong>pruned</strong> node keeps every block header and every <a href="#kernel">kernel</a>, but the full block <em>bodies</em> only for recent blocks. It still verifies everything and is the right choice for almost every use. A <strong>full archive</strong> node keeps every block since genesis — needed only to serve old blocks, for example to a block explorer. The toolkit's directories are <code>mainnet-prune</code>, <code>testnet-prune</code> and <code>mainnet-full</code>. See <a href="01-build-node#mode-pruned-or-full-archive">Script 01</a>.</p>
+<h3 id="chain-data-and-snapshots">Chain data and snapshots<a class="anchor" href="#chain-data-and-snapshots" aria-label="Link to this section">#</a></h3>
+<p><code>chain_data/</code> is the node's database: the chain it has downloaded and verified. A <strong>snapshot</strong> is a compressed copy of a synced node's <code>chain_data</code>, published by community hosts so a new node can start in minutes instead of syncing for days. Script 01 downloads one (<a href="01-build-node#chain-data-source">chain data source</a>); <a href="03-share-chain-data">Script 03</a> lets you publish your own.</p>
+<h3 id="sync-and-pibd">Sync and PIBD<a class="anchor" href="#sync-and-pibd" aria-label="Link to this section">#</a></h3>
+<p><strong>Syncing</strong> is a node catching up with the chain. Starting from nothing, Grin downloads the chain state in parallel pieces — <strong>PIBD</strong>, <em>Parallel Initial Block Download</em> — which can take hours to days and sometimes stalls. That is why the toolkit starts from a snapshot. A node reports <code>&quot;sync_status&quot;:&quot;no_sync&quot;</code> once it is caught up.</p>
+<h3 id="kernel">Kernel<a class="anchor" href="#kernel" aria-label="Link to this section">#</a></h3>
+<p>Every Grin transaction leaves a <strong>kernel</strong> on the chain: a small signed record that proves the transaction happened and carries its fee. Kernels are never pruned, so they are how an explorer or a <a href="#payment-proof">payment proof</a> finds a transaction later. There are no addresses or amounts on the chain to look up instead.</p>
+<h3 id="mempool">Mempool<a class="anchor" href="#mempool" aria-label="Link to this section">#</a></h3>
+<p>The waiting room of transactions a node has received but that are not in a block yet. A transaction leaves the mempool when a miner includes it, usually within a minute or two.</p>
+<h3 id="txhashset-snapshot">txhashset snapshot<a class="anchor" href="#txhashset-snapshot" aria-label="Link to this section">#</a></h3>
+<p>A <code>txhashset_snapshot_&lt;height&gt;</code> zip your node writes whenever another node syncs its state from yours. They pile up in the node directory; <a href="03-share-chain-data#i-clean-up-txhashset-snapshots">Script 03</a> removes them before each share and can schedule a clean-up.</p>
+<h3 id="p2p-port">P2P port<a class="anchor" href="#p2p-port" aria-label="Link to this section">#</a></h3>
+<p>The port other nodes use to connect to yours: <strong>3414</strong> on mainnet, <strong>13414</strong> on testnet. It is one of the few ports that must be open in your provider's firewall. See <a href="reference-ports-and-paths#which-ports-must-be-open-at-the-provider">Ports and paths</a>.</p>
+<h2 id="node-apis-and-secrets">Node APIs and secrets<a class="anchor" href="#node-apis-and-secrets" aria-label="Link to this section">#</a></h2>
+<h3 id="foreign-api-and-owner-api">Foreign API and Owner API<a class="anchor" href="#foreign-api-and-owner-api" aria-label="Link to this section">#</a></h3>
+<p>A node answers on one HTTP port (3413, testnet 13413) with two APIs. The <strong>Foreign API</strong> (<code>/v2/foreign</code>) serves public chain data and broadcasts transactions — it is what wallets and explorers use, and what <a href="04-publish-node-api#foreign-api-and-owner-api">Script 04</a> publishes. The <strong>Owner API</strong> (<code>/v2/owner</code>) manages the node — status, peers, validation — and stays on the server. A <em>wallet</em> has its own pair with the same names on different ports (3415 and 3420); see <a href="#wallet">Wallet</a>.</p>
+<h3 id="api-secrets">API secrets<a class="anchor" href="#api-secrets" aria-label="Link to this section">#</a></h3>
+<p>The two password files in a node directory: <code>.api_secret</code> protects the Owner API and <code>.foreign_api_secret</code> the Foreign API. Programs send them as HTTP Basic credentials with the user name <code>grin</code>. The toolkit keeps a copy of each in <code>/opt/grin/keys/&lt;network&gt;/</code>, so rebuilding a node does not change them. See <a href="getting-started#where-things-live-on-the-server">Getting started</a>.</p>
+<h3 id="grin-secret-sync">grin-secret-sync<a class="anchor" href="#grin-secret-sync" aria-label="Link to this section">#</a></h3>
+<p>A small helper the toolkit installs with a timer that runs every 5 minutes. It finds each node's secret files and re-points every installed service at them, so a rebuilt or moved node does not leave the services behind it locked out with HTTP 401. <code>grin-secret-sync --rotate &lt;network&gt;</code> changes a secret on purpose. See <a href="01-build-node#day-to-day-operations">Script 01</a>.</p>
+<h2 id="wallets-and-transactions">Wallets and transactions<a class="anchor" href="#wallets-and-transactions" aria-label="Link to this section">#</a></h2>
+<h3 id="wallet">Wallet<a class="anchor" href="#wallet" aria-label="Link to this section">#</a></h3>
+<p>A separate program — <code>grin-wallet</code> — that holds your <a href="#seed-phrase">seed</a>, builds and signs transactions, and asks a node what is on the chain. It exposes a <strong>Foreign API</strong> (port 3415 / 13415) through which it receives, and an <strong>Owner API</strong> (3420 / 13420) through which it is managed; both stay on localhost. See <a href="05-wallet-services#a-grin-wallet-in-plain-words">A Grin wallet, in plain words</a>.</p>
+<h3 id="seed-phrase">Seed phrase<a class="anchor" href="#seed-phrase" aria-label="Link to this section">#</a></h3>
+<p>The 24 words printed once when a wallet is created. They <em>are</em> the wallet: anyone holding them holds the coins, and they are the only way to restore the wallet on another machine. Write them on paper and keep them off the server. See <a href="089-backup-restore">Back up and restore</a>.</p>
+<h3 id="passphrase">Passphrase<a class="anchor" href="#passphrase" aria-label="Link to this section">#</a></h3>
+<p>The password that encrypts the seed file on disk. It is asked for every time the wallet is unlocked. The toolkit's always-on wallets save it in a protected file on the server so they can unlock themselves after a reboot — one more reason the server itself must be kept safe.</p>
+<h3 id="slate-and-slatepack">Slate and slatepack<a class="anchor" href="#slate-and-slatepack" aria-label="Link to this section">#</a></h3>
+<p>A Grin payment is a two-way exchange. The sender's wallet writes a partial transaction — a <strong>slate</strong> — the receiver's wallet signs it and hands it back, and the sender finalises and broadcasts it. A <strong>slatepack</strong> is a slate written as a block of text, so it can be copied and pasted through any channel: a chat, an email, a web form.</p>
+<h3 id="slatepack-address">Slatepack address<a class="anchor" href="#slatepack-address" aria-label="Link to this section">#</a></h3>
+<p>A wallet's <code>grin1…</code> address (<code>tgrin1…</code> on testnet). It is a key for <em>reaching</em> a wallet — over Tor, or to encrypt a slatepack to it — not a place on the chain where coins sit. The same key gives the wallet its Tor address.</p>
+<h3 id="listener">Listener<a class="anchor" href="#listener" aria-label="Link to this section">#</a></h3>
+<p>A wallet left running so it can answer incoming payments without you. The toolkit uses two modes: <strong><code>listen</code></strong> (receive only, Foreign API on 3415, with its own Tor address) and <strong><code>owner_api</code></strong> (receive <em>and</em> send, both APIs on 3420, no automatic Tor), which the toolkit's services use. See <a href="05-wallet-services#the-two-listener-modes">the two listener modes</a>.</p>
+<h3 id="invoice">Invoice<a class="anchor" href="#invoice" aria-label="Link to this section">#</a></h3>
+<p>The same exchange started from the other end: the receiver writes an invoice slatepack for an amount, the payer's wallet pays it with <code>grin-wallet pay</code>, and the receiver finalises. Shops and donation pages use it — see <a href="053-woocommerce#how-a-grin-payment-works-here">WooCommerce</a> and <a href="059-grin-drop#donating">Grin Drop</a>.</p>
+<h3 id="payment-proof">Payment proof<a class="anchor" href="#payment-proof" aria-label="Link to this section">#</a></h3>
+<p>A statement signed by the receiver's wallet saying it received a given amount in a given transaction. It is optional and only possible when the sender knew the receiver's slatepack address. A payment proof shows who was paid; a <a href="#kernel">kernel</a> on chain only shows that the transaction was mined.</p>
+<h2 id="mining">Mining<a class="anchor" href="#mining" aria-label="Link to this section">#</a></h2>
+<h3 id="miner-and-cuckatoo32">Miner and Cuckatoo32<a class="anchor" href="#miner-and-cuckatoo32" aria-label="Link to this section">#</a></h3>
+<p>A <strong>miner</strong> is a machine — usually a dedicated rig — that races to solve Grin's proof of work, <em>Cuckatoo32</em>. Its speed is measured in <strong>graphs per second</strong> (G/s, kG/s, MG/s), not hashes. A new block arrives about every minute. See <a href="07-mining-services#how-solo-mining-works">How solo mining works</a>.</p>
+<h3 id="stratum">Stratum<a class="anchor" href="#stratum" aria-label="Link to this section">#</a></h3>
+<p>The protocol a miner uses to fetch work and hand in solutions, over a plain TCP connection such as <code>stratum+tcp://your-server:3416</code>. A Grin node has a stratum server built in (3416 / 13416), switched off until you set up mining; the public pool puts its own stratum on 3333 / 13333 in front of it.</p>
+<h3 id="coinbase-and-maturity">Coinbase and maturity<a class="anchor" href="#coinbase-and-maturity" aria-label="Link to this section">#</a></h3>
+<p>The <strong>coinbase</strong> is the new money in each block — 60 GRIN — paid to whoever mined it. The node asks the wallet to build it with a <code>build_coinbase</code> call. A coinbase is locked for <strong>1,440 blocks (about 24 hours)</strong> before it can be spent; until then it is <em>immature</em>.</p>
+<h3 id="solo-mining-and-pools">Solo mining and pools<a class="anchor" href="#solo-mining-and-pools" aria-label="Link to this section">#</a></h3>
+<p><strong>Solo</strong>: your rigs mine against your own node and every block you find pays its whole coinbase to your wallet — rare but large. <strong>Pool</strong>: many miners share the work and the pool splits each block between them — small, steady payments. The toolkit offers both, one per server. See <a href="07-mining-services">solo mining</a> and <a href="07-public-pool">the public pool</a>.</p>
+<h3 id="pplns">PPLNS<a class="anchor" href="#pplns" aria-label="Link to this section">#</a></h3>
+<p><em>Pay Per Last N Shares</em> — the way the toolkit's public pool splits a block: by the work each miner submitted in the last 60 blocks. Leaving just before a block is found still earns your part, so hopping between pools does not pay. See <a href="07-public-pool#fees-and-payouts">Fees and payouts</a>.</p>
+<h3 id="orphan-block">Orphan block<a class="anchor" href="#orphan-block" aria-label="Link to this section">#</a></h3>
+<p>A block that was found but lost the race: the network kept a different block at the same height, so its coinbase never matures. The toolkit's mining tools detect orphans and never pay them out.</p>
+<h2 id="transport-and-privacy">Transport and privacy<a class="anchor" href="#transport-and-privacy" aria-label="Link to this section">#</a></h2>
+<h3 id="tor-and-onion-addresses">Tor and .onion addresses<a class="anchor" href="#tor-and-onion-addresses" aria-label="Link to this section">#</a></h3>
+<p><strong>Tor</strong> is a network that relays traffic through volunteers' servers so neither end learns where the other is. A service reachable only through Tor has a <code>.onion</code> address. Grin wallets use Tor to send a payment straight to the receiver's <a href="#slatepack-address">slatepack address</a>; the toolkit also gives node APIs an onion mirror. See <a href="04-publish-node-api#the-tor-onion">Script 04's onion</a>.</p>
+<h3 id="nostr-relay">Nostr relay<a class="anchor" href="#nostr-relay" aria-label="Link to this section">#</a></h3>
+<p><strong>Nostr</strong> is an open protocol for passing signed messages through servers called <strong>relays</strong>. The Goblin wallet sends slatepacks as encrypted Nostr messages, so the receiver can pick up a payment when it next comes online. Script 091 deploys a relay — see <a href="09-connectivity-hub#floonet-relay-091">Floonet relay</a>.</p>
+<h3 id="goblin">Goblin<a class="anchor" href="#goblin" aria-label="Link to this section">#</a></h3>
+<p>An independent Grin wallet, by the developer known as <em>dog</em>, that pays by human-readable name (<code>alice@yourdomain.com</code>) and moves slatepacks over Nostr and Tor. The toolkit does not ship it; it deploys the relay Goblin connects to, and the public pool has an optional Goblin payout method, off by default.</p>
+<h3 id="store-and-forward-transporter">Store-and-forward (Transporter)<a class="anchor" href="#store-and-forward-transporter" aria-label="Link to this section">#</a></h3>
+<p>A mailbox for slates: the sender drops an encrypted slatepack into a queue on a server, and the receiver collects it later, so the two never need to be online at the same moment. The toolkit's version is the <a href="09-connectivity-hub#grin-transporter-093">Grin Transporter</a>, which has not yet been run on a server.</p>
+<h3 id="wireguard">WireGuard<a class="anchor" href="#wireguard" aria-label="Link to this section">#</a></h3>
+<p>A fast, simple VPN. The toolkit uses it for two private links: the public pool's regional gateways tunnel miners to the pool server, and Fidelius can be made reachable only over a WireGuard connection from your own devices. It listens on UDP 51820. See <a href="051-fidelius#private-access-menu-v">Fidelius private access</a>.</p>
+<h2 id="the-server">The server<a class="anchor" href="#the-server" aria-label="Link to this section">#</a></h2>
+<h3 id="vps">VPS<a class="anchor" href="#vps" aria-label="Link to this section">#</a></h3>
+<p>A <em>virtual private server</em> — a small Linux machine rented from a hosting provider, always on, reached over SSH. The toolkit is meant to run on a clean one. See <a href="getting-started#what-you-need">What you need</a>.</p>
+<h3 id="glibc">glibc<a class="anchor" href="#glibc" aria-label="Link to this section">#</a></h3>
+<p>The C library that almost every Linux program is built against. The official Grin binaries need <strong>glibc 2.38 or newer</strong>, which is why Ubuntu 24.04 is the minimum and 22.04 does not work. Check with <code>ldd --version</code>, and never upgrade glibc by hand.</p>
+<h3 id="root-sudo-and-the-grin-user">root, sudo and the grin user<a class="anchor" href="#root-sudo-and-the-grin-user" aria-label="Link to this section">#</a></h3>
+<p><strong>root</strong> is the Linux administrator account; <code>sudo</code> runs one command as root. The toolkit's scripts must run as root, but the node itself runs as an unprivileged <strong><code>grin</code></strong> user the toolkit creates. Starting a node as root by hand leaves root-owned files that stop the next normal start.</p>
+<h3 id="tmux-and-gtmux">tmux and gtmux<a class="anchor" href="#tmux-and-gtmux" aria-label="Link to this section">#</a></h3>
+<p><strong>tmux</strong> keeps a terminal session running after you disconnect — the toolkit runs each node inside one. Because those sessions belong to the <code>grin</code> user, a plain <code>tmux ls</code> as root does not show them; the toolkit's <strong><code>gtmux</code></strong> helper does (<code>gtmux ls</code>, <code>gtmux attach -t grin_pruned_mainnet</code>). Detach with Ctrl+B, then D. See <a href="getting-started#watching-the-node">Watching the node</a>.</p>
+<h3 id="systemd-service">systemd service<a class="anchor" href="#systemd-service" aria-label="Link to this section">#</a></h3>
+<p>The standard way Linux runs a background program and restarts it if it dies. The toolkit's web apps and wallet listeners are systemd services (<code>systemctl status &lt;name&gt;</code>, logs with <code>journalctl -u &lt;name&gt;</code>); the nodes themselves run in tmux instead.</p>
+<h3 id="cron">cron<a class="anchor" href="#cron" aria-label="Link to this section">#</a></h3>
+<p>Linux's scheduler. The toolkit uses it for recurring jobs — snapshot sharing, the sync watchdog, dashboard collectors, scheduled backups — and for <code>@reboot</code> entries that start nodes when the server boots.</p>
+<h3 id="watchdog">Watchdog<a class="anchor" href="#watchdog" aria-label="Link to this section">#</a></h3>
+<p>A scheduled check that repairs something when it fails. The main one is the <strong>sync watchdog</strong>: every 5 minutes it restarts a node that is down or whose height has stopped moving. The mining tools add watchdogs for the wallet listener and the stratum port. See <a href="07-mining-services#watchdogs-and-autostart">Watchdogs and autostart</a>.</p>
+<h3 id="swap">Swap<a class="anchor" href="#swap" aria-label="Link to this section">#</a></h3>
+<p>Disk space the kernel uses as overflow memory. A Grin node's start-up needs a lot of memory at once, so Script 01 adds a swapfile (2 GB, or 4 GB on servers with under 2 GB of RAM) to keep small servers from killing it.</p>
+<h3 id="firewall">Firewall<a class="anchor" href="#firewall" aria-label="Link to this section">#</a></h3>
+<p>Two layers decide which ports the internet can reach: your <strong>provider's firewall</strong> (often called a security group), set in their control panel, and the server's own, <strong>ufw</strong> (or firewalld on Rocky/Alma). The toolkit opens ports in the server's firewall; the provider's you open yourself. See <a href="reference-ports-and-paths#which-ports-must-be-open-at-the-provider">Ports and paths</a>.</p>
+<h2 id="the-web-side">The web side<a class="anchor" href="#the-web-side" aria-label="Link to this section">#</a></h2>
+<h3 id="dns-a-record">DNS A record<a class="anchor" href="#dns-a-record" aria-label="Link to this section">#</a></h3>
+<p>The entry at your domain registrar or DNS host that points a name such as <code>api.yourdomain.com</code> at your server's IP address. Every script that sets up a public site asks for a domain whose A record already points at the server, because the certificate step checks it.</p>
+<h3 id="nginx-vhosts-and-reverse-proxies">nginx, vhosts and reverse proxies<a class="anchor" href="#nginx-vhosts-and-reverse-proxies" aria-label="Link to this section">#</a></h3>
+<p><strong>nginx</strong> is the web server in front of everything the toolkit publishes. Each site is a <strong>vhost</strong> — a config file in <code>/etc/nginx/sites-available/</code> answering for one domain. Most toolkit sites are <strong>reverse proxies</strong>: nginx takes the HTTPS request on port 443 and passes it to an app listening on localhost. Test any change with <code>nginx -t</code> before reloading.</p>
+<h3 id="let-s-encrypt-and-certbot">Let's Encrypt and certbot<a class="anchor" href="#let-s-encrypt-and-certbot" aria-label="Link to this section">#</a></h3>
+<p><strong>Let's Encrypt</strong> issues free HTTPS certificates; <strong>certbot</strong> is the tool that requests and renews them. To prove you own a domain it fetches a file from your server over port 80, so the <a href="#dns-a-record">A record</a> must be right and port 80 open. Certificates renew automatically.</p>
+<h3 id="cloudflare-proxy">Cloudflare proxy<a class="anchor" href="#cloudflare-proxy" aria-label="Link to this section">#</a></h3>
+<p>Cloudflare can sit in front of a domain (the orange cloud in its dashboard). That hides your server's IP address, but it also gets in the way of the certificate check and of anything that is not web traffic. Set a name to <strong>DNS only</strong> while a script issues its certificate, and never proxy a stratum or P2P name.</p>
+<h3 id="basic-auth">Basic Auth<a class="anchor" href="#basic-auth" aria-label="Link to this section">#</a></h3>
+<p>A user name and password that the browser asks for before showing a page, enforced by nginx. The toolkit uses it to lock private pages — Fidelius, the solo-mining stats page — to their owner.</p>
+<h2 id="toolkit-words">Toolkit words<a class="anchor" href="#toolkit-words" aria-label="Link to this section">#</a></h2>
+<h3 id="hub">Hub<a class="anchor" href="#hub" aria-label="Link to this section">#</a></h3>
+<p>A main-menu entry that opens its own sub-menu of products, with the live status of each: <strong>5</strong> wallets and payments, <strong>7</strong> mining, <strong>8</strong> admin and maintenance, <strong>9</strong> connectivity. See <a href="./#the-menu">the menu</a>.</p>
+<h3 id="dev">(DEV)<a class="anchor" href="#dev" aria-label="Link to this section">#</a></h3>
+<p>The main menu's mark for a hub that is still being built — 5, 7 and 9 today. Some products inside are finished; each page in this manual starts with a status note saying which.</p>
+<h3 id="super-auto">Super Auto<a class="anchor" href="#super-auto" aria-label="Link to this section">#</a></h3>
+<p>Script 01's one-key install: both networks, pruned, from the fastest snapshot, plus autostart on reboot, the sync watchdog and log rotation. It wipes any existing node first. See <a href="01-build-node#super-auto">Super Auto</a>.</p>
+<h3 id="personal-key">Personal key<a class="anchor" href="#personal-key" aria-label="Link to this section">#</a></h3>
+<p>The one key that encrypts every backup archive on a server — the toolkit-wide backup and each product's own. Keep it somewhere other than the server; without it an archive cannot be opened. See <a href="089-backup-restore#the-personal-key">The personal key</a>.</p>
+<h2 id="related">Related<a class="anchor" href="#related" aria-label="Link to this section">#</a></h2>
+<ul><li><a href="reference-troubleshooting">Troubleshooting</a> — every symptom in the manual, A–Z</li><li><a href="reference-ports-and-paths">Ports and paths</a> — every port and directory mentioned here</li><li><a href="getting-started">Getting started</a> — the first page to read</li></ul>
+      </article>
+      <nav class="pager" aria-label="Previous and next page"><a class="pager-prev" href="reference-ports-and-paths"><span>Previous</span><strong>Ports and paths</strong></a><a class="pager-next" href="reference-troubleshooting"><span>Next</span><strong>Troubleshooting</strong></a></nav>
+    </main>
+
+    <aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav><a href="#the-node-and-the-chain">The node and the chain</a><a href="#node-apis-and-secrets">Node APIs and secrets</a><a href="#wallets-and-transactions">Wallets and transactions</a><a href="#mining">Mining</a><a href="#transport-and-privacy">Transport and privacy</a><a href="#the-server">The server</a><a href="#the-web-side">The web side</a><a href="#toolkit-words">Toolkit words</a><a href="#related">Related</a></nav></aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footerInner">
+      <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      document.getElementById("themeToggle").addEventListener("click", function () {
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
+      });
+      var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
+      btn.addEventListener("click", function () {
+        var open = side.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.querySelectorAll(".copy").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var code = b.parentNode.querySelector("code").textContent;
+          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
+          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+        });
+      });
+      var filter = document.getElementById("symptomFilter");
+      if (filter) {
+        var trs = Array.prototype.slice.call(document.querySelectorAll(".symptom-index tbody tr")), count = document.getElementById("symptomCount");
+        var run = function () {
+          var q = filter.value.trim().toLowerCase(), n = 0;
+          trs.forEach(function (r) { var hit = !q || r.textContent.toLowerCase().indexOf(q) > -1; r.hidden = !hit; if (hit) n++; });
+          count.textContent = q ? n + " of " + trs.length + " match" : trs.length + " symptoms";
+        };
+        filter.parentNode.hidden = false;
+        filter.addEventListener("input", run); run();
+      }
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      if (links.length && "IntersectionObserver" in window) {
+        var map = {};
+        links.forEach(function (a) { map[a.getAttribute("href").slice(1)] = a; });
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { links.forEach(function (a) { a.classList.remove("active"); }); var a = map[en.target.id]; if (a) a.classList.add("active"); }
+          });
+        }, { rootMargin: "-80px 0px -70% 0px" });
+        Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+    })();
+  </script>
+</body>
+</html>

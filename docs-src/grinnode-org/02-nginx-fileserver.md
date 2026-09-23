@@ -3,6 +3,7 @@ title: Host a file server for chain snapshots
 description: How Script 02 sets up an nginx file server with a Let's Encrypt certificate to distribute Grin chain snapshots, plus rate caps, fail2ban and IP blocking.
 section: Scripts
 order: 2
+short: File server
 label: Script 02
 covers: 2026-09-19
 updated: 2026-09-19

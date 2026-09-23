@@ -3,6 +3,7 @@ title: Mine Grin on your own node (solo)
 description: How Script 07 turns your Grin node into a private stratum server for solo mining — reward wallet, publishing the port, pointing a rig, stats, watchdogs, backup.
 section: Scripts
 order: 7
+short: Solo mining
 label: Script 07
 covers: 2026-09-20
 updated: 2026-09-20

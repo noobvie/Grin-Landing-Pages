@@ -2,7 +2,8 @@
 title: Accept GRIN in WooCommerce
 description: How Script 053 adds a Grin payment method to WooCommerce — a PHP plugin plus a local Node.js bridge to grin-wallet — and how the invoice flow works.
 section: Scripts
-order: 53
+order: 5.3
+short: WooCommerce
 label: Script 053
 covers: 2026-09-20
 updated: 2026-09-20

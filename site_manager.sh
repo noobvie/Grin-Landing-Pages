@@ -519,6 +519,19 @@ $ssl_block
         expires 1h;
     }
 
+    # Toolkit manual (grinnode.org/docs/) — clean URLs. Pages are <slug>.html on disk
+    # but every link, canonical and sitemap entry is extension-less (tools/build-docs.mjs),
+    # so try_files adds the .html. The .html spelling and /docs/index are 301'd to the
+    # one indexed URL; testing \$request_uri (never rewritten) instead of \$uri keeps the
+    # internal index/try_files rewrites from looping back into the redirect. A miss is a
+    # real 404 here, not the site's home page. Harmless on a site with no docs/ folder.
+    location /docs/ {
+        if (\$request_uri ~ "^/docs/index(\.html)?(\?.*)?\$") { return 301 /docs/\$2; }
+        if (\$request_uri ~ "^(/docs/[^?]+)\.html(\?.*)?\$")  { return 301 \$1\$2; }
+        try_files \$uri \$uri.html \$uri/ =404;
+        expires 1h;
+    }
+
     # Immutable cache for hashed assets
     location ~* \.(css|js|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|ico|webp)\$ {
         expires 1y;

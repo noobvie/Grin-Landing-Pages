@@ -2,7 +2,8 @@
 title: Back up and restore
 description: What the toolkit-wide backup (Script 089) captures and leaves out, the one personal key, scheduling, the offsite push, and restoring onto a fresh server.
 section: Scripts
-order: 89
+order: 8.9
+short: Backups
 label: Script 089
 covers: 2026-09-20
 updated: 2026-09-20
@@ -164,7 +165,7 @@ The restore writes files back where they came from and re-enables the nginx site
 3. **Admin & Maintenance → Backup & Restore → `R`.** Pick the archive from the list (or `C` for a custom path). Type the personal key; the date is read from the filename. The manifest is shown — read it — then confirm.
 4. The restore stops Tor while it swaps identity directories (and Fidelius if it is running), puts files back with the permissions each service expects, re-enables the nginx sites that were enabled, runs `nginx -t` and reloads if it passes, and prints *Next steps*.
 5. **Script 01** — build the node(s) the old server had. Step 8b restores the API secrets from the vault; step 13b reuses the onion key. Then `grin-secret-sync` once.
-6. Each product's own setup for the software the archive does not carry: [Fidelius](051-fidelius.html) steps 1 and 3, [Grin Drop](059-grin-drop.html) install, [GrinScan](06b-grinscan.html) and [Script 06](06-global-health.html) install, the Floonet relay (Script 09 — *manual page coming*). Their restored configs and databases are picked up as the services start.
+6. Each product's own setup for the software the archive does not carry: [Fidelius](051-fidelius.html) steps 1 and 3, [Grin Drop](059-grin-drop.html) install, [GrinScan](06b-grinscan.html) and [Script 06](06-global-health.html) install, the [Floonet relay](09-connectivity-hub.html#guided-setup-step-by-step) (Script 09 → Floonet Relay → guided setup). Their restored configs and databases are picked up as the services start.
 7. Point DNS at the new server. Let's Encrypt certificates came with the archive; renewal works again once a product setup has installed certbot (its package timer, or the cron [Script 02](02-nginx-fileserver.html) writes, takes it from there).
 8. Set the personal key again (the key file is never in an archive) — the same key, so the naming of future archives stays consistent — and re-create the schedule and the offsite target.
 
@@ -212,7 +213,7 @@ All of these use the same key, the same folder and the same name pattern, and al
 | `grin_drop_backup_*` | [Grin Drop → Backups](059-grin-drop.html#backups) | The Drop wallet and database (also in the toolkit archive) |
 | `grin_pubpool_backup_*`, `grin_pubpooltestnet_backup_*` | [Public pool → Backups](07-public-pool.html#backups-and-scheduled-tasks) | The **pool wallet**, pool database, WireGuard identity, vhost — not in the toolkit archive |
 | `grin_tor_onion_<net>.tar.gz` | [Script 04 → `V`](04-publish-node-api.html#the-tor-onion) | The API onion's key files, **unencrypted** (also in the toolkit archive, encrypted) |
-| Relay and Transporter archives | Their menus on Script 09 *(manual page coming)* | Relay config and databases (also here); the Transporter queue (only there) |
+| Relay and Transporter archives | Their `B` menus on [Script 09](09-connectivity-hub.html) | Relay config and databases (also here); the Transporter queue (only there) |
 
 ## Troubleshooting
 
