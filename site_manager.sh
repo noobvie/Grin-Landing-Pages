@@ -631,16 +631,26 @@ TMP_NGINX
         certbot certonly --nginx \
             --non-interactive \
             --agree-tos \
+            --expand \
             --email "$EMAIL" \
             --domains "$DOMAIN,www.$DOMAIN" 2>&1 || {
-            print_warn "certbot failed. Generating self-signed cert for testing..."
-            mkdir -p "/etc/ssl/$DOMAIN"
-            openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-                -keyout "/etc/ssl/$DOMAIN/privkey.pem" \
-                -out    "/etc/ssl/$DOMAIN/fullchain.pem" \
-                -subj   "/CN=$DOMAIN" 2>/dev/null
-            cert_mode="selfsigned"
-            print_warn "Self-signed cert generated. Replace with Let's Encrypt for production."
+            # A live site must never be downgraded to self-signed just because a
+            # re-run failed to ISSUE: keep the existing Let's Encrypt cert if it
+            # is still valid for at least a day.
+            if openssl x509 -checkend 86400 -noout \
+                    -in "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" 2>/dev/null; then
+                print_warn "certbot failed, but a valid existing certificate was found — keeping it."
+                print_warn "It may not cover www.$DOMAIN; check DNS and re-run to expand it."
+            else
+                print_warn "certbot failed. Generating self-signed cert for testing..."
+                mkdir -p "/etc/ssl/$DOMAIN"
+                openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+                    -keyout "/etc/ssl/$DOMAIN/privkey.pem" \
+                    -out    "/etc/ssl/$DOMAIN/fullchain.pem" \
+                    -subj   "/CN=$DOMAIN" 2>/dev/null
+                cert_mode="selfsigned"
+                print_warn "Self-signed cert generated. Replace with Let's Encrypt for production."
+            fi
         }
     fi
 
