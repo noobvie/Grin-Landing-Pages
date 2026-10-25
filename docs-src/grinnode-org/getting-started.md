@@ -4,8 +4,8 @@ description: What server to rent, which Linux to install, how to run the Grin No
 section: Start here
 order: 1
 short: Getting started
-covers: 2026-09-19
-updated: 2026-09-23
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
 By the end of this page you will have the toolkit installed on a server and its main menu open. Building the node itself is the next page, [Script 01](01-build-node.html).
@@ -17,11 +17,11 @@ By the end of this page you will have the toolkit installed on a server and its 
 | Resource | Minimum | Comfortable |
 |----------|---------|-------------|
 | Disk | **10 GB free** for one pruned node (Script 01 checks this). 25 GB for a full archive; Super Auto asks for 20 GB | 40 GB+ if you also want to share snapshots or run an explorer |
-| RAM | Works on 2 GB — the toolkit adds a swapfile (2 GB, or 4 GB on boxes under 2 GB RAM) because a Grin node's start-up is memory-heavy | 4 GB if you run mainnet and testnet together or add web services |
+| RAM | Works on 2 GB — the toolkit adds a [swapfile](reference-glossary.html#swap) (2 GB, or 4 GB on boxes under 2 GB RAM) because a Grin node's start-up is memory-heavy | 4 GB if you run mainnet and testnet together or add web services |
 | CPU | 1 vCPU | 2 vCPU — node start-up pegs one core for a few minutes |
 | Network | Inbound port 3414 (mainnet) / 13414 (testnet) reachable, so other nodes can connect to yours | |
 
-**A supported Linux.** The toolkit downloads the official pre-built Grin binary, which is compiled against **glibc 2.38 or newer**. That is a hard floor: on an older system the node exits immediately with `version 'GLIBC_2.38' not found`. Check yours with `ldd --version`.
+**A supported Linux.** The toolkit downloads the official pre-built Grin binary, which is compiled against **[glibc 2.38 or newer](reference-glossary.html#glibc)**. That is a hard floor: on an older system the node exits immediately with `version 'GLIBC_2.38' not found`. Check yours with `ldd --version`.
 
 | Distribution | Status |
 |--------------|--------|
@@ -30,10 +30,13 @@ By the end of this page you will have the toolkit installed on a server and its 
 | Debian 13 (trixie) or newer | Best effort, not fully tested. Debian 12 has glibc 2.36 — too old |
 | Other Debian-based (Mint, Pop!_OS, Kali…) | Best effort; must still meet the glibc floor |
 | Rocky Linux / AlmaLinux 10+ | Runs, not fully tested |
-| Rocky / Alma 9 or older | Not supported (glibc 2.34); the script prints upgrade instructions |
-| Fedora, Arch, others | Not supported — the script exits |
+| Rocky / Alma 9 or older | Not supported (glibc 2.34). The main menu prints upgrade instructions, then lets you carry on, but the node will not run |
+| Fedora, Arch, RHEL, CentOS, openSUSE and similar | Not supported: the script exits |
+| Any distribution it does not recognise | Not supported: the script warns "errors are expected" and carries on anyway |
 
 > **Danger:** On Ubuntu 22.04 (or any glibc below 2.38) **do not try to upgrade glibc.** `libc.so.6` is the library every program on the machine links against; installing a newer `libc6` from another release breaks the system, usually beyond SSH. Reinstall the VPS on Ubuntu 24.04, or compile the node yourself with Script 01 → key `G` (build from source), which links against whatever glibc you have. Note that the wallet products download the same kind of pre-built binary, so a source build is only a partial escape.
+
+> **Note:** The toolkit's start-up check still calls Ubuntu 22.04 "fully supported" and lets you in. It looks only at the version number; the glibc floor above is what decides whether the node runs.
 
 **Root access.** Every script runs with `sudo`. The toolkit creates a dedicated `grin` system user and runs the node as that user — you never run the node as root yourself.
 
@@ -61,10 +64,10 @@ The toolkit itself lives where you cloned it; everything it *installs* goes unde
 
 ## Your first run
 
-On start the main script checks your operating system. Unsupported distributions exit with a message; older Rocky/Alma releases get upgrade instructions. Then the menu appears:
+On start the main script checks your operating system. The distributions listed as unsupported above exit with a message, one it does not recognise gets a warning, and Rocky/Alma releases older than 10 get upgrade instructions. Then the menu appears:
 
 ```text
- Grin Node Toolkit v2026.09.20
+ Grin Node Toolkit v2026.10.25
  Keeping Grin shining bright...
 
   Core Features
@@ -78,7 +81,7 @@ On start the main script checks your operating system. Unsupported distributions
   4) Publish Grin Node API
   5) Grin Wallet & Payment Services (DEV)
   6) Global Grin Health
-  7) Grin Mining Pool Deployment (DEV)
+  7) Grin Mining Pool Deployment
   9) Grin Connectivity Hub (DEV)
 
   8) Admin & Maintenance
@@ -92,10 +95,11 @@ Press **1** to build your node. The next page, [Script 01](01-build-node.html), 
 
 ### How the menus work
 
-- **Numbers** are the main actions; **letters** are secondary ones (`B` back, `R` refresh, `D` delete, `L` logs, and so on). **`0`** always goes back or exits. `Enter` on an empty prompt takes the default shown in brackets — `[A/1/G/0, Enter = 1]` means plain Enter picks `1`.
+- **Numbers** are the main actions; **letters** are secondary ones (`B` back, `R` refresh, `D` delete, `L` logs, and so on). **`0`** always goes back or exits. `Enter` on an empty prompt takes the default shown in brackets: `Choice [1]:` means plain Enter picks `1`. A menu without a default, such as Script 01's `Select [A / 1-5 / G / 0]:`, just asks again.
+- **Greyed-out rows.** Some menus, Script 01's among them, always list every key and print one that cannot act right now dim, with the reason beside it, instead of hiding it.
 - **Backing out.** When a script asks you to type a value (a domain, a path), use the cancel key it shows — `q` in newer prompts, `0` in menus. Avoid `Ctrl+C` mid-action: it kills the script, and a half-finished action may need cleaning up.
 - **Hubs** (5, 7, 8, 9) print their own sub-menu with the live status of each product — installed, running, version — so you can see the state of the server before choosing.
-- **A product's screen shows its number** in the banner (`01) Grin Node Setup`), which is the same number as its script file in the repository. Sub-menu keys are separate from those numbers and can differ between hubs.
+- **A product's screen shows its number** in the banner (`01) GRIN NODES`), which is the same number as its script file in the repository. Sub-menu keys are separate from those numbers and can differ between hubs.
 - **Every action writes a log**, named by script and timestamp, under `/opt/grin/logs/` — for example `/opt/grin/logs/01_build_new_grin_node_20260919_142201.log`. The script prints the path when it finishes. Attach it when you report a problem.
 
 ## Mainnet and testnet
@@ -138,7 +142,7 @@ The values are generated once and kept in `/opt/grin/keys/`, so rebuilding a nod
 
 ## Watching the node
 
-The node runs inside a **tmux** session owned by the `grin` user. Because that session lives on the `grin` user's tmux server, a plain `tmux ls` as root does not show it; use the `gtmux` helper the toolkit installs:
+The node runs inside a **[tmux](reference-glossary.html#tmux-and-gtmux)** session owned by the `grin` user. Because that session lives on the `grin` user's tmux server, a plain `tmux ls` as root does not show it; use the `gtmux` helper the toolkit installs:
 
 ```bash
 gtmux ls                              # list node sessions
@@ -168,7 +172,9 @@ The toolkit changes often. Update it from the menu — **[Admin & Maintenance �
 cd ~/Grin-Node-Toolkit && git pull
 ```
 
-Updating the toolkit does not touch your node; updating the *node binary* is a separate action inside Script 01 (key `B`).
+Pick one of the two and stick to it. Self-update downloads the branch as an archive and copies it over the clone, so afterwards `git log` in the clone is out of date, `git status` lists the updated files as changed, and a file that was deleted upstream stays on disk.
+
+Updating the toolkit does not touch your node; updating the *node binary* is a separate action inside Script 01 (*Update Grin binary*, key `3`).
 
 ## Removing everything
 
@@ -182,7 +188,7 @@ Stuck on something not listed here? [Troubleshooting](reference-troubleshooting.
 |---------|---------------|
 | `version 'GLIBC_2.38' not found` | Your distribution is too old for the pre-built binary. Reinstall on Ubuntu 24.04, or use Script 01 → `G` to build from source. See [What you need](#what-you-need). |
 | `The Grin Node Toolkit must be run as root` | Start with `sudo ./grin-node-toolkit.sh`. |
-| `Unsupported OS` at start | Fedora, Arch and similar are not supported. Rocky/Alma 9 needs an upgrade to 10. |
-| `command not found: jq` (or `tmux`, `curl`…) | Script 01 installs its dependencies in Step 2. If a package fails to install, run `sudo apt update` and retry. |
-| The menu is missing key 5, 7 or 9 features | Products marked **(DEV)** are still being built. Everything under 1–4, 6 and 8 is stable. |
+| `UNSUPPORTED OPERATING SYSTEM — CANNOT CONTINUE` at start | Fedora, Arch, RHEL and similar are not supported. Rocky/Alma 9 shows *OS VERSION TOO OLD* instead and needs a reinstall on version 10. |
+| `command not found: jq` (or `tmux`, `curl`…) | Script 01 installs its dependencies in step 2 of a node install. If a package fails to install, run `sudo apt update` and retry. |
+| The menu is missing key 5 or 9 features | Products marked **(DEV)** are still being built. Their pages say which parts have run on a server. |
 | Nothing listens on 3414 after the build | The node may still be starting — a Grin node takes a few minutes to open its ports after launch. Check with `gtmux attach -t grin_pruned_mainnet`. |

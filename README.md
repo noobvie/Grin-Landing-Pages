@@ -71,7 +71,7 @@ become callouts.
 is when the page text last changed. Both are printed on the page — keep them
 honest rather than fresh.
 
-### Pages (20, written 2026-09-19 → 09-23)
+### Pages (20, written 2026-09-19 → 09-23, re-checked 2026-10-23 → 10-24)
 
 `index`, `getting-started`; one page per script — `01-build-node`,
 `02-nginx-fileserver`, `03-share-chain-data`, `04-publish-node-api`,
@@ -85,6 +85,10 @@ explorer, Tiny Explorer), `06b-grinscan`, `07-mining-services` (hub + solo),
 `reference-<topic>.md`, never a sub-folder. Sub-product pages sort under their
 hub with a decimal `order` (051 → 5.1, 06b → 6.5, 089 → 8.9).
 
+Every page was re-checked against toolkit branch `add-ons` @ `270e2b3` on
+2026-10-23 → 10-24, with an independent second reader per page; each page's
+`covers` / `updated` says when it was last checked and changed.
+
 ### Writing a page
 
 - **Audience:** someone who can SSH into a VPS and paste commands but has never
@@ -93,7 +97,7 @@ hub with a decimal `order` (051 → 5.1, 06b → 6.5, 089 → 8.9).
 - **The code wins.** Every key, path, port, cron cadence and claim comes from
   the script, not the toolkit README or CLAUDE.md — the two were wrong often
   enough to fill a 100-row log (now the toolkit's
-  `docs/generated/script00_report_manual_findings.md`). When they disagree,
+  `docs/reference/script00_report_manual_findings.md`). When they disagree,
   write what the code does and add a row there.
 - **Say what has never run.** A product that has not been deployed on a VPS
   gets a `> **Warning:** Status — …` callout at the top (Accio has no page at
@@ -153,9 +157,16 @@ the template and read, not run through `nginx -t` — do that on the server.)
 
 ### Open items
 
-- **Not deployed yet.** grinnode.org/docs/ returned 404 on 2026-09-23. The
-  toolkit README and grin.money's toolkit page already link to it, so deploy
-  this site together with those changes.
+- **Deployed, but the live copy is stale.** On 2026-10-24
+  `curl -sI https://grinnode.org/docs/01-build-node` → 200, `….html` → 301,
+  `/docs/nope` → 404 (the clean-URL block is in place), but the live page still
+  shows its 2026-09 dates. Deploy the rebuilt `web/grinnode-org-2026/docs/`.
+- **Warnings that wait on toolkit fixes.** Several pages warn about code bugs
+  logged in the toolkit's findings log (*Act on these first*): the dead Script 03
+  schedules (Danger callout on 03), Script 01 `G` → `3` (Warning on 01), Drop's
+  `-p` passphrase (059 Status), the Top 20 bandwidth parser (Note on 08), the
+  ufw block order (Warning on 02), the pool's `Z` defaults (Danger on the pool
+  page). When the code is fixed, re-check that page and remove its warning.
 - **Soft 404 elsewhere on the site:** `location /` falls back to `/index.html`,
   so any missing URL outside `/docs/` returns the home page with HTTP 200.
   Fine for a one-page site; worth a real 404 if more pages are added.

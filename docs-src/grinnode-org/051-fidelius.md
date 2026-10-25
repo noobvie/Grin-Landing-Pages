@@ -5,20 +5,20 @@ section: Scripts
 order: 5.1
 short: Fidelius
 label: Script 051
-covers: 2026-09-19
-updated: 2026-09-19
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
 Fidelius is a wallet you use from a browser — on your phone, on a laptop, anywhere — while the wallet itself runs on your server next to your node. One small Node.js service manages as many wallets as you like, on mainnet and testnet at once, and the page is served by nginx over HTTPS behind a username and password. **The keys stay on the server**: every wallet is a normal `grin-wallet` whose seed lives in `/opt/grin/fidelius/`, and the browser only drives it. (Accio, the toolkit's other web wallet, is the opposite — keys in the visitor's browser, nothing on the server — and it has not run anywhere yet; see the [wallet hub](05-wallet-services.html#accio-the-public-web-wallet-not-yet-run).)
 
-It is a **personal** wallet: it is meant for the server owner and nobody else. Basic Auth is the whole front door, and whoever passes it controls every wallet registered.
+It is a **personal** wallet: it is meant for the server owner and nobody else. [Basic Auth](reference-glossary.html#basic-auth) is the whole front door, and whoever passes it controls every wallet registered.
 
 > **Warning:** Status — the hub marks Fidelius *building*. It has been through one live test on a VPS (2026-08-09, a synced mainnet node, which found and fixed a node-status bug), but the changes since — the node-status rework, the WireGuard private-access menu, the Transporter send rail — have **not** been run on a server. Start on **testnet**, keep amounts small on mainnet, and write the seed phrase of every wallet down the day you create it.
 
 ## What it does
 
-1. Installs the pinned `grin-wallet` binary (v5.4.1) once, shared by every wallet, plus Node.js 24, nginx, certbot, `htpasswd`, tor, `qrencode` and `jq`.
-2. Deploys the app to `/opt/grin/fidelius/app/` and runs it as the systemd service **`grin-fidelius`**, bound to `127.0.0.1:7420` — never reachable directly from outside.
+1. Installs the [pinned](reference-glossary.html#grin-wallet-pin) `grin-wallet` binary (**v5.4.1** — Fidelius keeps its own pin; every other wallet product in the toolkit now installs v5.5.0) once, shared by every wallet, plus Node.js 24, nginx, certbot, `htpasswd`, tor, `qrencode` and `jq`.
+2. Deploys the app to `/opt/grin/fidelius/app/` and runs it as the [systemd service](reference-glossary.html#systemd-service) **`grin-fidelius`**, bound to `127.0.0.1:7420` — never reachable directly from outside.
 3. Writes an nginx site for your domain that proxies to that port with **Basic Auth**, a strict Content-Security-Policy, per-IP rate limits (3 sends a minute, 10 API calls a minute, 20 page loads a minute) and HTTPS from Let's Encrypt or a Cloudflare Origin certificate.
 4. Opens ports 80 and 443 in the firewall and adds a **fail2ban** jail: five wrong passwords in ten minutes bans the address for an hour.
 5. Installs the 5-minute `grin-secret-sync` timer, so wallets pointed at your local node keep working after a node rebuild.
@@ -28,14 +28,14 @@ From then on, wallets are created, unlocked, funded and spent **in the browser**
 
 ## How it is built
 
-- **One process, many wallets, both networks.** Each wallet is a directory under `/opt/grin/fidelius/` — `wallet_<network>_<name>/` — holding its own `grin-wallet.toml` and encrypted seed. The service keeps a registry (`wallets_info.json`) and, when you unlock a wallet, starts that wallet's own `grin-wallet` processes as children: an **Owner API** for balance and sending, and a **Listener** (Foreign API, over Tor) for receiving. A locked wallet has no processes.
+- **One process, many wallets, both networks.** Each wallet is a directory under `/opt/grin/fidelius/` — `wallet_<network>_<name>/` — holding its own `grin-wallet.toml` and [encrypted seed](reference-glossary.html#seed-phrase). The service keeps a registry (`wallets_info.json`) and, when you unlock a wallet, starts that wallet's own `grin-wallet` processes as children: an **Owner API** for balance and sending, and a **Listener** (Foreign API, over Tor) for receiving. A locked wallet has no processes.
 - **Ports are allocated per wallet.** The first mainnet wallet gets Foreign 3415 and Owner 3420, the second 3416 / 3421, and so on; testnet counts from 13415 / 13420. All on localhost. This is why Fidelius should not share a server with the CMD wallet or Grin Drop, which want 3415 / 3420 too — and why, on a server that also solo-mines, a *second* mainnet wallet would land on 3416, the node's stratum port.
 - **Wallet names must be unique across both networks.** Every URL in the app is `/api/wallet/<name>/…`, so a mainnet and a testnet wallet both called `savings` cannot coexist; the app refuses the second and suggests `savings-test`.
 - **Two locks.** The browser locks all wallets after 15 minutes without mouse or keyboard activity (adjustable in the UI). The server has a backstop of its own (`WW_IDLE_LOCK_MINUTES`, default 60): after that long with no deliberate action it forgets the passphrase even if the tab was closed — listeners keep running, so receiving is unaffected.
-- **The passphrase never touches a command line.** grin-wallet reads it from the app over stdin, so it does not appear in `ps` — the reason the binary is pinned to a version known to read stdin.
+- **The passphrase never touches a command line.** grin-wallet reads it from the app over stdin, so it does not appear in `ps`. The binary is pinned so that a new release is checked for exactly that before it is used: v5.5.0 still reads a piped passphrase, but Fidelius stays on v5.4.1 until someone verifies an unlock on the newer binary (the pin lives in both `scripts/051_grin_fidelius.sh` and `web/051_fidelius/server.js`).
 - **The service runs as root**, like the rest of the toolkit, with systemd hardening (`ProtectSystem=full`, `PrivateTmp`, `NoNewPrivileges`, write access only to `/opt/grin/fidelius` and `/opt/grin/logs`).
 
-Design notes and the security audit are in the toolkit's [script051_design.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script051_design.md) and [script051_security_audit.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script051_security_audit.md).
+Design notes and the security audit are in the toolkit's [script051_design.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script051_design.md) and [script051_security_audit.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script051_security_audit.md).
 
 ## Before you start
 
@@ -45,7 +45,7 @@ Design notes and the security audit are in the toolkit's [script051_design.md](h
 | A domain with an **A record** pointing at this server | For HTTPS. `wallet.yourdomain.com` is the pattern the script suggests. Using Cloudflare? For Let's Encrypt the record must be **DNS only** (grey cloud); with a Cloudflare Origin certificate it can stay proxied |
 | Ports **80** and **443** open at the provider | Step 7 opens them in the server's own firewall; the provider's firewall or security group is yours to open |
 | The toolkit's `web/051_fidelius/` folder present | Step 3 copies the app from the cloned repository — a partial clone has nothing to deploy |
-| tor installed and running | Only for **Tor sends** and for the wallet's `.onion` listener; step 2 installs and enables it. Slatepack send/receive works without it |
+| tor installed and running | Only for **[Tor sends](reference-glossary.html#tor-and-onion-addresses)** and for the wallet's `.onion` listener; step 2 installs and enables it. Slatepack send/receive works without it |
 
 ## The menu
 
@@ -145,7 +145,7 @@ The page has six tabs: **Wallet**, **Send**, **Receive**, **History**, **Node** 
 
 **Creating your first wallet** happens on the Setup tab, under *Your Wallets*, through a short wizard: a name (`main`, say), the network, the directory (proposed as `wallet_<network>_<name>` under `/opt/grin/fidelius/`), the node to use — your local node or one of the public nodes, each pinged live — and then one of **New Wallet** (a fresh seed), **Recover** (paste a seed phrase) or **Skip** (register only, initialise later). New wallets take a passphrase twice. The 24-word seed phrase is shown once; the wizard refuses to finish if it could not read it back, so you always get a chance to write it down. A Tor step shows whether tor is running on the host; it cannot be changed from the browser.
 
-**Unlocking** a wallet (the Wallet tab) means entering its passphrase; the app then starts that wallet's Owner API and shows the balance, the slatepack address with a QR code, and two service switches — the Owner API and the **Listener (Tor)**. The listener is what makes you reachable at your `grin1…` address; leave it on if you expect payments.
+**Unlocking** a wallet (the Wallet tab) means entering its [passphrase](reference-glossary.html#passphrase); the app then starts that wallet's Owner API and shows the balance, the [slatepack address](reference-glossary.html#slatepack-address) with a QR code, and two service switches — the Owner API and the **Listener (Tor)**. The listener is what makes you reachable at your `grin1…` address; leave it on if you expect payments.
 
 **Sending** (the Send tab) offers up to four methods, depending on what the host provides:
 

@@ -5,11 +5,11 @@ section: Scripts
 order: 8.9
 short: Backups
 label: Script 089
-covers: 2026-09-20
-updated: 2026-09-20
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
-Script 089 — **Admin & Maintenance → Backup & Restore**, key `9` — makes one encrypted archive of everything on the server that you could not simply reinstall: configuration, API secrets, wallet seeds, product databases, nginx sites, certificates, cron schedules and Tor identities. Chain data is deliberately left out — a new node gets it from a snapshot in minutes. The same script restores such an archive, schedules unattended backups, and pushes every archive to another machine over SSH.
+Script 089 — **Admin & Maintenance → Backup & Restore**, key `9` — makes one encrypted archive of everything on the server that you could not simply reinstall: configuration, [API secrets](reference-glossary.html#api-secrets), [wallet seeds](reference-glossary.html#seed-phrase), product databases, nginx sites, certificates, [cron schedules](reference-glossary.html#cron) and [Tor identities](reference-glossary.html#tor-and-onion-addresses). Chain data is deliberately left out — a new node gets it from a [snapshot](reference-glossary.html#chain-data-and-snapshots) in minutes. The same script restores such an archive, schedules unattended backups, and pushes every archive to another machine over SSH.
 
 Several products carry their own backup as well (solo mining, Grin Drop, the public pool, the relay, the Transporter). They all share this script's engine, key and archive folder; [the last section](#other-backups-in-the-toolkit) says which archive holds what, because **two wallets are not in this one**.
 
@@ -24,16 +24,17 @@ A backup walks these sources. "Ask" means an interactive backup asks `[Y/n]`; th
 | Grin nginx sites | Always | Every file in `sites-available` whose name contains *grin* or whose root is a Grin web root, plus a list of which were enabled |
 | `/etc/letsencrypt/live` and `renewal` | Always | Your certificates |
 | root and `www-data` crontabs | Always | Collector, snapshot and backup schedules |
-| Wallets in the registry | Ask (default yes) | The directories listed in `/opt/grin/conf/grin_wallets_location.conf` — today that is the CMD wallet from [hub 05](05-wallet-services.html#the-cmd-wallet-quick-setup), `/opt/grin/cmdwallet/<network>/`, seed included |
+| Wallets in the registry | Ask (default yes) | The directories listed in `/opt/grin/conf/grin_wallets_location.conf` — today that is the CMD wallet from [hub 05](05-wallet-services.html#the-cmd-wallet-quick-setup), `/opt/grin/cmdwallet/<network>/`, seed included. A CMD wallet that a re-initialize or Nuke moved to `/opt/grin/cmdwallet/.retired/` is **not** in the registry and is not archived: copy it off the server or purge it |
 | Grin Drop | Ask (default yes) | `/opt/grin/drop-<net>/` (config, secrets, wallet seed) and the database in `drop-<net>-data/`; a second question includes or skips the LMDB `wallet_data/` |
 | Product databases | Always | `grin-stats/stats.db` and `config.env`, `grin-price/grin-price.db`, both GrinScan databases, every `solo-stats/*.db` — each taken as a consistent **online snapshot** (`sqlite3 .backup`), so a collector writing at that moment does not produce a torn copy |
 | Tor onion identities | Ask (default yes) | `/var/lib/tor/grin-<network>-raw-tcp` (Script 01's node onion), `grin-<network>-nginx` (Script 04's API onion) and the legacy `grin-<network>` — the **secret key** that *is* the `.onion` address |
 | Floonet relay | Ask (default yes) | `/etc/floonet-rs/` and the relay's databases (NIP-05 usernames, stored events) |
 | Fidelius | Ask (default yes) | Every `/opt/grin/fidelius/wallet_<network>_*` directory found on disk, with the registry `wallets_info.json`, `config.conf` and `wallet.env` — seeds included |
 | Accio gateway state | Ask (default yes) | `/opt/grin/accio-<net>/gateway-state/` and `gateway.json` — the table that maps each wallet to its receiving address; not a cache |
+| Node event recorder ledger | Always | `/opt/grin/node-events/<network>/ledger.jsonl` and its rotated copies — the [event recorder's](08-admin-maintenance.html#node-event-recorder) down/up history, a few KB, nothing secret. Not its `status.json` (live state) or `evidence/` (raw logs; export what you need from the recorder instead) |
 | `/opt/grin/logs/` | Ask (default **no**) | Logs |
 
-**Not included, on purpose:** `chain_data/` (Script 01 rebuilds it from a snapshot), the node and wallet binaries (re-downloaded; a *source-built* node binary from Script 01 → `G` is the one thing you would have to recompile), `/var/www/` (every product re-deploys its web files), Fidelius's and Accio's application code, the GrinScan and pool applications.
+**Not included, on purpose:** `chain_data/` (Script 01 rebuilds it from a snapshot), the node and wallet binaries, including the grin-wallet version store `/opt/grin/wallet-bin/` (re-downloaded — each wallet's pinned-version file *is* restored, so a rollback fetches its target again; a *source-built* node binary from Script 01 → `G` is the one thing you would have to recompile), `/var/www/` (every product re-deploys its web files), Fidelius's and Accio's application code, the GrinScan and pool applications.
 
 > **Warning:** Two wallets that hold real money are **not** in this archive, and the script does not say so on screen:
 > - the **solo-mining wallet** (`/opt/grin/solowallet/<network>/`, seed and saved passphrase) — the solo setup never writes the registry this script reads, so only its stats databases are captured. Use [the solo menu's own backup](07-mining-services.html#backups).
@@ -98,6 +99,7 @@ Changing the key: this screen has no "change key" action — a key is only asked
 | 4 | Grin Drop, if installed; then whether to include its `wallet_data/` | `Y`, `Y` |
 | 5 | Product databases, listed with sizes (`stats.db` can be ~100 MB) | Nothing |
 | 5b–5e | Tor identities, Floonet relay, Fidelius, Accio — each only if present, each `[Y/n]` | `Y` |
+| 5f | Event recorder ledger, if present — no question | Nothing |
 | 6 | Logs | Usually `n` |
 | 7 | Writes a `MANIFEST.txt`, snapshots the databases, builds the tar, encrypts it with AES-256-CBC (PBKDF2, 600 000 iterations), moves it into place with mode 600, pushes it offsite if configured | Wait |
 
@@ -134,8 +136,10 @@ openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
 The entry is tagged so the menu can show, replace or remove it, and looks like:
 
 ```text
-30 3 * * * bash /path/to/scripts/089_backup_restore.sh --auto-backup --keep-days 14
-``` A scheduled run **fails, silently, until a personal key exists** — the menu makes you set one before it installs the schedule, but a box that got its cron line before the shared key existed needs one set from this screen once. The run's log lines land in a `grin_backup_restore_<date>.log` file in `/opt/grin/logs/`.
+30 3 * * * bash /path/to/scripts/089_backup_restore.sh --auto-backup --keep-days 14 # grin-toolkit-auto-backup
+```
+
+A scheduled run **fails, silently, until a personal key exists** — the menu makes you set one before it installs the schedule, but a box that got its cron line before the shared key existed needs one set from this screen once. The run's log lines land in a `grin_backup_restore_<date>.log` file in `/opt/grin/logs/`.
 
 ## Offsite push
 
@@ -152,7 +156,7 @@ The entry is tagged so the menu can show, replace or remove it, and looks like:
   E) Enable    D) Disable (target kept)
 ```
 
-Set it up as `1` → `2` or `3` → `4` → `E`, then `6` once to copy what you already have. `5` prunes archives on the remote older than N days (0 keeps all); `7` installs a cron that re-sends the newest archive if a push failed while the remote was down. A failed push never fails the backup — the local archive stays, the failure is logged to `/opt/grin/logs/backup-push.log`, and the target is saved in `/opt/grin/conf/grin_backup_remote.conf` (mode 600, never inside an archive).
+Set it up as `1` → `2` or `3` → `4` → `E`, then `6` once to copy what you already have. `6` and the catch-up cron pick the newest archive of **every** product in `/opt/grin/backups/` — the product is read from the `grin_<product>_backup_` part of the name, so the pool, relay and Transporter archives are included. `5` prunes archives on the remote older than N days (0 keeps all); `7` installs a cron that re-sends the newest archive if a push failed while the remote was down. A failed push never fails the backup — the local archive stays, the failure is logged to `/opt/grin/logs/backup-push.log`, and the target is saved in `/opt/grin/conf/grin_backup_remote.conf` (mode 600, never inside an archive).
 
 Only current-format archives are safe to store where others might read them; archives named `temp_dir_*` from before 2026-07-10 derived their password from the filename and should be treated as readable by anyone who has the file.
 
@@ -163,7 +167,7 @@ The restore writes files back where they came from and re-enables the nginx site
 1. Install the toolkit ([Getting started](getting-started.html)) and run it once so `/opt/grin/` exists.
 2. Copy the archive over: `mkdir -p /opt/grin/backups` then `scp` the `.enc` file into it from wherever you keep archives.
 3. **Admin & Maintenance → Backup & Restore → `R`.** Pick the archive from the list (or `C` for a custom path). Type the personal key; the date is read from the filename. The manifest is shown — read it — then confirm.
-4. The restore stops Tor while it swaps identity directories (and Fidelius if it is running), puts files back with the permissions each service expects, re-enables the nginx sites that were enabled, runs `nginx -t` and reloads if it passes, and prints *Next steps*.
+4. The restore stops Tor while it swaps identity directories (and Fidelius if it is running), puts files back with the permissions each service expects, re-enables the nginx sites that were enabled, runs `nginx -t` and reloads if it passes, and prints *Next steps*. An event recorder ledger is restored only where this box has none yet — a live ledger is newer than any archive. The printed *Next steps* still name Script 01 keys from before its menu changed (`S) Start`, "M/T/K rebuild"); on today's Script 01 those are *Start a node* and *Rebuild a node*.
 5. **Script 01** — build the node(s) the old server had. Step 8b restores the API secrets from the vault; step 13b reuses the onion key. Then `grin-secret-sync` once.
 6. Each product's own setup for the software the archive does not carry: [Fidelius](051-fidelius.html) steps 1 and 3, [Grin Drop](059-grin-drop.html) install, [GrinScan](06b-grinscan.html) and [Script 06](06-global-health.html) install, the [Floonet relay](09-connectivity-hub.html#guided-setup-step-by-step) (Script 09 → Floonet Relay → guided setup). Their restored configs and databases are picked up as the services start.
 7. Point DNS at the new server. Let's Encrypt certificates came with the archive; renewal works again once a product setup has installed certbot (its package timer, or the cron [Script 02](02-nginx-fileserver.html) writes, takes it from there).
@@ -204,7 +208,7 @@ A backup you have never restored is a hope, not a backup. Once, and after any bi
 
 ## Other backups in the toolkit
 
-All of these use the same key, the same folder and the same name pattern, and all are pushed offsite by the same target.
+All of these except Script 04's onion file use the same key, the same folder and the same `grin_<product>_backup_<DDMMYYYY>.tar.gz.enc` name pattern, and all of those are pushed offsite by the same target. The onion file is not encrypted and is never pushed; copy it off the server yourself.
 
 | Archive | Made by | Holds |
 |---------|---------|-------|

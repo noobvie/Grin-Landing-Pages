@@ -5,19 +5,19 @@ section: Scripts
 order: 6.5
 short: GrinScan
 label: Script 06b
-covers: 2026-09-20
-updated: 2026-09-20
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
-GrinScan is the block explorer behind [grinscan.org](https://grinscan.org) and [test.grinscan.org](https://test.grinscan.org): a Node.js application with its own small SQLite database that shows the latest blocks, one page per block, kernel and output, hashrate and difficulty charts, price, the node's peers and a JSON API — with live updates pushed to the page as blocks arrive, a mobile layout and light and dark themes. It runs one copy per network, so a single server can serve mainnet and testnet under two subdomains.
+GrinScan is the block explorer behind [grinscan.org](https://grinscan.org) and [test.grinscan.org](https://test.grinscan.org): a Node.js application with its own small SQLite database that shows the latest blocks, one page per block, [kernel](reference-glossary.html#kernel) and output, hashrate and difficulty charts, price, the node's peers and a JSON API — with live updates pushed to the page as blocks arrive, a mobile layout and light and dark themes. It runs one copy per network, so a single server can serve mainnet and testnet under two subdomains.
 
 It is option `B` of [Script 06](06-global-health.html). Unlike the grincoin.org explorer (option `C`) it needs no Rust build, and unlike the [Tiny Explorer](06-global-health.html#tiny-explorer) it keeps history, so it can draw charts and page through blocks.
 
 ## What it does
 
-1. Installs Node.js 24 (it needs the built-in `node:sqlite` module), copies the app to `/opt/grin/grinscan/app/` and writes two systemd services, `grinscan-test` and `grinscan-main`, that run as `www-data`.
+1. Installs Node.js 24 (it needs the built-in `node:sqlite` module), copies the app to `/opt/grin/grinscan/app/` and writes two [systemd services](reference-glossary.html#systemd-service), `grinscan-test` and `grinscan-main`, that run as `www-data`.
 2. Writes a `config.json` per network with the node's API URLs, a copy of the node's two API secrets, ports **3010** (testnet) and **3011** (mainnet), and the cache settings.
-3. On start, the service asks the node whether it can serve block 1 — that decides `node_mode`, archive or pruned — then caches the last **500 blocks** into its database and from there on polls the node every **30 seconds** for new ones. Old blocks are read from the node on demand when the node is an archive; on a pruned node they are reported as not found.
+3. On start, the service asks the node whether it can serve block 1 — that decides `node_mode`, [archive or pruned](reference-glossary.html#pruned-node-and-archive-node) — then caches the last **500 blocks** into its database and from there on polls the node every **30 seconds** for new ones. Old blocks are read from the node on demand when the node is an archive; on a pruned node they are reported as not found.
 4. nginx fronts each copy on its own subdomain with HTTPS, a rate limit on the REST endpoints and the special handling the live-update stream needs.
 
 ## Pruned or archive node?
@@ -48,7 +48,7 @@ The installer checks for an archive node and asks before continuing without one.
 | A subdomain per network with an A record, e.g. `scan.yourdomain.com` and `test.yourdomain.com` | Set before the nginx step; Cloudflare records on **DNS only** |
 | Root shell, a few hundred MB of disk | The database grows with the block cache (500 blocks) plus a compact daily table that never gets pruned — small |
 
-> **Tip:** If Tiny Explorer or another Node.js product is already on the box, install GrinScan first next time — its installer removes any Node.js older than 24 before installing 24 from NodeSource. Everything else in the toolkit runs on 24, so nothing breaks, but a running service keeps the old binary until restarted.
+> **Tip:** If another Node.js product is already on the box with a Node.js older than 24, GrinScan's installer removes that Node.js (the `nodejs` and `npm` packages) before installing 24 from NodeSource. Every Node.js product in the toolkit, Tiny Explorer included, runs on 24, so nothing breaks, but a running service keeps the old binary until it is restarted.
 
 ## The menu
 
@@ -136,7 +136,7 @@ Then open `https://scan.yourdomain.com`. The first start logs `Backfilling <tip�
 
 Price comes from Gate.io (GRIN/USDT) and CoinGecko (GRIN/BTC), refreshed every 10 minutes and kept in the database, so the charts can show price alongside hashrate. Hashrate uses the standard Cuckatoo32 formula (difficulty delta × 42 ÷ seconds ÷ 16 384), the same as the dashboard of Script 06 and the grincoin.org explorer.
 
-> **Note:** Two items from the toolkit's [security audit](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script06_security_audit.md) are still open: the `/api/…` routes that reach the node are not rate-limited by nginx (only `/rest/` is), and `/api/peers` and `/rest/node.json` publish your node's connected peers with their addresses. On a public explorer, expect both.
+> **Note:** Two items from the toolkit's [security audit](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script06_security_audit.md) are still open: the `/api/…` routes that reach the node are not rate-limited by nginx (only `/rest/` is), and `/api/peers` and `/rest/node.json` publish your node's connected peers with their addresses. On a public explorer, expect both.
 
 ### What was created
 
@@ -180,7 +180,7 @@ The daily chart history goes back only as far as the blocks the database has acc
 
 | Symptom | Cause and fix |
 |---------|---------------|
-| `Node API port :3011 not listening — is the node running?` at Configure | Wrong network chosen for the node you have, or the node is down. Start it ([Script 01](01-build-node.html) → `S`), or answer `n` and configure the other network |
+| `Node API port :3413 not listening — is the node running?` at Configure (`:13413` for testnet) | Wrong network chosen for the node you have, or the node is down. Answer `n` to *Continue anyway?*, start the node ([Script 01](01-build-node.html) → *Start a node*) and run Configure again, or configure the other network |
 | `Node not reachable at http://127.0.0.1:3413/v2/owner` | The node is up but rejected the secret — usually a node rebuilt while a stale secret sat in the data dir. `grin-secret-sync` from a root shell, then Configure again |
 | `Port :3011 not yet listening after 10s` | The service crashed at start: `journalctl -u grinscan-main -n 20`. Typical causes: a Node.js older than 24 (`node --version`), or a bad `config.json` after a hand edit |
 | Old blocks say *not found* | Pruned node — see [Pruned or archive node?](#pruned-or-archive-node). `/api/stats` shows `"node_mode":"pruned"` |
@@ -194,4 +194,4 @@ The daily chart history goes back only as far as the blocks the database has acc
 - [Script 06](06-global-health.html) — the hub this lives in: the network dashboard, the grincoin.org explorer and the Tiny Explorer
 - [Script 01](01-build-node.html) — building the archive node that lets GrinScan serve every block
 - [Ports and paths](reference-ports-and-paths.html) — 3010/3011 and the `/opt/grin/grinscan` tree
-- Deeper reading in the toolkit repository: [script06b_design.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script06b_design.md) and [script06b_implementation.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script06b_implementation.md)
+- Deeper reading in the toolkit repository: [script06b_design.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script06b_design.md) and [script06b_implementation.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script06b_implementation.md)

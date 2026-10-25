@@ -5,8 +5,8 @@ section: Scripts
 order: 6
 short: Dashboard
 label: Script 06
-covers: 2026-09-20
-updated: 2026-09-23
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
 Script 06 — *Global Grin Health* in the main menu — is the hub for everything that **shows the network to the public**. Every product in it reads from your own node and is served by nginx over HTTPS on a subdomain you own. Nothing here touches wallets or money; the worst a misconfiguration can do is show stale numbers.
@@ -18,7 +18,7 @@ It holds four products, each with its own sub-menu and status line:
 | `A` | **Network Stats + Peer Map** | A three-page dashboard: a world map of Grin nodes, charts of hashrate, difficulty, transactions, fees, price and supply, and an ecosystem status page. Built with a Python collector, SQLite and static HTML — [world.grin.money](https://world.grin.money). Needs a mainnet node; **pruned is enough** |
 | `B` | **GrinScan** | A block explorer for mainnet and testnet — [grinscan.org](https://grinscan.org). It has its own page: [GrinScan](06b-grinscan.html). Pruned works; an archive node adds old blocks |
 | `C` | **Grin Explorer by Grincoin.org** | The upstream Rust explorer ([aglkm/grin-explorer](https://github.com/aglkm/grin-explorer)) built from source and put behind nginx. Needs an **archive** node (`mainnet-full`) or a remote one |
-| `D` | **Tiny Explorer** | A stateless single-block explorer with a toolbox: slatepack inspector, payment-proof verifier, wallet and node checkers, emission and mining calculators — [scan.grin.money](https://scan.grin.money). Mainnet; archive is best, pruned runs |
+| `D` | **Tiny Explorer** | A stateless single-block explorer with a toolbox: [slatepack](reference-glossary.html#slate-and-slatepack) inspector, payment-proof verifier, wallet and node checkers, emission and mining calculators — [scan.grin.money](https://scan.grin.money). Mainnet; archive is best, pruned runs |
 
 Plus `N`, which installs nginx, certbot and `whois` for all of them.
 
@@ -31,10 +31,10 @@ This page covers `A`, `C` and `D`. GrinScan is on [its own page](06b-grinscan.ht
 | A synced **mainnet** node from [Script 01](01-build-node.html), running on port 3413 | Every product reads the node's Foreign API (`/v2/foreign`), and the dashboard's peer data comes from its Owner API. Testnet peer data is thin, so the dashboard is mainnet-first — a testnet node next to it only adds testnet peers to the map |
 | nginx + certbot | Press `N` in this menu if you have not installed them (Scripts 02 and 04 install the same packages) |
 | One subdomain per product, with a DNS **A record** pointing at the server | `stats.yourdomain.com`, `explorer.yourdomain.com`, `scan.yourdomain.com` — created in your DNS provider's panel *before* the nginx step, or certbot fails. Cloudflare users: set the record to **DNS only**, not Proxied |
-| Python 3 (dashboard) · Node.js 18+ (Tiny Explorer) · Rust toolchain (grincoin explorer) | The scripts install what is missing: Python from apt, Node.js 20 from NodeSource, Rust with `rustup` |
+| Python 3 (dashboard) · Node.js 24+ (Tiny Explorer) · Rust toolchain (grincoin explorer) | The scripts install what is missing: Python from apt, Node.js 24 from NodeSource, Rust with `rustup` |
 | Disk | Dashboard: about 110 MB of SQLite for the complete chain history plus 12 MB a year, under 20 MB for prices, 5 MB of map geometry in the web root. Grincoin explorer: about 2 GB for the Rust toolchain and build. Tiny Explorer: a few MB |
 
-> **Tip:** Install **GrinScan before Tiny Explorer** if you want both on one server. GrinScan needs Node.js 24 and its installer removes an older Node.js first; Tiny Explorer is happy with anything from 18 up, so it runs fine on 24 — but the other way round, GrinScan's install swaps the binary under a running Tiny Explorer.
+> **Tip:** GrinScan and Tiny Explorer both need **Node.js 24 or newer**, so the order you install them in no longer matters. Either installer, finding an older Node.js, removes the distribution's `nodejs` and `npm` packages and installs 24 from NodeSource. Any other Node.js service already running on the box keeps the old binary until it is restarted — restart it after the install.
 
 ## The menu
 
@@ -46,18 +46,23 @@ This page covers `A`, `C` and `D`. GrinScan is on [its own page](06b-grinscan.ht
   [OK]   Nginx installed    (use option N to install)
   [--]   DNS A-records — confirm via A→4 or C→4 before nginx setup (B: see DNS hint in menu)
 
-  N)   Install Nginx + Certbot + Whois
+  N)   Install Nginx + Certbot + Whois  install nginx, certbot, and whois (domain expiry lookup)
 
   A)   Network Stats + Peer Map
-       Hashrate · Difficulty · Transactions · Fees · Versions · 2D Peer Map
+      Hashrate · Difficulty · Transactions · Fees · Versions · 2D Peer Map
+
   B)   GrinScan
-       Lightweight block explorer — testnet + mainnet, mobile friendly, pruned node OK
+      Lightweight block explorer — testnet + mainnet, mobile friendly, pruned node OK
+
   C)   Grin Explorer by Grincoin.org
-       Rust + Rocket — archive node required
+      Rust + Rocket — archive node required
+
   D)   Tiny Explorer
-       Stateless single-block explorer for pool deep-links — mainnet, archive node
+      Stateless single-block explorer for pool deep-links — mainnet, archive node (e.g. scan.grin.money)
 
   0) Back to main menu
+
+Select [N/A/B/C/D/0]:
 ```
 
 The requirement lines are live: the node check looks for something listening on 3413, the nginx check for the binary. The keys `A`–`D` open a sub-menu each; the sub-menus below are numbered, and every one of them reads `0` as back and a bare Enter as "refresh the status labels".
@@ -83,8 +88,10 @@ Every chart has a matching JSON file under `/api/…` that anyone may fetch (rat
 - **`grin-stats-collector`** (`/usr/local/bin/`, a Python script) — talks to the node, keeps `/opt/grin/grin-stats/stats.db` and writes the JSON files. Every 5 minutes it fetches new block headers, samples the mempool, samples the unspent-output count every 20 minutes, fills in transaction and fee stats for recent blocks (at most 60 blocks and 2 minutes per run, so a slow node can never delay the export), refreshes the peer list, and rewrites all JSON. It runs under `flock`, so a run that overruns is skipped rather than stacked.
 - **`grin-price-collector`** — its own script and database (`/opt/grin/grin-price/grin-price.db`). GRIN/USDT comes from Gate.io, with daily candles back to 2019 imported once at install; GRIN/BTC comes from CoinGecko, or is derived from Gate.io's USDT prices when CoinGecko is unavailable. Also every 5 minutes.
 - **`grin-ecosystem-checker`** — TCP-checks the DNS seeds, HTTP-checks the listed sites and services (GitHub and Gitea repositories included), probes the community-submitted nodes, and looks up domain expiry over RDAP (refreshed daily). Hourly.
-- **`grin-submit`** — a small systemd service on `127.0.0.1:5060` behind the "submit your node" form. It hands out a challenge token, probes the submitted node before accepting it (through Tor when the URL is an `.onion`, which is why `tor` is installed), accepts at most two submissions per hour per visitor, and stores the result in `community_nodes.json`. A node that fails 168 consecutive hourly checks (a week) is dropped automatically.
+- **`grin-submit`** — a small [systemd service](reference-glossary.html#systemd-service) on `127.0.0.1:5060` behind the "submit your node" form. It hands out a challenge token, probes the submitted node before accepting it (through Tor when the URL is an `.onion`, which is why `tor` is installed), accepts at most two submissions per hour per visitor, and stores the result in `community_nodes.json`. A node that fails 168 consecutive hourly checks (a week) is dropped automatically.
 - **nginx** — the vhost `grin-stats`: static files, gzip (the map geometry is 740 KB raw, 240 KB compressed), a 30-day cache on the geometry, a referer check on `/data/`, and the whitelisted `/api/…` endpoints.
+
+**Which peers count.** The map and the peer counts use two sources: the peers your node is connected to right now, and the healthy peers in its peer store that it last completed a handshake with (`last_connected`) within the past **30 days**. The store keeps healthy peers indefinitely, so the handshake time, not the store itself, decides who is "active"; a peer with no handshake time on record is skipped. The node-version chart uses the same 30-day set plus everyone connected right now.
 
 **Smart sampling** keeps the database small without losing detail where it matters: every block for the last 24 hours, one block per hour for the last 30 days, one per day before that — and full transaction and fee rows for every block since genesis (about 23 bytes each, 85 MB for the whole chain).
 
@@ -97,6 +104,10 @@ The sub-menu `A`:
 ```text
   6A) Network Stats + Peer Map
 
+  Pages served:  /                (index.html)    → Grin peer world map
+                 /stats.html                     → hashrate, difficulty, tx, fees, versions
+                 /ecosystem.html                 → DNS seeds + ecosystem services status
+
   1)   Install          collector + ecosystem checker + Chart.js + Leaflet   [✗ not installed]
   2)   Import Data      stats: init / backfill / update  |  price: init / update  |  ecosystem: run / whois
   3)   Start Updates    stats+price every 5 min · ecosystem hourly  [stats: inactive · eco: inactive]
@@ -105,13 +116,16 @@ The sub-menu `A`:
   6)   Status
   7)   Google Analytics  inject GA tag into all three pages  [not set]
   Z)   Stop Updates     disable cron
+
+  0) Back
+  [Enter] Refresh menu
 ```
 
 | Step | What happens | What you do |
 |------|--------------|-------------|
 | `1` Install | Creates `/opt/grin/grin-stats/` and `/var/www/grin-stats/`; installs the three collectors and their JSON sidecars (DNS seeds, ecosystem sites, external nodes, exceptions) into `/usr/local/bin/`; installs `python-whois`, `tor` and the Python SOCKS packages; copies the three pages, the shared header and the map geometry; downloads Chart.js and Leaflet; detects the running node and its secret paths and writes `config.env`; installs the secret self-heal timer; creates both databases; imports the Gate.io price history (about 30 s); generates the inflation chart; starts the submit server | Optionally paste a Google Analytics `G-…` ID, or Enter to skip |
 | `2` Import Data → `b` | **Full history import** — samples headers across the whole chain (fast), then walks every block since genesis for transaction and fee stats, then peers, then exports. This is the one run that seeds the block table; the other import keys refuse to run before it | Answer `Y`, and run it inside `tmux` — it takes **6 hours or more**. On a pruned node, blocks older than the pruning horizon have no body, so their transaction rows stay empty |
-| `3` Start Updates | Adds four cron lines to root's crontab: stats and price every 5 minutes, ecosystem hourly, RDAP expiry refresh daily at 03:00. Each stats run first re-syncs the node secret paths (`grin-secret-sync`) so a node rebuild cannot break it | Enter. Re-running offers to replace the existing lines |
+| `3` Start Updates | Adds four [cron](reference-glossary.html#cron) lines to root's crontab: stats and price every 5 minutes, ecosystem hourly, RDAP expiry refresh daily at 03:00. Each stats run first re-syncs the node secret paths (`grin-secret-sync`) so a node rebuild cannot break it | Enter. Re-running offers to replace the existing lines |
 | `4` Check DNS | Prints this server's IP addresses and the A record you need — it does **not** query DNS; it asks you to confirm you set it | Confirm |
 | `5` Setup Nginx | Asks for the subdomain (the labels `fullmain`, `prunemain` and `prunetest` are refused — Script 02 owns them) and an email for Let's Encrypt; stamps the domain into the pages' canonical and Open Graph tags and writes `robots.txt` and `sitemap.xml`; writes the HTTP vhost, creates the rate-limit zones and the `/etc/nginx/snippets/grin-api.conf` snippet, tests, reloads, then runs certbot and reloads again | Subdomain, email |
 | `6` Status | Collectors, databases with sizes, the age of every JSON export, cron state, nginx domain, node, submit server with community node counts, analytics | Read it |
@@ -163,6 +177,9 @@ Option `C` builds the explorer that powers [grincoin.org](https://grincoin.org) 
 ```text
   C) Grin Explorer by Grincoin.org
 
+  Repo: github.com/aglkm/grin-explorer  (Rust + Rocket + SQLite)
+  Requires: full archival node or remote node URL
+
   1)   Install & Build  clone + cargo build --release  [✗ not built]
   2)   Configure        patch Explorer.toml
   3)   Start            launch in tmux  [stopped]
@@ -172,6 +189,9 @@ Option `C` builds the explorer that powers [grincoin.org](https://grincoin.org) 
   7)   Status
   Z)   Stop             kill tmux session
   X)   Nuke             remove service, nginx, crontab, data dir (clean rebuild)
+
+  0) Back
+  [Enter] Refresh menu
 ```
 
 | Step | What happens | What you do |
@@ -199,12 +219,20 @@ Option `D` is the toolkit's own explorer, written for one job first: answering *
 | `/node-check` | **Node Reachability Checker** — enter a host and port and this server tries the node's Foreign API and P2P port from outside the visitor's network | This server dials the target (with a blocklist against internal addresses) |
 | `/emission`, `/mining` | **Emission & Supply** (1 ツ per second, supply = height × 60, live inflation) and a **Mining Calculator** (GRIN per day from your graphs-per-second, power cost, break-even and payback) | Browser, from one stats call |
 
-Kernels resolve on a pruned node too; a spent output whose block has been pruned returns 404, as does any block below the pruning horizon — which is why an archive node is recommended.
+Kernels resolve on a [pruned node](reference-glossary.html#pruned-node-and-archive-node) too; a spent output whose block has been pruned returns 404, as does any block below the pruning horizon — which is why an archive node is recommended.
+
+**When the node stops answering.** A Grin node can stop answering its API for minutes, or on an archive node for hours, while it [compacts its chain](reference-glossary.html#compaction). Tiny Explorer then stops queueing requests behind it: it answers with HTTP **503** `{"error":"node busy"}` and tries the node again once every 30 seconds. The home page keeps showing the last good tip, figures and block list (up to 24 hours old), marked *node busy · as of …*, and a block or kernel page says the node is busy instead of showing an error number. Everything updates by itself when the node is back.
+
+> **Note:** This node-busy behaviour was read from the code. It has not yet been seen on a server during a real compaction.
 
 ### Tiny Explorer setup, step by step
 
 ```text
   D) Tiny Explorer — single-block deep-link explorer
+
+  Node.js / Express — stateless, mainnet-only, no SQLite, no crawler
+  Answers /block/<height> for pool deep-links (e.g. scan.grin.money)
+  Port: 8471  ·  best on an ARCHIVE node (old permalinks resolve)
 
   1)   Install         Node.js + npm deps + systemd unit
   2)   Configure       write config.json (prompts domain)  [✗]
@@ -215,11 +243,15 @@ Kernels resolve on a pruned node too; a spent output whose block has been pruned
   7)   View Logs
   U)   Update App      redeploy server.js + web files, refresh npm deps
   Z)   Nuke            stop + remove service, data dir, nginx config
+
+  0) Back
+  [Enter] Refresh menu
+  DNS: ensure A-record points to this server before running Setup Nginx (4)
 ```
 
 | Step | What happens | What you do |
 |------|--------------|-------------|
-| `1` Install | Checks for an archive node (warns and lets you continue without one); installs Node.js 20 if nothing from 18 up is present; copies the app to `/opt/grin/tiny-explorer/app/`, runs `npm install`, writes the `grin-tiny-explorer` systemd unit (runs as `www-data`, log at `/opt/grin/tiny-explorer/tiny-explorer.log`). Re-running it on a live install redeploys the files and restarts the service | Confirm the archive warning if it appears |
+| `1` Install | Checks for an archive node (warns and lets you continue without one); installs Node.js 24 from NodeSource if nothing from 24 up is present (an older distribution `nodejs`/`npm` is removed first); copies the app to `/opt/grin/tiny-explorer/app/`, runs `npm install`, writes the `grin-tiny-explorer` systemd unit (runs as `www-data`, log at `/opt/grin/tiny-explorer/tiny-explorer.log`). Re-running it on a live install redeploys the files and restarts the service | Confirm the archive warning if it appears |
 | `2` Configure | Finds the live mainnet node and tests it; asks the questions below; copies the node's two secrets into `/opt/grin/tiny-explorer/` for `www-data`; writes `config.json`; registers with the secret self-heal timer; restarts the service if it is running | Answer the prompts |
 | `3` Service Control | `S` start (waits for port 8471), `T` stop, `R` remove the unit | — |
 | `4` Setup Nginx | Domain (defaults to the configured one — and if you type a different one, offers to update `config.json` so page titles and canonical tags match), email on the first certbot run; writes the vhost proxying everything to `127.0.0.1:8471` with two rate-limit zones, tests, reloads, runs certbot, writes logrotate | Domain, maybe email |
@@ -288,7 +320,7 @@ curl -X DELETE "http://127.0.0.1:5060/remove-node?url=<the node URL>&token=$TOKE
 
 | Symptom | Cause and fix |
 |---------|---------------|
-| `No Grin node detected. Stats will fail until a node is running.` | Nothing listens on 3413 or 13413. Start the node ([Script 01](01-build-node.html) → `S`) and re-run the step |
+| `No Grin node detected. Stats will fail until a node is running.` | Nothing listens on 3413 or 13413. Start the node ([Script 01](01-build-node.html) → *Start a node*) and re-run the step |
 | `Foreign API secret not found` / `Mainnet secret not found` at install | The node's secret files are not where `grin-server.toml` says. Rare on a toolkit node; `grin-secret-sync` from a root shell re-resolves them, or edit `config.env` |
 | `[ERROR] No block headers in DB — run --init-history first.` | You chose `c`, `d` or `e` before the full import. Run `2` → `b` |
 | `Another --update run is still in progress — skipping` in the cron log | Normal after a slow run; the lock prevents pile-up. If it repeats for an hour, a run is stuck — `pgrep -af grin-stats-collector`, kill it, and check the node |
@@ -303,6 +335,8 @@ curl -X DELETE "http://127.0.0.1:5060/remove-node?url=<the node URL>&token=$TOKE
 | Tiny Explorer: the wallet checker's "is it online" button never appears | The probe is off in `config.json`, or the service was not restarted after turning it on. `D` → `2`, answer `y`; `6` shows the probe state |
 | Tiny Explorer: the probe answers "could not check" for every wallet | No Tor SOCKS proxy on `127.0.0.1:9050`. `systemctl status tor`; `grep SocksPort /etc/tor/torrc` |
 | `Port :8471 not listening yet — check: journalctl -u grin-tiny-explorer -n 20` | Usually a config error; the log names it |
+| Tiny Explorer: the home page says *node busy · as of …* and block pages say the node is busy | The node is not answering its API — usually chain compaction, which on an archive node can last hours. The service log shows `node API not answering`, then `node API answering again after …`. Nothing to fix in the explorer; check the node itself if it lasts longer than a compaction would |
+| The week and month peer counts dropped sharply after a toolkit update | Expected, once. Older collectors stamped every peer in the node's store as seen "now", which inflated the counts; the current one uses the node's real handshake time and, on its first run per network, pulls the old stamps back (`one-off peer stamp repair` in `/opt/grin/logs/grin_stats_cron.log`). The year view settles over the following months |
 
 ## Related
 
@@ -311,4 +345,4 @@ curl -X DELETE "http://127.0.0.1:5060/remove-node?url=<the node URL>&token=$TOKE
 - [Script 04](04-publish-node-api.html) — the published node API that shares the `grin_api` rate-limit zone with the dashboard
 - [Public pool](07-public-pool.html) — Script 07's pool, whose block and payout pages deep-link to a Tiny Explorer
 - [Ports and paths](reference-ports-and-paths.html) — 5060, 8000, 8471 and the `/opt/grin` tree
-- Deeper reading in the toolkit repository: [script06_design.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script06_design.md) (the peer map's geometry and grouping, the Tiny Explorer tools) and [script06_security_audit.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script06_security_audit.md)
+- Deeper reading in the toolkit repository: [script06_design.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script06_design.md) (the peer map's geometry and grouping, the Tiny Explorer tools) and [script06_security_audit.md](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script06_security_audit.md)

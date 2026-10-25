@@ -5,11 +5,11 @@ section: Scripts
 order: 9
 short: Relay & Transporter
 label: Script 09
-covers: 2026-09-23
-updated: 2026-09-23
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
-A Grin payment is a short conversation: the sender's wallet writes a **slatepack** (a block of encrypted text), the receiver's wallet signs it and sends one back, and only then can the transaction go on chain. Something has to carry those messages. **Tor** carries them directly when both wallets are online at the same moment; a **Nostr relay** carries them as encrypted direct messages that the receiver's wallet picks up when it next connects; a **store-and-forward queue** holds them in a mailbox on a server until the receiver's software comes to collect. Script 09 — main menu 9, *Grin Connectivity Hub* — deploys the second and third of these on your server. It does not touch the node's own peer-to-peer network ([Script 01](01-build-node.html)) and holds no wallets itself ([Script 05](05-wallet-services.html) does).
+A Grin payment is a short conversation: the sender's wallet writes a **[slatepack](reference-glossary.html#slate-and-slatepack)** (a block of encrypted text), the receiver's wallet signs it and sends one back, and only then can the transaction go on chain. Something has to carry those messages. **[Tor](reference-glossary.html#tor-and-onion-addresses)** carries them directly when both wallets are online at the same moment; a **[Nostr relay](reference-glossary.html#nostr-relay)** carries them as encrypted direct messages that the receiver's wallet picks up when it next connects; a **[store-and-forward queue](reference-glossary.html#store-and-forward-transporter)** holds them in a mailbox on a server until the receiver's software comes to collect. Script 09 — main menu 9, *Grin Connectivity Hub* — deploys the second and third of these on your server. It does not touch the node's own peer-to-peer network ([Script 01](01-build-node.html)) and holds no wallets itself ([Script 05](05-wallet-services.html) does).
 
 > **Warning:** Status — the hub is marked **(DEV)** in the main menu. Its three rows are at very different stages: the **Floonet relay** is finished and runs in public at [relay.grin.money](https://relay.grin.money); the **Grin Transporter** is built but has **never been deployed on a server**; the **CoinSwap mixer** is a reserved row with no code behind it. The relay is safe to deploy today. Treat the Transporter as something to rehearse on testnet, with no real money, until someone has proven a full round trip on a VPS.
 
@@ -34,7 +34,14 @@ The menu as of today:
      Store-and-forward slate relay — offline auto-payouts (HTTP, not SMTP)
 
   0) Back to main menu
+
+  ✅ ready   🔧 in progress   ⏳ reserved — a reserved key explains the slot,
+  installs nothing. The badge on the right is the state on THIS server.
+
+Select [1-3 / 0]:
 ```
+
+> **Note:** The Transporter row says *offline auto-payouts*, but no toolkit product sends payouts through it today. The [public pool](07-public-pool.html) pays over Tor, by slatepack, or through its optional [Goblin](reference-glossary.html#goblin) (Nostr) rail, and none of those use the Transporter. It is a slate transport you wire up yourself (below).
 
 | Row | What it opens |
 |-----|---------------|
@@ -52,7 +59,7 @@ Keys in this hub are assigned by position, so they can move when a row is added 
 
 **Nostr** is an open protocol for passing signed messages through servers called **relays**. The **Goblin** wallet (by the developer known as *dog*, github.com/2ro) uses it to move Grin payments: a slatepack travels as an end-to-end encrypted Nostr direct message, the wallets reach relays over Tor, and users can be paid by a human-readable name such as `alice@yourdomain.com`. **Floonet** is that developer's Grin-oriented relay software, `floonet-rs` — a hardened build of the widely used `nostr-rs-relay` with an event-kind allowlist, NIP-42 login, a built-in username registry and optional paid access.
 
-Script 091 **deploys his software unchanged** — it does not fork it. What the toolkit adds is the server work around it: the Rust build, a hardened systemd service, nginx with a Let's Encrypt certificate in front (in place of upstream's Caddy), firewall rules, a browser landing page, event retention and encrypted backups. A server runs **one relay**, shared by mainnet and testnet users alike — the relay only carries encrypted messages and never looks at the chain.
+Script 091 **deploys his software unchanged** — it does not fork it. What the toolkit adds is the server work around it: the Rust build, a hardened [systemd service](reference-glossary.html#systemd-service), nginx with a Let's Encrypt certificate in front (in place of upstream's Caddy), firewall rules, a browser landing page, event retention and encrypted backups. A server runs **one relay**, shared by mainnet and testnet users alike — the relay only carries encrypted messages and never looks at the chain.
 
 **Who connects:** Goblin wallet users who add your relay to their list (*Settings → Nostr Relays*, paste `wss://relay.yourdomain.com`). The more independent relays exist, the less any single operator can see or block. The relay needs **no Grin node** and no wallet.
 
@@ -191,7 +198,7 @@ To move: restore the archive on the new server, point the DNS record at it, then
 - **`U` Update** fetches upstream's latest source, rebuilds and restarts — but only if the source revision differs from the one installed.
 - **`D` Uninstall** asks you to type `REMOVE`, then deletes the service, binary, nginx site, rate-limit zones, landing page, and backup/prune crons. It then asks separately about the data and config (default **yes**), the certificate (default **no** — keeping it avoids Let's Encrypt's duplicate-certificate limit on a reinstall) and the build directory (default yes). Archives in `/opt/grin/backups/` are never touched.
 
-> **Note:** Three known limits, from the toolkit's [security audit](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script09_security_audit.md): the build follows upstream's latest code rather than a pinned, reviewed revision; the prebuilt-release path (unused today — upstream publishes no releases) has no checksum check; and a failed certificate leaves the relay on `ws://` with only a warning, as described above.
+> **Note:** Three known limits, from the toolkit's [security audit](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script09_security_audit.md): the build follows upstream's latest code rather than a pinned, reviewed revision; the prebuilt-release path (unused today — upstream publishes no releases) has no checksum check; and a failed certificate leaves the relay on `ws://` with only a warning, as described above.
 
 ---
 
@@ -225,7 +232,7 @@ Both sides of a payment must use a Transporter on the **same network** (testnet 
 | You need | Why |
 |----------|-----|
 | **Node.js 24 or newer** | The server uses Node's built-in SQLite. Install offers to remove an older Node and install 24 from NodeSource — other Node apps on the box (Tiny Explorer, for one) then run on 24 after their next restart |
-| For the **agent**: a `grin-wallet` running the **combined listener** on this box | The agent needs the wallet's Owner API (to send) and Foreign API (to receive) on one port: `grin-wallet owner_api` with `owner_api_include_foreign = true`, on **3420** (mainnet) or **13420** (testnet), a `.owner_api_secret` in the wallet folder, and a **passphrase file** the agent can read. The [CMD Wallet quick setup](05-wallet-services.html#the-cmd-wallet-quick-setup) with listener mode **`owner_api`** gives you this; a Grin Drop, solo-mining or public-pool wallet also qualifies |
+| For the **agent**: a `grin-wallet` running the **combined listener** on this box | The agent needs the wallet's Owner API (to send) and Foreign API (to receive) on one port: `grin-wallet owner_api` with `owner_api_include_foreign = true`, on **3420** (mainnet) or **13420** (testnet), a `.owner_api_secret` in the wallet folder, and a **passphrase file** the agent can read. The [CMD Wallet quick setup](05-wallet-services.html#the-cmd-wallet-quick-setup) with listener mode **`owner_api`** gives you this; a Grin Drop, solo-mining or public-pool wallet also qualifies. After a CMD wallet *Re-initialize* or *Nuke*, re-run the agent's wallet step: its settings still point at the old wallet's files ([hub 05 troubleshooting](05-wallet-services.html#troubleshooting)), and a Nuke resets the listener mode, so pick `owner_api` again in setup step 4b |
 | For agents on **other** servers: a domain with a DNS A record, ports 80/443 open | They reach your queue at `https://<domain>`. An agent on the same box can use `http://127.0.0.1:7466` (testnet) or `7456` (mainnet) and needs no domain |
 | Optional: Tor | For a `.onion` front — see [the onion front](#the-onion-front) |
 
@@ -359,9 +366,10 @@ From outside, the same at `https://<domain>/health`, and `https://<domain>/` sho
 | *certbot could not issue a certificate*; relay only on `ws://` | DNS does not point here yet, port 80 is closed, or a Cloudflare record is proxied (orange cloud). Fix it, then relay menu → `2` |
 | `cargo build failed` | Usually out of memory or disk. Accept the temporary swap offer, free space on `/opt`, and scroll up to the first error line. Re-run `1` |
 | Service fails with `status=238/STATE_DIRECTORY` | A leftover from an earlier upstream-style install. Guided setup `1` repairs the state directory and starts the relay again |
+| `Landing template not found: …/web/091_floonet_relay/landing.html` | The landing page is rendered from a template in the toolkit checkout, and that file is missing — an incomplete copy of the toolkit. The relay itself keeps working; only the browser page is missing (*Landing page not written — relay serves proxy-only*). Update the toolkit to a full checkout, then `L` |
 | `name@domain` lookups return nothing | The username registry is off (`9` → enable), or the relay was reinstalled without restoring its database |
 | Agent: *Wallet owner API not reachable at … — is the owner_api session running?* | The wallet is not running the combined `owner_api` listener on 3420 / 13420. A wallet in plain `listen` mode cannot be used |
-| Agent: *Cannot read wallet pass file …* | The passphrase file in `agent.json` is missing or unreadable by the `grin` user. Re-run `7` and give the right path |
+| Agent: *Cannot read wallet pass file …* | The passphrase file in `agent.json` is missing or unreadable by the `grin` user. Re-run `7` and give the right path. A re-initialize or *Nuke* of the CMD wallet moves or deletes the files the agent points at, so re-run `7` after either (see the [wallet hub](05-wallet-services.html#troubleshooting)) |
 | Agent log: *S1 has no sender address — cannot route reply, skipping* | The payment was sent without a sender address (a plain slatepack send), so there is nowhere to deliver the reply. The sender must use the Transporter send path, which embeds it |
 | Agent log: *CRITICAL: received … GRIN but reply deposit failed* | Your wallet signed the payment but the reply could not be queued. The log prints the reply slatepack — deliver it to the sender by hand, or the sender's coins stay locked |
 | Deposit refused: *You already have the maximum pending slates for this recipient*, *Recipient queue is full* or *Store is at capacity* | A limit was hit — the fair-share cap, the per-recipient cap or the global cap. The receiver's next poll drains the queue; an operator can raise the limits with `2` |

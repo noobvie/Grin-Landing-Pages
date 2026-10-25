@@ -1,21 +1,21 @@
 ---
 title: Admin and maintenance
-description: Script 08: node status, a remote fleet monitor, host-tamper alerts, host tuning advice, nginx extras, key-only SSH, disk cleanup, self-update and uninstall.
+description: Script 08: node status, diagnostics and an event recorder, a fleet monitor, host-tamper alerts, tuning advice, nginx extras, SSH hardening, cleanup, updates.
 section: Scripts
 order: 8
 short: Admin
 label: Script 08
-covers: 2026-09-20
-updated: 2026-09-20
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
 Script 08 is the operations toolbox. Nothing here installs a Grin product; everything here keeps the server that runs them healthy, watched and up to date. It is also home to the two things every operator eventually needs — [backups](089-backup-restore.html) and the [full uninstall](#full-grin-cleanup-key-del).
 
-If you are new, learn one screen first: **Node Status & Sync** (key `5`). It answers "is my node running, and is it caught up?" for both networks without any typing.
+If you are new, learn one screen first: **Node Status & Sync** (key `5`). It answers "is my node running, and is it caught up?" for both networks without any typing. When the answer is "no, and I don't know why", the next screen is **Diagnostics & Support** (key `6`).
 
 ## The menu
 
-Hub 08 is the one hub where the key *is* the script number: each numbered sub-script sits on its last digit (081 → `1`, 082 → `2`, 083 → `3`, 084 → `4`, 089 → `9`) and the un-numbered built-in screens fill the gaps. These keys are stable and this page uses them.
+Hub 08 is the one hub where the key *is* the script number: each numbered sub-script sits on its last digit (081 → `1`, 082 → `2`, 083 → `3`, 084 → `4`, 086 → `6`, 089 → `9`) and the un-numbered built-in screens fill the gaps (`5`, `7`, `8`). These keys are stable and this page uses them.
 
 ```text
   Monitoring & Host
@@ -23,10 +23,10 @@ Hub 08 is the one hub where the key *is* the script number: each numbered sub-sc
   2)   Provider Access Watch     host-tamper detection + off-box alerts
   3)   Host Optimization & Hard. profile CPU/RAM/IO → tuning advice
 
-  Network & Status
-  4)   Nginx Extended Features   audit · reverse proxy · security · logs
+  Network, Status & Diagnostics
+  4)   Nginx Extended Features   audit · proxy · security · bandwidth
   5)   Node Status & Sync        ports, tmux, versions + chain tip
-  6)   Top 20 Bandwidth Consumers parse nginx logs, block/limit IP
+  6)   Diagnostics & Support     health check · support bundle · log triage
 
   Maintenance
   7)   Disk Cleanup              tar archives + OS temp/logs + nginx dirs
@@ -42,26 +42,26 @@ Hub 08 is the one hub where the key *is* the script number: each numbered sub-sc
 | Key | Opens | Changes anything? |
 |-----|-------|-------------------|
 | `1` | [Remote Node Manager](#remote-node-manager-key-1) — script 081 | Only when you use its mass-deployment actions |
-| `2` | [Provider Access Watch](#provider-access-watch-key-2) — script 082 | Installs a small watcher and a systemd timer |
+| `2` | [Provider Access Watch](#provider-access-watch-key-2) — script 082 | Installs a small watcher and a [systemd timer](reference-glossary.html#systemd-service) |
 | `3` | [Host Optimization & Hardening](#host-optimization-hardening-key-3) — script 083, with SSH Key Hardening (085) inside it | The advisor changes nothing; the SSH tool does |
-| `4` | [Nginx Extended Features](#nginx-extended-features-key-4) — script 084 | Yes — writes nginx config |
+| `4` | [Nginx Extended Features](#nginx-extended-features-key-4) — script 084, with Top 20 Bandwidth Consumers inside it | Yes — writes nginx config; blocks an IP if you ask |
 | `5` | [Node Status & Sync](#node-status-sync-key-5) | No — read-only |
-| `6` | [Top 20 Bandwidth Consumers](#top-20-bandwidth-consumers-key-6) | Only if you block or rate-limit an IP |
-| `7` | [Disk Cleanup](#disk-cleanup-key-7), with the automatic cleanup and the swap manager | Yes — deletes files |
+| `6` | [Diagnostics & Support](#diagnostics-support-key-6) — script 086, with the node event recorder inside it | Read-only, except a load test that asks first and the recorder's install |
+| `7` | [Disk Cleanup](#disk-cleanup-key-7), with the automatic cleanup and the [swap](reference-glossary.html#swap) manager | Yes — deletes files |
 | `8` | [Self-Update](#self-update-key-8) | Yes — overwrites the toolkit's files |
 | `9` | [Backup & Restore](089-backup-restore.html) — script 089, its own page | Yes |
 | `DEL` | [Full Grin Cleanup](#full-grin-cleanup-key-del) — script 08del | **Removes everything** |
 
-Two keys changed hands on 2026-08-25: `3` used to be Node Status and `5` used to be SSH Key Hardening. There is deliberately no alias for the old meanings — every screen prints its own banner, so a mis-key is obvious before anything happens. Key `10` still opens Backup & Restore (its old slot) as a silent alias.
+Three keys have changed hands over time: `3` used to be Node Status, `5` used to be SSH Key Hardening, and `6` used to be Top 20 Bandwidth Consumers (now option `5` inside Nginx Extended Features). There is deliberately no alias for the old meanings — every screen prints its own banner, so a mis-key is obvious before anything happens. Key `10` still opens Backup & Restore (its old slot) as a silent alias.
 
-Every screen writes its run to `/opt/grin/logs/` — the admin hub itself to `grin_admin_<date>.log`, each sub-script to its own `grin_<name>_<date>.log`. On the hub's own screens (`6`, `7`) a value prompt accepts `q` to cancel.
+Every screen writes its run to `/opt/grin/logs/` — the admin hub itself to `grin_admin_<date>.log`, each sub-script to its own `grin_<name>_<date>.log`. On the hub's own screens (`7`, `8`) a value prompt accepts `q` to cancel.
 
 ## Node Status & Sync (key 5)
 
 One read-only screen, three parts:
 
 1. **Port status** — whether anything listens on the eight toolkit ports: node API 3413 / 13413, P2P 3414 / 13414, wallet listener 3415 / 13415, stratum 3416 / 13416, with the PID. A wallet port marked ⚠ is one you should not expose to the internet.
-2. **tmux sessions** — every `grin*` session on *both* tmux servers: the `grin` user's socket (where the toolkit starts nodes; attach with `gtmux attach -t <name>`) and root's (`tmux attach -t <name>`). A session on the root socket next to one on the grin socket is the classic duplicate-node situation — see [Script 01's troubleshooting](01-build-node.html#troubleshooting).
+2. **[tmux sessions](reference-glossary.html#tmux-and-gtmux)** — every `grin*` session on *both* tmux servers: the `grin` user's socket (where the toolkit starts nodes; attach with `gtmux attach -t <name>`) and root's (`tmux attach -t <name>`). A session on the root socket next to one on the grin socket is the classic duplicate-node situation — see [Script 01's troubleshooting](01-build-node.html#troubleshooting).
 3. **Running Grin processes and binary versions** — each `grin` process and the `--version` of every distinct binary.
 
 Then **Chain Sync** asks each node for its tip over the Foreign API and reports one of:
@@ -69,12 +69,114 @@ Then **Chain Sync** asks each node for its tip over the Foreign API and reports 
 | Line | Meaning |
 |------|---------|
 | `[ONLINE]` with height, last block, difficulty | The node answered. Compare the height with [grinscan.org](https://grinscan.org) (mainnet) or [test.grinscan.org](https://test.grinscan.org) (testnet) to see how far behind it is |
-| `[OFFLINE] — nothing listening on port N` | No node on that port. Start it with Script 01 → `S` |
+| `[OFFLINE] — nothing listening on port N` | No node on that port. Start it with Script 01 → *Start a node* |
 | `[NO SECRET]` | The port is open but the node's `.foreign_api_secret` could not be read. Run `grin-secret-sync` |
 | `[AUTH FAILED]` with HTTP 401 or 403 | The node is **running**; the secret on disk is not the one it loaded. Run `grin-secret-sync`, and if it persists restart the node |
 | `[NO DATA]` or `[API ERROR]` | The node answered with something other than a tip — usually still starting up. Wait a few minutes |
 
-A healthy node reads `[ONLINE]` with a height that moves between two runs a minute apart. The screen distinguishes "node down" from "wrong credential" on purpose: an empty reply used to be reported as offline, and a perfectly healthy node looked dead.
+A healthy node reads `[ONLINE]` with a height that moves between two runs a minute apart. The screen distinguishes "node down" from "wrong credential" on purpose: an empty reply is not proof a node is down, and treating it as one makes a perfectly healthy node look dead.
+
+## Diagnostics & Support (key 6)
+
+> **Warning:** Status — script 086 and its node event recorder are built and reviewed but have **never been run on a VPS**. The thresholds behind each finding are untested heuristics. Read a finding's *observed* value before acting on it.
+
+Script 086 answers one question from evidence: *is this the toolkit, this server, or Grin itself?* It runs the checks you would otherwise paste into a chat one by one, tags each finding with where to look first, and can pack everything into one file to hand to whoever is helping you. It must run as root (it exits otherwise), because the probes read root-only state.
+
+```text
+ 086)  Diagnostics & Support Bundle
+
+  Is it our code, this host, or upstream grin? Collect the evidence first.
+
+  Check
+  1)   Quick health check        ~30 s · findings + likely origin
+  2)   Build support bundle      ~3 min · one .tar.gz to share
+
+  Dig deeper
+  3)   Node API performance      get_block cold/warm · parallel burst
+  4)   Node log triage           known error signatures · hourly timeline
+  5)   Consumer load test        pauses explorers ~1 min (asks first)
+
+  Over time
+  7)   Node event recorder       timeline · availability % · evidence · alerts
+
+  6)   Saved reports             list · delete old
+  0)   Return to admin centre
+
+  Read-only except option 5 (and 7's install/settings). Reports: /opt/grin/reports/diag
+```
+
+| Key | What it does | Changes anything? |
+|-----|--------------|-------------------|
+| `1` | Checks the host (memory, swap, disk and IO pressure, CPU steal, OOM kills, full filesystems, clock sync), every running node (runs as `grin`, one process per dir, secrets, Owner and Foreign API, peers, lag behind a public reference tip, log level), the last hour of each node log, and the toolkit services that use the node. On screen, in a pager — `q` leaves it | No |
+| `2` | The same checks over 24 hours plus config, a diff of `grin-server.toml` against what the same binary generates as its default, peers by version, the node's tmux pane (panics land there), API timings, services, network, `sar` history, a 30-second CPU/disk sample per process and the recorder's state — packed into one `.tar.gz` | No |
+| `3` | Times `get_block` from the tip back towards genesis, each height twice (cold, then warm), plus a 20-request parallel burst. It offers two optional *IncompleteMessage experiments* that add one or two lines to the node log | Only the optional log lines |
+| `4` | Matches the node log against known Grin error signatures and prints an hourly timeline; window last hour, 6 h, 24 h or since the node started | No |
+| `5` | Measures the mainnet node's CPU and disk with the read-only explorers (`grin-tiny-explorer`, `grinscan-main`) running, stopped, then restarted — 45 s each. They are down for about a minute; you must type `yes`. Only units it stopped are restarted, Ctrl+C included. The pool, wallets and nodes are never touched | **Yes** — stops the explorers briefly |
+| `6` | Lists saved reports and deletes those older than N days | Deletes only its own reports |
+| `7` | The [node event recorder](#node-event-recorder) | Its own install, settings and evidence |
+
+Reports go to `/opt/grin/reports/diag/` (mode 700, each file 600): `grin_diag_<host>_<time>.tar.gz` with a `.summary.txt` next to it, `api_perf_<net>_<time>.txt` and `consumer_load_<time>.txt`. The screen prints the `scp` line to copy a bundle to your own machine.
+
+**[Likely origin](reference-glossary.html#likely-origin).** Every finding carries one of these tags, and the summary counts critical and warning findings per tag under *Where to look first*:
+
+| Tag | Look at |
+|-----|---------|
+| `host` | This VPS — disk, RAM, CPU steal, clock |
+| `toolkit` | The toolkit's setup — how the node was launched, secrets, services |
+| `upstream` | Grin itself — check the upstream issue tracker |
+| `client` | Programs calling the node API |
+| `chain` | Chain data on disk |
+| `network` | P2P and sync |
+| `config` | `grin-server.toml` settings |
+| `consumer` | A toolkit service that uses the node |
+
+A tag is a **lean from a pattern match** (a log signature, a threshold), not a diagnosis — the screen says so every time. Use it to decide where to look first, then confirm. As on Host Optimization, a run with **zero findings is reported as broken, not as a pass**.
+
+**Privacy.** No secret value is printed or put on a command line; peer and visitor IP addresses are masked; long token-like strings are redacted. **Hostnames and domains are not masked** — read a bundle before posting it anywhere public. Set `GRIN_DIAG_OFFLINE=1` before starting to skip the calls that leave the box (the public reference tip and the upstream latest-release lookup).
+
+### Node event recorder
+
+`6` → `7`. A small timer that checks each node every 30 seconds and writes down every time it goes down or comes back, with a guess at *why* and the evidence saved at that moment — the node's tmux pane, its log window, kernel lines and host state. It answers "how often does my node fall over, for how long, and what was it doing?", which a status screen run by hand cannot.
+
+It is **read-only**: it never starts, stops, restarts or signals a node. Restarting is the [sync watchdog](reference-glossary.html#watchdog)'s job (Script 01 installs it); the recorder only records.
+
+```text
+  View
+  1)  Timeline                  last events per network
+  2)  Availability              uptime % · outages by class · MTBF · 7 / 30 / 90 d
+  3)  Show evidence             pick a bundle · summary + matched lines
+  4)  Export for upstream       masked .tar.gz for a GitHub issue
+  C)  Capture evidence now      a bundle on demand · no event recorded
+
+  Set up
+  5)  Alert settings            channels · import · test · thresholds
+  I)  Install / refresh
+  R)  Remove                    keeps the ledger, evidence and config
+  S)  Status
+  0)  Back to Diagnostics
+```
+
+**Set it up:** `I` installs it (Script 01 also offers it during a build, and Super Auto installs it). If the box's sync watchdog is older than the recorder, `I` offers to regenerate it, so a watchdog restart saves the node's pane before it is destroyed. Then `5` → set at least one alert channel, or `5` → `5` to copy the channels you already set in [Provider Access Watch](#provider-access-watch-key-2) (a copy, not a link), and `5` → `6` to send a test.
+
+**What the classes mean.** Each outage gets a class. Like the origin tags, it is a lean, not a verdict, and it may be refined once the evidence is read:
+
+| Class | Usually means |
+|-------|---------------|
+| `hung` | The process is alive but the API stopped answering (timeout, closed port, bad reply; also a compaction or IO stall on an archive node) |
+| `crashed` | The process exited with an error code, or a panic was found in the log |
+| `killed` | Killed with SIGKILL — often the kernel's out-of-memory killer |
+| `unexplained_stop` | It stopped cleanly but nothing in the toolkit planned that stop (for example Ctrl+C inside its tmux session) |
+| `failed_start` | It never answered within the start timeout, or exited before its first answer |
+| `wedged` | The sync watchdog decided it was stuck and restarted it |
+| `corrupted` | The start-up log shows broken chain data. **Restarts will not fix this** — rebuild the node's chain data |
+
+Planned stops (the toolkit's own *Stop a node*, a rebuild, a full cleanup), node starts and host reboots are recorded but **never counted as outages**. *Availability* is up time divided by up plus counted down time, over 7, 30 and 90 days, with outages by class, MTBF, mean time to recover and the longest outage. All times are UTC.
+
+**Alerts** go to the channels you set, at most one of each per outage: *DOWN* once an outage lasts 3 minutes, *CORRUPTED* at once, a *restart loop* (3 watchdog restarts within 60 minutes), *recovery* after a DOWN, and an *unclean host reboot*. Every threshold, the evidence size caps (50 MB per bundle, 500 MB in total, 180 days) and the watched networks are under `5` → `7`; the timer re-reads them on every check.
+
+**Evidence and export.** Raw bundles do **not** mask IP addresses or hostnames. To share one, use `4`: it masks IPs fully, replaces this host's name, redacts secrets and every 20+-character token, and writes `/opt/grin/logs/grin_node_events_export_<time>.tar.gz`. Copy it off soon — the automatic cleanup in [Disk Cleanup](#disk-cleanup-key-7) ages out `/opt/grin/logs`.
+
+**What was created:** the worker `/usr/local/bin/grin-node-events` (`check`, `capture`, `show`, `test-alert`), `grin-node-events.service` and `.timer`, copies of the libraries it runs from in `/opt/grin/lib/`, the config `/opt/grin/conf/node-events/recorder.conf` (mode 600 — it holds your alert tokens; written only if absent), `/etc/logrotate.d/grin-node-events`, and the records in `/opt/grin/node-events/<network>/`: `ledger.jsonl` (history), `status.json` (current state), and `evidence/` (mode 700). `R` removes the program and its units but keeps the records and the config; [backups](089-backup-restore.html) carry the ledger; [Full Grin Cleanup](#full-grin-cleanup-key-del) removes everything and asks about the evidence first.
 
 ## Remote Node Manager (key 1)
 
@@ -118,11 +220,11 @@ label|host|ssh_port|user|key_path|toolkit_path
 | Manage server list | List, add, remove, test every connection, and **Bootstrap SSH keys** — generates `/root/.ssh/grin_deploy` (ed25519, no passphrase) if missing, prints the public key, then runs `ssh-copy-id` to each server (asks for that server's password once) and verifies key login |
 | Push toolkit update | Downloads a branch tarball on each selected server and copies it over its toolkit directory — the remote equivalent of [Self-Update](#self-update-key-8) |
 | Run command | Runs one shell command on the selected servers and shows each reply |
-| Remote node control | `a` start, `b` stop, `c` restart the Grin nodes on the selected servers (both tmux sockets, as the `grin` user — the same rules as Script 01); `d` upgrade the grin binary; `e` reboot after a one-minute delay, with a confirmation |
+| Remote node control | `a` start, `b` stop, `c` restart the Grin nodes on the selected servers (as the `grin` user, on both tmux sockets — the same rules as Script 01); `d` upgrade the grin binary; `e` reboot after a one-minute delay, with a confirmation. A stop closes **node** sessions only — wallet listeners that share the `grin_` prefix keep running — and, on a server with the [node event recorder](#node-event-recorder), first leaves a planned-stop marker so the stop is not counted as an outage |
 
 Every action asks which servers: `all` or a comma-separated list of numbers.
 
-> **Warning:** Two remote actions do not work as shipped (verified against GitHub on 2026-09-20, not on a server). *Upgrade grin binary* looks for a release asset named `linux-amd64`, but grin publishes `linux-x86_64`, so it stops with *could not get latest release URL* — upgrade with Script 01 → `B` on each box instead. And *Push toolkit update* offers the branches `addons` and `corefeatures`, which do not exist on GitHub (the branch is `add-ons`; there is no `corefeatures`) — those two choices download nothing. `main` works; for `add-ons` use *Custom branch* and type the name with the hyphen.
+> **Warning:** Two remote actions do not work as shipped (verified against GitHub on 2026-09-20, re-read in the code on 2026-10-23, not run on a server). *Upgrade grin binary* looks for a release asset named `linux-amd64`, but grin publishes `linux-x86_64`, so it stops with *could not get latest release URL* — upgrade with Script 01 → *Update Grin binary* on each box instead. And *Push toolkit update* offers the branches `addons` and `corefeatures`, which do not exist on GitHub (the branch is `add-ons`; there is no `corefeatures`) — those two choices download nothing. `main` works; for `add-ons` use *Custom branch* and type the name with the hyphen.
 
 Remote *start* launches every installed node at once, without the 1000-second stagger Script 01 uses; on a small VPS expect the second node to take a long time to open its ports.
 
@@ -154,7 +256,7 @@ It **detects**; it cannot prevent. The two measures that would raise the ceiling
   7)  Beyond detection         LUKS remote-unlock · wallet-off-VPS
 ```
 
-**Set it up in this order:** `1` snapshot a baseline on a box you trust right now — then **copy the printed SHA-256 off the server** (a notes app, a password manager). An intruder can rewrite the baseline file on the box to hide their changes, but not your saved copy of its hash; if the hash in `6` ever differs from your note, the baseline itself was tampered with. Then `4` configure at least one alert channel — a finding that only lands in a log on the same server the intruder is on is worthless — and `6` to send a test. Then `5` enable the timer; the default interval is **15 minutes** (first run 2 minutes after boot).
+**Set it up in this order:** `1` snapshot a baseline on a box you trust right now — then **copy the printed SHA-256 off the server** (a notes app, a password manager). An intruder can rewrite the baseline file on the box to hide their changes, but not your saved copy of its hash; if the hash in `6` ever differs from your note, the baseline itself was tampered with. Then `4` configure at least one alert channel — a finding that only lands in a log on the same server the intruder is on is worthless — and `4` → `6` to send a test. Then `5` enable the timer; the default interval is **15 minutes** (first run 2 minutes after boot).
 
 | Channel | What you enter | Notes |
 |---------|----------------|-------|
@@ -163,11 +265,11 @@ It **detects**; it cannot prevent. The two measures that would raise the ceiling
 | Email | An address | Needs `sendmail`, `mail` or `msmtp` on the box |
 | Nostr | Secret key and relay URL | Needs `nak` (or `nostril` + `websocat`) installed; otherwise logged as skipped |
 
-Every configured channel is tried independently. Standing findings (a changed file, a new key) alert once and again only if the set of findings changes; events (a login, a clock jump) alert once each. `5` in the alert menu toggles the new-login alert, which is on by default — turn it off if your own logins are frequent.
+Every configured channel is tried independently. Standing findings (a changed file, a new key) alert once and again only if the set of findings changes; events (a login, a clock jump) alert once each. `5` in the alert menu toggles the new-login alert, which is on by default — turn it off if your own logins are frequent. The [node event recorder](#node-event-recorder) uses the same delivery code and can import these channels.
 
-**What was created:** `/opt/grin/access-watch.sh` (the worker, reinstalled on every launch), `grin-access-watch.service` and `.timer`, `/opt/grin/conf/access-watch/` (mode 700) holding `baseline`, `alert.conf` (mode 600 — your tokens) and `state/`, and the log `/opt/grin/logs/access-watch.log`. Re-snapshot the baseline after *you* change something it watches (a new SSH key, a system upgrade that replaces `sshd`), or every check will keep reporting it.
+**What was created:** `/opt/grin/access-watch.sh` (the worker, reinstalled on every launch; if that refresh fails, the installed worker keeps running), `grin-access-watch.service` and `.timer`, `/opt/grin/conf/access-watch/` (mode 700) holding `baseline`, `alert.conf` (mode 600 — your tokens) and `state/`, and the log `/opt/grin/logs/access-watch.log`. Re-snapshot the baseline after *you* change something it watches (a new SSH key, a system upgrade that replaces `sshd`), or every check will keep reporting it.
 
-> **Note:** Built 2026-07-25 and checked only by syntax and code reading — it has not been run on a VPS. Test every alert channel with `6` before trusting it.
+> **Note:** Built 2026-07-25 and checked only by syntax and code reading — it has not been run on a VPS. Test every alert channel with `4` → `6` before trusting it.
 
 ## Host Optimization & Hardening (key 3)
 
@@ -184,9 +286,9 @@ Script 083 profiles the VPS — CPU, RAM, disk, kernel settings, time sync, logg
   5)   Kernel & node limits      sysctl, THP, fd limits, peer count
   6)   Security & firewall       ufw, exposed node API, updates
 
-  Hardening
-  7)   SSH posture               read-only summary of SSH config
-  8)   SSH Key Hardening →       open the SSH tool (makes changes)
+  Hardening   configure first, then verify
+  7)   SSH Key Hardening →       keys, key-only login, guided user+sudo setup
+  8)   SSH posture               read-only summary — check your work
 ```
 
 Findings are graded **CRIT** / **WARN** / **INFO** / **OK** / **NA**. The full report is longer than a screen, so it is shown in a pager — press `q` to leave it — and ends with an explicit `[END]` marker so you know nothing was cut off. `2` writes the same report, without colour, to `/opt/grin/reports/` as `host_optimization_<date>.txt` (mode 600 — it lists open ports and firewall state).
@@ -206,28 +308,65 @@ A summary of **zero findings is reported as a failed run, not a pass** — the p
 
 ### SSH Key Hardening (script 085)
 
-`7` shows your SSH posture; `8` opens the only tool in the toolkit that *changes* SSH: script 085, which had its own hub key until 2026-08-25. Its job is to get a public key onto the server, prove that key login works, and only then turn password login off — with a guaranteed way back.
+`7` opens the only tool in the toolkit that *changes* SSH: script 085, which had its own hub key until 2026-08-25. `8` shows the result read-only. Its job is to get a public key onto the server, prove that key login works, and only then turn password login off — with a guaranteed way back.
 
 ```text
+  Start here
+  W)  GUIDED SETUP →          key ▸ normal user ▸ sudo ▸ root, in order
+      Creates the user, installs the key, proves both work, THEN locks
+      SSH down. Does every step below in the safe sequence.
+
+  Keys   individual actions — to adjust, not to set up
   1)  Add a public key          paste · generate on server · fetch URL
   2)  List installed keys       fingerprints in /root/.ssh/authorized_keys
+
+  Hardening
   3)  Verify key login          anti-lockout self-test (run this first!)
   4)  Disable password login    key-only; optional safety timer
   5)  Make key-only permanent   cancel safety timer after testing
   6)  Re-enable password login  rollback / break-glass
+
+  Info
   7)  SSH status & audit        effective config, keys, firewall
   8)  How to connect with key   remote-tool steps (Windows/Linux/macOS)
 ```
 
-Do it in order: `1` → `3` → `4` → test in a second terminal → `5`.
+There are two ways to use it. **`W`** sets up a separate admin account and shuts root out of SSH (below). The numbered keys keep logging in as **root** and only turn passwords off: do them in order `1` → `3` → `4` → test in a second terminal → `5`.
 
-- **Add a key** three ways: paste the `.pub` line from your laptop (recommended); generate a pair on the server, in which case the private key is shown **once** for you to copy and you are asked to delete the server's copy; or fetch a *public* key from a URL such as `github.com/<user>.keys`. Private keys are never fetched from anywhere.
+- **Add a key** three ways: paste the `.pub` line from your laptop (recommended); generate a pair on the server, in which case the private key is shown **once** for you to copy and you are asked to delete the server's copy; or fetch a *public* key from a URL such as `github.com/<user>.keys`. Private keys are never fetched from anywhere. A pasted fingerprint, a private key or a wrapped key is refused with the reason.
 - **Verify key login** checks `authorized_keys`, permissions, `sshd -t`, that public-key auth is enabled, how *this* session authenticated, and tries a loopback login with the key.
-- **Disable password login** writes `PasswordAuthentication no`, `KbdInteractiveAuthentication no` and `PermitRootLogin prohibit-password` — to a drop-in, `99-grin-hardening.conf` in `/etc/ssh/sshd_config.d/`, where the distro supports it — validates with `sshd -t` before applying, and **reloads** sshd rather than restarting it, so your current session survives. It refuses to run with no key installed.
+- **Disable password login** writes `PasswordAuthentication no`, `KbdInteractiveAuthentication no` and `PermitRootLogin prohibit-password` — to a drop-in, `00-grin-hardening.conf` in `/etc/ssh/sshd_config.d/`, where the distro supports it (an older `99-grin-hardening.conf` is removed) — validates with `sshd -t` before applying, and **reloads** sshd rather than restarting it, so your current session survives. It refuses to run with no key installed.
+- **Written is not applied.** sshd keeps the *first* value it reads for a setting, so another file — on Ubuntu usually `50-cloud-init.conf` with `PasswordAuthentication yes` — can silently win. After every apply the tool asks sshd what it actually resolved. If a setting did not take, it lists every file that sets it and offers `f` to comment out the other lines (kept behind a `#GRIN-DISABLED# ` prefix and put back on any rollback) and check again, or `q` to roll the whole change back. It never leaves you half-applied.
 
-> **Danger:** Do not lock yourself out. Choose the **safety timer** (`A`, default 5 minutes) unless you have *already* logged in with the key in another terminal. With the timer, passwords come back on their own unless you return and press `5` to commit. If you did test first and pick `B`, you are asked to confirm it once more. `6` is the break-glass at any time — but it only helps if you can still get in, which is the point of testing first. The tool also warns if ufw is active with no rule for your SSH port.
+> **Danger:** Do not lock yourself out. Choose the **[safety timer](reference-glossary.html#safety-timer)** (`A`, default 5 minutes) unless you have *already* logged in with the key in another terminal. With the timer, passwords come back on their own unless you return and press `5` to commit. If you did test first and pick `B`, you are asked to confirm it once more. `6` is the break-glass at any time — but it only helps if you can still get in, which is the point of testing first. The tool also warns if ufw is active with no rule for your SSH port.
 
-Every change backs up the previous config to `/opt/grin/conf/ssh_backups/`. The scope is the root account only, which is the account the toolkit runs as.
+Every change backs up the previous config to `/opt/grin/conf/ssh_backups/`.
+
+### Guided setup (W)
+
+`W` walks the whole "your key → a normal user → `sudo` → root" setup in the only safe order. At the end, SSH passwords are off, **direct root SSH is off**, and you log in as the new user and become root with `sudo -i`. Steps 1–5 change users and keys but not sshd, so they cannot lock you out; step 7 is the only one that touches SSH, and it refuses to run until step 6 has proven the new way in works. Keep your current session open until the end.
+
+| Step | What happens | What you do |
+|------|--------------|-------------|
+| 1 | Name the admin user — created, or an existing one adopted | A lowercase name; avoid `admin` and `grin` |
+| 2 | Set that user's password. SSH will not accept it; `sudo` asks for it, and an account with no password cannot `sudo` at all | Type it into `passwd` (the toolkit never sees it) |
+| 3 | Add the user to `sudo` (Debian/Ubuntu) or `wheel` (Rocky/Alma); offers to install `sudo` if missing | Confirm |
+| 4 | Install your laptop's public key into **that user's** `~/.ssh/authorized_keys` — root's keys are left alone | Paste, generate or fetch, as with `1` |
+| 5 | Optional: a `grinops` group that can read `/opt/grin/backups`, so you can `scp` backups as the new user without `sudo` | `y` or `n` |
+| 6 | **Proof.** In a second terminal, `ssh <user>@<server> -p <port>` then `sudo -i`. The tool looks for an *Accepted publickey* line for that user in the SSH log (or, for a key generated on the server, tries a loopback login) and asks `sudo` whether the user may run everything. Both must go green. The log line can be an old one, so check that the date shown is from just now | Log in, come back, `r` to re-check (`q` stops with nothing changed) |
+| 7 | Applies `PasswordAuthentication no` and `PermitRootLogin no`, and offers `AllowUsers` so only the listed accounts may log in (it names any other account with keys that would be locked out). Then the auto-undo timer — default **10 minutes**, `0` for none | Choose, confirm, then log in as the user in a new terminal and press `5` |
+
+It finishes by printing the login line and an `~/.ssh/config` block for your laptop. Use `sudo -i`, not `sudo ./grin-node-toolkit.sh` — plain `sudo` keeps the user's home directory, and you need a root shell to see the node's tmux sessions.
+
+The choices are saved in `/opt/grin/conf/ssh_hardening_policy.conf` at step 7 *before* you are asked to apply, so the file stays even if you answer no to *Apply now?* or the auto-undo timer rolls the change back. While that file says root login is off, `4` also applies it (and warns); `6` re-enables passwords and root SSH and offers to forget the policy.
+
+> **Danger:** Step 7 turns off direct root SSH, and with `AllowUsers` it shuts out every other account too. Do not lock yourself out:
+> - Keep the auto-undo timer (do not answer `0`) and keep your current session open.
+> - Before pressing `5`, open a **new** terminal, log in as the new user with your key, and run `sudo -i`. Press `5` only when both work.
+> - **Do not reboot the server while the timer runs.** The timer is a background process, not a systemd unit; a reboot kills it, so the change is never undone and stays in force.
+> - If you are locked out anyway, your only way in is the provider's web console or rescue mode. A cloud image often has no root password for the console, so set one (`passwd`) before you start.
+
+> **Note:** The guided setup and the "did it take" check are read from the code; they have not been run on a server.
 
 ## Nginx Extended Features (key 4)
 
@@ -238,6 +377,7 @@ Script 084 is for the nginx you already have from Scripts 02, 04, 06 or a wallet
   2)  Reverse Proxy Manager    add · remove · list reverse proxy vhosts
   3)  Enhance Security         harden SSL settings and HTTP security headers
   4)  Log Rotation Setup       configure logrotate (10 MB or 10 days)
+  5)  Top 20 Bandwidth Consumers parse access logs, block/limit an IP
 ```
 
 **Config & SSL Audit** runs `nginx -t`, lists every file in `sites-available` with whether it is enabled, its type (proxy or file server) and its upstream or root, then connects to each `server_name` on port 443 and reports the certificate's days to expiry — yellow at 30 days or less, red at 14. Read-only.
@@ -252,11 +392,13 @@ Script 084 is for the nginx you already have from Scripts 02, 04, 06 or a wallet
 
 > **Note:** Two things to know before pressing `4` (from reading the code, not from a server). Debian and Ubuntu's nginx package already ships `/etc/logrotate.d/nginx` for the same files, so logrotate will report a *duplicate log entry* and skip the second definition; the dry-run output shown on screen is where you would see that. And the policy it prints — "10 MB or 10 days, whichever first" — is not what `size 10M` means in logrotate: `size` makes rotation depend on size alone and ignores `daily`. If the packaged config is present you do not need this one.
 
-## Top 20 Bandwidth Consumers (key 6)
+### Top 20 Bandwidth Consumers
 
-Parses every access log under `/var/log/nginx/` and ranks the twenty client IPs that were served the most bytes — the quick answer to "who is downloading my chain snapshots all day?". Then `1` lets you enter an IP and either **block it** (`ufw deny from <ip>`, after a confirmation) or **rate-limit it** with an iptables `hashlimit` rule (over 25 connections a minute gets dropped, burst 100). The iptables rule is not saved anywhere, so it is gone after a reboot; the ufw rule persists. Without ufw the screen prints the equivalent `iptables` command instead of running it.
+`5` parses every access log under `/var/log/nginx/` and ranks the twenty client IPs that were served the most bytes — the quick answer to "who is downloading my chain snapshots all day?". Then `1` lets you enter an IP and either **block it** (`ufw deny from <ip>`, after a confirmation) or **rate-limit it** with an iptables `hashlimit` rule (over 25 connections a minute gets dropped, burst 100). The iptables rule is not saved anywhere, so it is gone after a reboot; the ufw rule persists. Without ufw the screen prints the equivalent `iptables` command instead of running it.
 
 Nothing to show means no nginx access logs, or logs not in the standard *combined* format.
+
+> **Note:** As shipped, this screen reads the wrong field for the byte count, so on standard *combined* logs it always ends with *No parseable data found in nginx access logs* (found by reading the code and testing its `awk` line on a sample log line, not on a server). Until that is fixed, a one-liner gives the same ranking: `awk '{b[$1]+=$10} END {for (i in b) print b[i], i}' /var/log/nginx/*access*.log | sort -rn | head -20`.
 
 ## Disk Cleanup (key 7)
 
@@ -275,11 +417,11 @@ One screen that first measures, then offers actions. It shows: tar archives in t
 
 What actually frees space on a toolkit-built server:
 
-- **`/opt/grin` breakdown** — read it first. `node/` (chain data) and `backups/` are the usual large ones; chain data is never touched here (use Script 01 → `R` for a corrupted chain), and old backup archives are pruned by [the backup schedule's retention](089-backup-restore.html#schedule-automatic-backups).
+- **`/opt/grin` breakdown** — read it first. `node/` (chain data) and `backups/` are the usual large ones; chain data is never touched here (use Script 01 → *Rebuild a node* for a corrupted chain), and old backup archives are pruned by [the backup schedule's retention](089-backup-restore.html#schedule-automatic-backups).
 - **`6` nginx web dir contents** — this is where Script 03's snapshot archives are (`/var/www/prunemain` and friends). Emptying one deletes the archive, its checksum and status file, *and* Script 02's landing page for that site; Script 03's next scheduled publish writes a fresh archive, and Script 02 must re-deploy the landing page. Prefer Script 03's own settings for keeping fewer archives.
 - **`D` system journal** — `journalctl --vacuum-time=<N>d`, asks for N (default 7).
 - **`A` /tmp** — files older than a day.
-- **`7` automatic cleanup** — installs `/opt/grin/auto_cleanup.sh` and a cron entry (`/etc/cron.d/grin-auto-cleanup`, daily at **04:30**) that deletes txhashset fast-sync snapshot files under `/tmp` and `/opt/grin/node`, and every file in `/opt/grin/logs` older than N days (default 7). It also installs `/etc/logrotate.d/grin-toolkit-logs`, which rotates the toolkit's continuous logs (watchdogs, collectors, backup pushes) once they pass 10 MB, keeping four compressed rotations. Enable this on every server; `3` inside runs it now.
+- **`7` automatic cleanup** — installs `/opt/grin/auto_cleanup.sh` and a cron entry (`/etc/cron.d/grin-auto-cleanup`, daily at **04:30**) that deletes txhashset fast-sync snapshot files under `/tmp` and `/opt/grin/node`, and every file in `/opt/grin/logs` older than N days (default 7) — including a [recorder export](#node-event-recorder) you have not copied off yet. It also installs `/etc/logrotate.d/grin-toolkit-logs`, which rotates the toolkit's continuous logs (watchdogs, collectors, backup pushes) once they pass 10 MB, keeping four compressed rotations. Enable this on every server; `3` inside runs it now.
 
 > **Note:** Three rows measure paths the toolkit does not use, so on a toolkit-built server they always show nothing to clean: *Chain Data Tar Archives* scans `/var/www/html/grin` (Script 03 writes to `/var/www/prunemain` etc. — use `6`), *Grin node logs* (`C`) looks in `~/.grin/main/log` (node logs are in each node directory and rotate via logrotate when Super Auto set it up), and *Grin-toolkit logs* (`E`) looks in `/var/log` (toolkit logs are in `/opt/grin/logs`, pruned by `7`). Not a fault of your server.
 
@@ -303,8 +445,8 @@ Downloads the toolkit from GitHub as a tarball and copies it over the directory 
 
 - Files you edited locally are overwritten; files removed upstream are left behind. If you would rather update with git, `cd Grin-Node-Toolkit && git pull` does the same thing from the clone directory, and it is what [Getting started](getting-started.html#keeping-the-toolkit-up-to-date) recommends.
 - To update from your own fork, save its `owner/repo` slug to `/opt/grin/conf/github_repo.conf`.
-- Updating the toolkit does not touch a node; the node *binary* is updated by Script 01 → `B`.
-- Products that keep a **copy** of code outside the clone — the solo-mining collector and stats page, Fidelius, GrinScan — need their own "deploy new code" action afterwards; each product page says which.
+- Updating the toolkit does not touch a node; the node *binary* is updated by Script 01 → *Update Grin binary*.
+- Products that keep a **copy** of code outside the clone — the solo-mining collector and stats page, Fidelius, GrinScan, the node event recorder — need their own "deploy new code" action afterwards (for the recorder: `6` → `7` → `I`); each product page says which.
 
 > **Note:** Branch `3` (`corefeatures`) does not exist on GitHub and the download fails with *Download failed. Check your internet connection or branch name* (verified 2026-09-20). Nothing is changed when a download fails.
 
@@ -314,25 +456,28 @@ Script 089 — the toolkit-wide encrypted backup, its schedule, the offsite push
 
 ## Full Grin Cleanup (key DEL)
 
-Script 08del removes everything Grin from the server, in eight confirmed steps. It **cannot be undone**.
+Script 08del removes everything Grin from the server, in eight numbered steps plus two sub-steps, each confirmed. It **cannot be undone**.
+
+> **Danger:** This deletes every wallet directory, the wallet seeds inside them, the backups in `/opt/grin/backups/`, the backup key file and the `.onion` identities. Funds in a wallet whose seed words you have not written down are lost for good. Back up first, copy the archive off the server, and check that you can read it ([Check it](089-backup-restore.html#check-it)) before you type `DESTROY`.
 
 Before you start: take a [backup](089-backup-restore.html) and **copy the archive off the server** — step 4 below deletes `/opt/grin` wholesale, which includes `/opt/grin/backups/`, every wallet directory, and the backup key file. Write the wallet seed words down as well.
 
-The screen opens with a red box listing the eight steps and asks you to type exactly `DESTROY`; anything else aborts with nothing changed. Then each step lists what it found and asks `[y/N]` before deleting it — you can say no to any step and yes to the next.
+The screen opens with a red box listing the steps and asks you to type exactly `DESTROY`; anything else aborts with nothing changed. Then each step lists what it found and asks `[y/N]` before deleting it — you can say no to any step and yes to the next.
 
 | Step | What it removes | Notes |
 |------|-----------------|-------|
-| 1 | Every running node and wallet process, and every `grin_*` tmux session on both tmux servers | Steps 4 and 5 refuse to run while a Grin process is alive |
+| 1 | Every running node and wallet process, and every `grin_*` tmux session on both tmux servers | First leaves [planned-stop markers](reference-glossary.html#planned-stop-marker), so the node event recorder logs the wipe as planned. Steps 4 and 5 refuse to run while a Grin process is alive |
 | 2 | Web roots and data directories: nginx roots containing *grin*, `/var/www/fullmain`, `prunemain`, `prunetest`, any `/var/www/*grin*` and `/var/lib/*grin*` | Snapshots, dashboards, explorer sites |
 | 3 | Grin nginx vhosts in `sites-available` and `sites-enabled`, the toolkit's rate-limit zone files; then `nginx -t` and a reload | nginx itself and Let's Encrypt certificates stay |
-| 3b | Grin systemd units — `grin-*`, `grinscan-*`, `floonet-rs` services and timers — stopped, disabled and deleted | Fidelius, Drop, pool, explorer, transporter, relay, the secret-sync and access-watch timers |
+| 3b | Grin systemd units — `grin-*`, `grinscan-*`, `floonet-rs` services and timers — stopped, disabled and deleted | Fidelius, Drop, pool, explorer, transporter, relay, the secret-sync, access-watch and event-recorder timers |
+| 3c | The [node event recorder](#node-event-recorder): worker, logrotate stanza, its library copies, its config (with your alert tokens) and `/opt/grin/node-events` | If evidence bundles exist it asks separately: *No* moves them, with the ledger, to `/root/grin-node-events-saved_<time>/` first |
 | 4 | **`/opt/grin` entirely**, plus `/grin*`, `/usr/local/bin/grin*`, the Floonet relay binary and its `/etc` and `/var/lib` dirs, and anything else named `grin*` directly under `/opt`, `/usr/local/bin` or `/usr/bin` | Nodes, chain data, every wallet, keys vault, backups, logs, configs |
 | 5 | `~/.grin` (a manual install's directory) | Only exists if grin was ever run by hand |
 | 6 | `/var/log/grin*.log` and a `log/` folder in the clone | See note below |
 | 7 | Grin lines from root's crontab, Grin `/etc/cron.d` files, Grin `/etc/logrotate.d` files | Each sub-step confirmed separately |
 | 8 | The toolkit's Tor hidden services: their `torrc` blocks and the key directories under `/var/lib/tor/grin-*`, then a Tor reload | **This destroys the `.onion` identities** — back them up first if you will ever want the same addresses again |
 
-What is left: nginx, certbot and its certificates, Tor itself, the `grin` system user, swapfiles under `/opt/grin/swap` (deleted with step 4, but their `/etc/fstab` lines remain — remove them by hand), and the toolkit clone, which you delete yourself.
+What is left: nginx, certbot and its certificates, Tor itself, the `grin` system user, swapfiles under `/opt/grin/swap` (deleted with step 4, but their `/etc/fstab` lines remain — remove them by hand), and the toolkit clone, which you delete yourself. If you kept the event recorder's evidence at step 3c, it is in `/root/grin-node-events-saved_<UTC>/` — raw, unmasked logs; delete it once you no longer need it. An admin user and `grinops` group made by the [guided SSH setup](#guided-setup-w), and the SSH drop-in, are not touched either.
 
 > **Note:** If the toolkit clone lives directly under `/opt` with a name starting `grin` — the mass-deployment default is `/opt/grin-node-toolkit` — step 4's scan lists it too, and confirming would delete the running toolkit mid-run. Check step 4's list before answering. Also, step 6 looks in `/var/log` and a `log/` folder that the toolkit never writes; the real logs in `/opt/grin/logs` went with step 4 — including this run's own log, so the *Review log* path printed at the end no longer exists.
 
@@ -342,12 +487,18 @@ What is left: nginx, certbot and its certificates, Tor itself, the `grin` system
 |---------|---------------|
 | Node Status shows `[AUTH FAILED]` | The node is up; the secret on disk is not the one it loaded. `grin-secret-sync`, then restart the node if it persists |
 | Node Status shows `[OFFLINE]` but `gtmux ls` shows a session | The node is inside its session but has not opened its port yet — a Grin node takes a few minutes after launch. Attach and read the log |
-| *No grin tmux sessions found on either tmux server* while a node is running | The node was started by hand outside the toolkit. Stop it and start it with Script 01 → `S` so it runs as `grin` on the grin socket |
-| Remote *Upgrade grin binary*: `could not get latest release URL` | The script looks for a `linux-amd64` asset; grin publishes `linux-x86_64`. Use Script 01 → `B` on each server |
+| *No grin tmux sessions found on either tmux server* while a node is running | The node was started by hand outside the toolkit. Stop it and start it with Script 01 → *Start a node* so it runs as `grin` on the grin socket |
+| Diagnostics: `This tool must run as root` | 086 reads root-only state and refuses to run without it. Start the toolkit as root (`sudo -i` first if you log in as an admin user) |
+| Diagnostics: `No running grin node` (CRIT) | No `grin server` process exists on the box. Start the node with Script 01, or find out why it exited: `gtmux ls`, then the node log — or the recorder's timeline if it is installed |
+| Diagnostics: *No checks produced a result* | The probes did not run, so this is not a pass. Read the `grin_diagnostics_<date>.log` in `/opt/grin/logs/` |
+| Recorder: `status is STALE: last check … ago` | The recorder's timer is not running. `6` → `7` → `S` for its state; `I` reinstalls the timer |
+| Remote *Upgrade grin binary*: `could not get latest release URL` | The script looks for a `linux-amd64` asset; grin publishes `linux-x86_64`. Use Script 01 → *Update Grin binary* on each server |
 | Self-Update or Push toolkit update: *Download failed* | Branch does not exist (`corefeatures`; `addons` in the mass-deploy menu — the real name is `add-ons`), or no internet. Nothing was changed |
 | Provider Access Watch reports the same finding every check | Something you changed yourself (a new key, a package upgrade that replaced `sshd`). Re-snapshot the baseline with `1` and save the new hash |
 | Access Watch: *No alert channel configured* | Findings stay on the box. Set at least ntfy or Telegram in `4` and send a test |
-| SSH: locked out after disabling passwords | If you used the safety timer, wait — passwords return automatically. If not: the provider's console, then `6` (re-enable) or delete `/etc/ssh/sshd_config.d/99-grin-hardening.conf` and reload sshd |
+| SSH: `Effective PasswordAuthentication: yes — the setting did NOT take` | Another sshd file sets the same keyword first (often `50-cloud-init.conf`). Press `f` to comment it out reversibly and re-check, or `q` to roll back |
+| SSH: locked out after disabling passwords | If you used the safety timer and the server has not rebooted since, wait — passwords (and root SSH) return automatically. If not: the provider's console, then `6` (re-enable), or delete `/etc/ssh/sshd_config.d/00-grin-hardening.conf` (on a system without drop-ins, the block between the `grin-toolkit ssh hardening` marker lines at the end of `/etc/ssh/sshd_config`), remove the `#GRIN-DISABLED# ` prefix from any line that carries it, and reload sshd |
+| SSH guided setup: *no successful publickey login found in the log yet* | Step 6 needs real evidence. Log in as the new user by key in a second terminal (not with a password), then press `r` |
 | Host Optimization: *No checks produced a result* | The probes failed, usually because the tool was not run as root. Not a pass |
 | Nginx audit: `<domain> — could not connect or no SSL` | The domain does not resolve to this server, port 443 is closed, or the vhost has no certificate yet |
 | Swap: `swapoff failed … pages can't be relocated` | Not enough free memory to absorb the file's contents. Add another swapfile first, or stop the node, then remove |
@@ -357,7 +508,7 @@ What is left: nginx, certbot and its certificates, Tor itself, the `grin` system
 
 - [Getting started](getting-started.html) — the main menu, updating, removing everything
 - [Back up and restore](089-backup-restore.html) — Script 089, key `9` on this hub
-- [Script 01](01-build-node.html) — starting, rebuilding and updating the node this screen monitors
+- [Script 01](01-build-node.html) — starting, rebuilding and updating the node this screen monitors, and the build step that offers the event recorder
 - [Script 03](03-share-chain-data.html) — the community host registry the Remote Node Manager checks
 - [Script 04](04-publish-node-api.html) — the supported way to expose the node API, and the onion identity that `DEL` step 8 destroys
 - [Ports and paths](reference-ports-and-paths.html) — every port the status screen checks, and where the files under `/opt/grin` live

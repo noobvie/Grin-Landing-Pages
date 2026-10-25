@@ -5,13 +5,13 @@ section: Scripts
 order: 7
 short: Solo mining
 label: Script 07
-covers: 2026-09-20
-updated: 2026-09-20
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
-A Grin **miner** is a machine that races to solve the *Cuckatoo32* proof-of-work; whoever solves the next block earns its **coinbase**, 60 GRIN, and there is a block about every minute. Today that machine is almost always an ASIC such as the iPollo G1 Mini. Most miners join a **pool** that shares blocks and rewards among many rigs for a fee. **Solo mining** cuts the pool out: your node itself hands work to your rig over the **stratum** protocol, and when your rig finds a block the whole 60 GRIN lands in a wallet on your server — no fee, no account, no Tor, no payout to wait for. The price is luck: a single rig finds blocks rarely and irregularly, so solo suits an owner (or a trusted group) who wants full rewards and full control, not a smooth daily income. Script 07's *Solo private mining* sets it all up on the node you built with [Script 01](01-build-node.html); the live example is [solo.grin.money](https://solo.grin.money).
+A Grin **[miner](reference-glossary.html#miner-and-cuckatoo32)** is a machine that races to solve the *Cuckatoo32* proof-of-work; whoever solves the next block earns its **[coinbase](reference-glossary.html#coinbase-and-maturity)**, 60 GRIN, and there is a block about every minute. Today that machine is almost always an ASIC such as the iPollo G1 Mini. Most miners join a **[pool](reference-glossary.html#solo-mining-and-pools)** that shares blocks and rewards among many rigs for a fee. **Solo mining** cuts the pool out: your node itself hands work to your rig over the **[stratum](reference-glossary.html#stratum)** protocol, and when your rig finds a block the whole 60 GRIN lands in a wallet on your server — no fee, no account, no Tor, no payout to wait for. The price is luck: a single rig finds blocks rarely and irregularly, so solo suits an owner (or a trusted group) who wants full rewards and full control, not a smooth daily income. Script 07's *Solo private mining* sets it all up on the node you built with [Script 01](01-build-node.html); the live example is [solo.grin.money](https://solo.grin.money).
 
-> **Warning:** Status — the mining hub is marked **(DEV)** in the main menu. The solo product is deployed and in daily use (solo.grin.money had eight rigs connected when this page was checked), but two things to know before you point real hardware at it: the reward wallet's **passphrase is saved on the server** so the wallet can restart unattended (see [the wallet](#step-2-the-reward-wallet)), and this wallet is **not included in the toolkit-wide backup** — only in the solo menu's own encrypted backup (see [Backups](#backups)). The public pool in the same hub is a separate product with [its own page](07-public-pool.html).
+> **Warning:** Status — the main menu does not mark the mining hub **(DEV)**, but its products are at different stages. The solo product is deployed and in daily use (solo.grin.money had eight rigs connected when this page was checked), but two things to know before you point real hardware at it: the reward wallet's **passphrase is saved on the server** so the wallet can restart unattended (see [the wallet](#step-2-the-reward-wallet)), and this wallet is **not included in the toolkit-wide backup** — only in the solo menu's own encrypted backup (see [Backups](#backups)). The public pool in the same hub is a separate product with [its own page](07-public-pool.html).
 
 ## The mining hub — one setup per server
 
@@ -21,6 +21,10 @@ Main menu 7 opens a small hub. It offers the solo product twice and the public p
   Grin Mining Services
 
   Active type: none yet — pick one below
+
+  Pick ONE option only — a server runs a single mining setup.
+  All three clash on the stratum port, nginx zones, and /opt/grin, so only
+  one can be installed per server (the others are blocked once one is set up).
 
   ─── Solo Mining Pool (private — yourself + friends)─────────
   1) Solo PRIVATE mining — Internet  (public domain + Let's Encrypt SSL · reachable anywhere)
@@ -36,8 +40,8 @@ Main menu 7 opens a small hub. It offers the solo product twice and the public p
 | Row | What it is |
 |-----|------------|
 | Solo — **Internet** | This page. The stats page is served on a public domain with Let's Encrypt HTTPS and an optional password |
-| Solo — **LAN** | The **same** solo setup (same wallet, ports, directories, watchdogs); only the stats page differs — plain HTTP on a private IP, no domain, no certificate, no password. For a home or office network. Switching between Internet and LAN later re-writes the stats vhost; the hub asks before it does |
-| Public pool — Mainnet / Testnet | A full PPLNS pool for other people's miners, with Tor payouts and an admin panel. The testnet install is independent and can live next to a mainnet pool, but neither can share a server with solo. [Manual page](07-public-pool.html) |
+| Solo — **LAN** | The **same** solo setup (same wallet, ports, directories, [watchdogs](reference-glossary.html#watchdog)); only the stats page differs — plain HTTP on a private IP, no domain, no certificate, no password. For a home or office network. Switching between Internet and LAN later re-writes the stats vhost; the hub asks before it does |
+| Public pool — Mainnet / Testnet | A full [PPLNS](reference-glossary.html#pplns) pool for other people's miners, with Tor payouts and an admin panel. The testnet install is independent and can live next to a mainnet pool, but neither can share a server with solo. [Manual page](07-public-pool.html) |
 
 You can also start the solo script directly: `bash scripts/07_grin_mining_solo.sh` for Internet mode, with `lan` appended for LAN mode. Started that way it performs the same Internet/LAN switch check itself.
 
@@ -78,7 +82,7 @@ A coinbase is locked for **1,440 blocks (about 24 hours)** before it can be spen
 - **Internet or LAN.** Decided in the hub (or by the `lan` argument). Only the stats page differs.
 - **Who may reach the stratum port.** When publishing: open it to all IPs (the default), to one IP or CIDR range, or leave the firewall alone.
 - **Payout split** (mainnet, asked during the stats-page deploy). Off if you mine alone. On if friends point rigs at your node: the page then shows what share of the work each nickname did and what they are owed, so you can pay them by hand. It is bookkeeping only — the coinbase still goes to your one wallet.
-- **Access lock on the stats page** (Internet mode, recommended and the default). A username and password (HTTP Basic Auth over HTTPS) in front of the whole site, because a solo page shows your income. A sanitised `data/health.json` stays public for uptime monitors; you can also choose to publish the `poolstats` feed that miningpoolstats.stream polls.
+- **Access lock on the stats page** (Internet mode, recommended and the default). A username and password (HTTP [Basic Auth](reference-glossary.html#basic-auth) over HTTPS) in front of the whole site, because a solo page shows your income. A sanitised `data/health.json` stays public for uptime monitors; you can also choose to publish the `poolstats` feed that miningpoolstats.stream polls.
 
 ## The menu
 
@@ -196,7 +200,7 @@ Enter the network branch and open **Wallet**:
 
 | Step | What happens | What you do |
 |------|--------------|-------------|
-| 1 | Downloads the pinned `grin-wallet` release (**v5.4.1**) into `/opt/grin/solowallet/<network>/` and checks its SHA256. The binary is kept in a shared store, so the *grin-wallet binary* screen can later update it or roll it back in one key | Wait |
+| 1 | Downloads the pinned `grin-wallet` release (**v5.5.0**) into `/opt/grin/solowallet/<network>/` and checks its SHA256. The binary is kept in a shared store, so the *grin-wallet binary* screen can later update it or roll it back in one key | Wait |
 | 2 | Asks for the setup mode: **new wallet** (`init`) or **recover from seed**. If a wallet already exists it asks before overwriting | `1` or `2`. On mainnet, read the red warning: this wallet receives real GRIN |
 | 3 | Asks for a **passphrase** twice (at least 3 characters), then runs `grin-wallet init`. A new wallet prints its **24-word seed** — write it down now; it is the only way to recover the wallet on another machine. In recover mode grin-wallet asks you to type the 24 words itself | Type the passphrase; save the seed. If init prints `get_version: Cannot parse response`, ignore it — the wallet is not yet pointed at the node at that moment; the next step fixes it |
 | 4 | **Saves the passphrase** to `.passphrase` in the wallet directory, readable by root only (mode 600). This is what lets the listener open the wallet unattended after a reboot or a crash | Nothing — but understand it: anyone with root on this server can spend this wallet. Keep the balance low and sweep rewards out (see [Day-to-day](#day-to-day-operations)) |
@@ -264,7 +268,7 @@ Prefer the **raw IP** over a domain in Pool 1: stratum is plain TCP to the node,
 | *(auto)* Writes the nginx vhost (HTTP first), enables it, tests and reloads | The vhost holds the base64 API credentials, so it is mode 600 |
 | Run certbot for SSL? | Internet mode. HTTP → HTTPS redirect included. If certbot fails, the page stays up over HTTP — and the access lock is **switched off**, because the script refuses to send passwords over plain HTTP; fix DNS and deploy again |
 
-The page (see solo.grin.money) shows per network: found blocks in 24 h and how many are still maturing, active miners, whether the wallet listener is up, estimated earnings per day for your hashrate and for one G1 Mini, network difficulty and hashrate, your total hashrate, a miners list with 15-minute to 48-hour hashrates, and every block you found with its maturity or *orphaned* status. Below that: a blocks-found chart with a by-hour heatmap, a hashrate history chart, and — mainnet, when the payout split is on — the split, a GRIN-per-miner-per-day chart and a **Solo Health** card. A clock button switches per-event times between UTC and local; charts can be exported as PNG or CSV. Live tiles refresh every **120 seconds**, collector data every 5 minutes.
+The page (see solo.grin.money) shows per network: found blocks in 24 h and how many are still [maturing](reference-glossary.html#coinbase-and-maturity), active miners, whether the wallet listener is up, estimated earnings per day for your hashrate and for one G1 Mini, network difficulty and hashrate, your total hashrate, a miners list with 15-minute to 48-hour hashrates, and every block you found with its maturity or *orphaned* status. Below that: a blocks-found chart with a by-hour heatmap, a hashrate history chart, and — mainnet, when the payout split is on — the split, a GRIN-per-miner-per-day chart and a **Solo Health** card. A clock button switches per-event times between UTC and local; charts can be exported as PNG or CSV. Live tiles refresh every **120 seconds**, collector data every 5 minutes.
 
 The collector keeps its durable state in **SQLite** — `/opt/grin/solo-stats/solo_mining_stats_main.db` and `…_test.db` — and regenerates the JSON files from it on every run. On mainnet, blocks are **chain-verified**: a found block is checked against the node at 60 confirmations and marked *orphaned* if the chain kept a different block at that height, and counted as matured only at 1,440 confirmations, so an orphan never inflates a payout. Testnet keeps no ledger, so its blocks are counted from the log alone.
 
@@ -343,7 +347,7 @@ The wallet log repeats `Error calling get_version … 127.0.0.1:3413` when the n
 
 The **wallet's** boot autostart (the 40-second `@reboot` line) lives in the wallet sub-menu, not here.
 
-> **Warning:** A node **rebuild** in Script 01 (`M`, `T`, `K` or Super Auto — anything that regenerates `grin-server.toml`) drops the three stratum keys, and nothing puts them back for solo: mining stops silently and only the stratum watchdog's log notices. Re-run *Stratum → Setup & Publish* after any rebuild. `R` (chain data only) and `B` (binary update) keep the toml and are safe. *(Read from the code; not reproduced on a server.)*
+> **Warning:** A Script 01 action that regenerates `grin-server.toml` — *Rebuild a node* → *full reinstall*, or *Super Auto* — drops the three stratum keys, and nothing puts them back for solo (the public pool has a timer that does; solo does not): mining stops silently and only the stratum watchdog's log notices. Re-run *Stratum → Setup & Publish* after any such rebuild. *Rebuild a node* → *chain_data only* and *Update Grin binary* keep the toml and are safe. *(Read from the code; not reproduced on a server.)*
 
 ## Backups
 
@@ -421,7 +425,7 @@ The **wallet's** boot autostart (the 40-second `@reboot` line) lives in the wall
 
 ## Related
 
-- [Script 01](01-build-node.html) — the node this mines on; rebuilds and the `S` start key
+- [Script 01](01-build-node.html) — the node this mines on; *Start a node*, *Stop a node* and rebuilds
 - [Script 03](03-share-chain-data.html#g-and-h-start-the-node-on-reboot) — the other door to node boot autostart
 - [Wallet hub](05-wallet-services.html) — what a Grin wallet is; the CMD wallet commands for moving rewards
 - [Ports and paths](reference-ports-and-paths.html) — 3416 / 13416 and the solo directories in context

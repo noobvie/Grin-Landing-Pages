@@ -3,8 +3,8 @@ title: Glossary
 description: Plain-language definitions of the Grin, server and web terms this manual uses — node, slatepack, Foreign API, stratum, tmux, vhost and more.
 section: Reference
 order: 2
-covers: 2026-09-23
-updated: 2026-09-23
+covers: 2026-10-24
+updated: 2026-10-24
 ---
 
 The words this manual uses without stopping to explain them, grouped by topic. Each entry is short and links to the page where the term actually matters; the definitions match the ones given on those pages. Every heading is a link target, so a page can point straight at a term.
@@ -17,7 +17,7 @@ The program — `grin` — that keeps a copy of the Grin blockchain, checks ever
 
 ### Mainnet, testnet and tGRIN
 
-**Mainnet** is the real Grin network, where GRIN has value. **Testnet** is a parallel chain whose coins, **tGRIN**, are worthless — made for rehearsing. The toolkit keeps the two completely apart: separate directories, ports and wallets. Rehearse anything unfamiliar on testnet first. See [Getting started](getting-started.html#mainnet-and-testnet).
+**Mainnet** is the real Grin network, where GRIN has value. **Testnet** is a parallel chain whose coins, **tGRIN**, are worthless — made for rehearsing. The toolkit keeps the two completely apart: separate directories, ports and wallets. Rehearse anything unfamiliar on testnet first; the one exception is the [public pool](07-public-pool.html), which the toolkit tests on mainnet only. See [Getting started](getting-started.html#mainnet-and-testnet).
 
 ### Pruned node and archive node
 
@@ -30,6 +30,10 @@ A **pruned** node keeps every block header and every [kernel](#kernel), but the 
 ### Sync and PIBD
 
 **Syncing** is a node catching up with the chain. Starting from nothing, Grin downloads the chain state in parallel pieces — **PIBD**, *Parallel Initial Block Download* — which can take hours to days and sometimes stalls. That is why the toolkit starts from a snapshot. A node reports `"sync_status":"no_sync"` once it is caught up.
+
+### Compaction
+
+The node's periodic clean-up of its chain database. While it runs, the node's API can stop answering for minutes on a pruned node and for hours on an archive node; nothing is wrong, and it comes back on its own. Tiny Explorer shows *node busy* meanwhile. See [Tiny Explorer](06-global-health.html#tiny-explorer).
 
 ### Kernel
 
@@ -59,13 +63,21 @@ The two password files in a node directory: `.api_secret` protects the Owner API
 
 ### grin-secret-sync
 
-A small helper the toolkit installs with a timer that runs every 5 minutes. It finds each node's secret files and re-points every installed service at them, so a rebuilt or moved node does not leave the services behind it locked out with HTTP 401. `grin-secret-sync --rotate <network>` changes a secret on purpose. See [Script 01](01-build-node.html#day-to-day-operations).
+A small helper the toolkit installs with a timer that runs every 5 minutes. It finds each node's secret files and re-points every installed service at them, so a rebuilt or moved node does not leave the services behind it locked out with HTTP 401. It also writes the public pool's stratum settings back into the node's config after a rebuild; the node must then be restarted before they take effect. `grin-secret-sync --rotate <network>` changes a secret on purpose. See [Script 01](01-build-node.html#day-to-day-operations).
 
 ## Wallets and transactions
 
 ### Wallet
 
 A separate program — `grin-wallet` — that holds your [seed](#seed-phrase), builds and signs transactions, and asks a node what is on the chain. It exposes a **Foreign API** (port 3415 / 13415) through which it receives, and an **Owner API** (3420 / 13420) through which it is managed; both stay on localhost. See [A Grin wallet, in plain words](05-wallet-services.html#a-grin-wallet-in-plain-words).
+
+### grin-wallet pin
+
+The `grin-wallet` version the toolkit installs. Every wallet product shares one download store, `/opt/grin/wallet-bin/<version>/`, and installs **v5.5.0** by default; Fidelius alone stays on **v5.4.1** until an unlock has been checked on the newer binary. Each product's binary screen can update past the pin or roll back. See [CMD wallet setup](05-wallet-services.html#setup-step-by-step).
+
+### CMD wallet
+
+The command-line wallet that the wallet hub's slot `A` sets up next to your node, in `/opt/grin/cmdwallet/<network>/`. Its screen has `L` to start, stop or restart the listener and `N` (*Nuke*) to start a network over. It has no autostart: after a reboot, start it again with `L`. See [The listener screen](05-wallet-services.html#the-listener-screen-l).
 
 ### Seed phrase
 
@@ -117,6 +129,14 @@ The **coinbase** is the new money in each block — 60 GRIN — paid to whoever 
 
 *Pay Per Last N Shares* — the way the toolkit's public pool splits a block: by the work each miner submitted in the last 60 blocks. Leaving just before a block is found still earns your part, so hopping between pools does not pay. See [Fees and payouts](07-public-pool.html#fees-and-payouts).
 
+### Held payout
+
+A public-pool payout over Tor whose outcome the pool cannot tell. The pool never sends it a second time: the amount stays locked and is settled from the wallet's own transaction log. See [Fees and payouts](07-public-pool.html#fees-and-payouts).
+
+### Stratum pause
+
+An admin switch in the public pool that closes every stratum port for a set time — no port is open while paused, so rigs get *connection refused* — and shows a public notice. A restore or a server move starts the pool paused. See [Pause the stratum](07-public-pool.html#pause-the-stratum).
+
 ### Orphan block
 
 A block that was found but lost the race: the network kept a different block at the same height, so its coinbase never matures. The toolkit's mining tools detect orphans and never pay them out.
@@ -134,6 +154,10 @@ A block that was found but lost the race: the network kept a different block at 
 ### Goblin
 
 An independent Grin wallet, by the developer known as *dog*, that pays by human-readable name (`alice@yourdomain.com`) and moves slatepacks over Nostr and Tor. The toolkit does not ship it; it deploys the relay Goblin connects to, and the public pool has an optional Goblin payout method, off by default.
+
+### Arti
+
+The Tor client built into grin-wallet v5.5.0. A wallet whose config has `[tor] use_integrated = true` (what v5.5.0 writes for a new wallet) runs Tor inside the wallet process instead of needing the system `tor` service. See [the two listener modes](05-wallet-services.html#the-two-listener-modes).
 
 ### Store-and-forward (Transporter)
 
@@ -171,7 +195,7 @@ Linux's scheduler. The toolkit uses it for recurring jobs — snapshot sharing, 
 
 ### Watchdog
 
-A scheduled check that repairs something when it fails. The main one is the **sync watchdog**: every 5 minutes it restarts a node that is down or whose height has stopped moving. The mining tools add watchdogs for the wallet listener and the stratum port. See [Watchdogs and autostart](07-mining-services.html#watchdogs-and-autostart).
+A scheduled check that repairs something when it fails. The main one is the **sync watchdog**: every 5 minutes it restarts a node that is down or whose height has stopped moving. By default it watches mainnet only; testnet has to be switched on in `/opt/grin/conf/grin_node_watchdog.json`. The mining tools add watchdogs for the wallet listener and the stratum port. See [Watchdogs and autostart](07-mining-services.html#watchdogs-and-autostart).
 
 ### Swap
 
@@ -211,11 +235,35 @@ A main-menu entry that opens its own sub-menu of products, with the live status 
 
 ### (DEV)
 
-The main menu's mark for a hub that is still being built — 5, 7 and 9 today. Some products inside are finished; each page in this manual starts with a status note saying which.
+The main menu's mark for a hub that is still being built — 5 and 9 today. Some products inside are finished; each page in this manual starts with a status note saying which.
 
 ### Super Auto
 
-Script 01's one-key install: both networks, pruned, from the fastest snapshot, plus autostart on reboot, the sync watchdog and log rotation. It wipes any existing node first. See [Super Auto](01-build-node.html#super-auto).
+Script 01's one-key install: both networks, pruned, from the first fresh snapshot host it finds, plus autostart on reboot, the sync watchdog, the node event recorder and log rotation. It wipes any existing node first, after you type `REBUILD` (or `DELETE-ARCHIVE` when an archive node exists). Under 20 GB of free disk it asks you to type `FORCE` rather than refusing. See [Super Auto](01-build-node.html#super-auto).
+
+### Source build and toolkit grin patches
+
+Script 01's key `G` compiles the `grin` node from source instead of downloading the release — for a fix that is not released yet, or a system whose glibc is too old. After checking out a branch or tag it offers the toolkit's own small patches (`scripts/patches/grin/`), all or none; a patched binary carries `tkp` in its name. See [Compile from source](01-build-node.html#compile-from-source-key-g).
+
+### grin.prev
+
+The previous node binary, kept as `grin.prev` in the node directory whenever Script 01 replaces `grin` (a binary update or a source install). Script 01 → `G` → `4` puts it back, and the rollback uses it up. See [Compile from source](01-build-node.html#compile-from-source-key-g).
+
+### Node event recorder
+
+A read-only timer that checks every 30 seconds whether each node is up, records every down and up in a ledger, keeps planned stops out of the outage count, saves the node's console and logs at the moment of a failure and can send an alert off the server. It never restarts anything. Super Auto installs it and a normal build offers it. See [Node event recorder](08-admin-maintenance.html#node-event-recorder).
+
+### Planned-stop marker
+
+A file the toolkit writes to `/opt/grin/node-events/<network>/planned_stop` just before it stops a node on purpose (a snapshot share, a remote stop from hub 08, a full cleanup), so the event recorder logs the stop as planned instead of as a crash. See [Node event recorder](08-admin-maintenance.html#node-event-recorder).
+
+### Likely origin
+
+The tag Diagnostics puts on each finding — host, toolkit, upstream, client, chain, network, config or consumer. It is a lean based on patterns that says where to look first, never a verdict. See [Diagnostics & Support](08-admin-maintenance.html#diagnostics-support-key-6).
+
+### Safety timer
+
+The automatic undo the SSH hardening screens arm before they change how you log in: if you do not confirm that a new login works, the old settings come back when it runs out — after 10 minutes by default in the guided setup, 5 minutes for *Disable password login*. It is a background process, so **a reboot cancels it** and leaves the change in force. See [Guided setup](08-admin-maintenance.html#guided-setup-w).
 
 ### Personal key
 

@@ -5,20 +5,20 @@ section: Scripts
 order: 4
 short: Node API
 label: Script 04
-covers: 2026-09-19
-updated: 2026-09-20
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
-Your node already answers questions about the chain — but only to programs on the same server. Script 04 opens that up: it puts the node's **public API** behind **nginx** (a web server) with a free HTTPS certificate, so a wallet or an explorer anywhere in the world can use your node at `https://api.yourdomain.com`. Optionally it adds a live status page, simple REST endpoints, and a Tor `.onion` address for people who do not want to reveal where they connect from. The sites [api.grin.money](https://api.grin.money) and [testapi.grin.money](https://testapi.grin.money) are exactly this script's output.
+Your node already answers questions about the chain — but only to programs on the same server. Script 04 opens that up: it puts the node's **public API** behind **[nginx](reference-glossary.html#nginx-vhosts-and-reverse-proxies)** (a web server) with a free HTTPS certificate, so a wallet or an explorer anywhere in the world can use your node at `https://api.yourdomain.com`. Optionally it adds a live status page, simple REST endpoints, and a [Tor](reference-glossary.html#tor-and-onion-addresses) `.onion` address for people who do not want to reveal where they connect from. The sites [api.grin.money](https://api.grin.money) and [testapi.grin.money](https://testapi.grin.money) are exactly this script's output.
 
-You need a running node from [Script 01](01-build-node.html), a domain name whose **A record** points at the server, and ports **80** and **443** open in your provider's firewall.
+You need a running node from [Script 01](01-build-node.html), a domain name whose **[A record](reference-glossary.html#dns-a-record)** points at the server, and ports **80** and **443** open in your provider's firewall.
 
 ## What it does
 
 1. Installs nginx and certbot if they are missing, and makes sure the rate-limit zones the toolkit shares between scripts exist.
 2. Writes an nginx site for your domain that forwards **only** `/v2/foreign` to the node on `127.0.0.1:3413` (testnet `13413`). Every other path — including the management API at `/v2/owner` — is answered with **403**.
-3. Reads the node's `.foreign_api_secret` and bakes it into the proxy as an `Authorization` header, so callers never need credentials and the secret never leaves the server.
-4. Requests a Let's Encrypt certificate for the domain and reloads nginx with HTTPS enabled.
+3. Reads the node's [`.foreign_api_secret`](reference-glossary.html#api-secrets) and bakes it into the proxy as an `Authorization` header, so callers never need credentials and the secret never leaves the server.
+4. Requests a [Let's Encrypt certificate](reference-glossary.html#let-s-encrypt-and-certbot) for the domain and reloads nginx with HTTPS enabled.
 5. On request, deploys a static **status page** at `https://api.yourdomain.com/`, a set of **REST JSON files** under `/rest/` refreshed by cron every minute, and a **Tor hidden service** that reaches the same `/v2/foreign` endpoint over the Tor network.
 
 Nothing here changes how the node itself runs. The node keeps listening on localhost; nginx is the only thing the internet talks to.
@@ -46,7 +46,7 @@ The script asks first whether you are publishing the **mainnet** or the **testne
 
 The menu offers two exclusive ways to expose the API. **Use Mode B, the nginx HTTPS proxy** — it is the one every other feature builds on, and it is the one this page describes.
 
-> **Warning:** Mode A ("Raw TCP", keys `1`–`3`) should be treated as **not working** in the current code. It is meant to make the node itself listen on all interfaces and open port 3413 in the firewall, but it writes the setting `check_node_api_http_addr` into `grin-server.toml` — that is a grin-*wallet* setting; the node's bind address is called `api_http_addr`. The node keeps listening on localhost, the firewall port is opened anyway, and the menu reports the mode as ACTIVE (its own `3) Status` screen contradicts it with "LISTENING on 127.0.0.1 (localhost only)"). Even once fixed, raw mode would publish the *whole* API port in cleartext, including `/v2/owner` guarded only by `.api_secret` — the known limitation recorded as finding F1 in the toolkit's [Script 04 security audit](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script04_security_audit.md). Nothing on this page needs it. (This was found by reading the code, not on a live server — whether grin also objects to the unknown key at start-up is unverified.)
+> **Warning:** Mode A ("Raw TCP", keys `1`–`3`) should be treated as **not working** in the current code. It is meant to make the node itself listen on all interfaces and open port 3413 in the firewall, but it writes the setting `check_node_api_http_addr` into `grin-server.toml` — that is a grin-*wallet* setting; the node's bind address is called `api_http_addr`. The node keeps listening on localhost, the firewall port is opened anyway, and the menu reports the mode as ACTIVE (its own `3) Status` screen contradicts it with "LISTENING on 127.0.0.1 (localhost only)"). Even once fixed, raw mode would publish the *whole* API port in cleartext, including `/v2/owner` guarded only by `.api_secret` — the known limitation recorded as finding F1 in the toolkit's [Script 04 security audit](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script04_security_audit.md). Nothing on this page needs it. (This was found by reading the code, not on a live server — whether grin also objects to the unknown key at start-up is unverified.)
 
 ### Domain and subdomain
 
@@ -288,8 +288,8 @@ The second one should print *Access denied. Only /v2/foreign is exposed.* If the
 | Symptom | Cause and fix |
 |---------|---------------|
 | `certbot failed — check /var/log/letsencrypt/letsencrypt.log` | Let's Encrypt could not reach `http://api.yourdomain.com/` on port 80. Check that the A record points at this server (`dig +short api.yourdomain.com`) and that port 80 is open at the provider. If the domain is behind Cloudflare's orange cloud, set it to "DNS only" while `4` runs, then turn the proxy back on |
-| `Port 3413 is not listening. Make sure your Grin mainnet node is running.` | The node is down or still starting. Start it from Script 01 → `S`; the proxy can be set up first and will work as soon as the node is up |
-| `Foreign API secret not found at: …/.foreign_api_secret` — config written WITHOUT an auth header; the status line says `auth header: MISSING` | The node directory Script 04 found has no secret file, usually because `grin_instances_location.conf` points at an old path. Rebuild or `S`-start the node with Script 01 (it re-creates the file and the conf), then run `4` again |
+| `Port 3413 is not listening. Make sure your Grin mainnet node is running.` | The node is down or still starting. Start it with Script 01 → *Start a node*; the proxy can be set up first and will work as soon as the node is up |
+| `Foreign API secret not found at: …/.foreign_api_secret` — config written WITHOUT an auth header; the status line says `auth header: MISSING` | The node directory Script 04 found has no secret file, usually because `/opt/grin/conf/grin_instances_location.conf` points at an old path. Check that file first. If the path is right and the file is really gone, rebuild the node with Script 01 → *Rebuild a node* → *full reinstall* (it deletes the node directory and downloads the chain again): the install restores both secret files from the key vault in `/opt/grin/keys/<network>/`. *Start a node* does not re-create them. Then run `4` again |
 | A wallet or browser gets **401** from the API | Same cause as above — nginx is not injecting the secret, so the node asks for it. Re-run `4`; if the node was just rebuilt, `grin-secret-sync` fixes it within 5 minutes |
 | `'prunemain' is reserved by script 02` | Pick another subdomain — `api.` or `testapi.` |
 | `MODE A Raw TCP is currently active … Disable Raw TCP first (option 2)` | Someone enabled Mode A earlier. `2` reverts the toml line and closes the firewall port (it offers to restart the node), then `4` works |

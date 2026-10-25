@@ -3,8 +3,8 @@ title: Grin Node Toolkit Manual
 description: A plain-language guide to installing and running a Grin node and its services on a Linux VPS with the Grin Node Toolkit — for first-time operators.
 section: Start here
 order: 0
-covers: 2026-09-19
-updated: 2026-09-23
+covers: 2026-10-24
+updated: 2026-10-24
 ---
 
 The [Grin Node Toolkit](https://github.com/noobvie/Grin-Node-Toolkit) is a set of Bash scripts, driven from one interactive menu, that installs and manages a [Grin](https://grin.mw) node and everything you might want to run next to it: an HTTPS API for wallets, chain-snapshot sharing, a block explorer, a network dashboard, wallet services, a mining pool, and the admin chores that keep a server healthy.
@@ -17,15 +17,15 @@ This manual explains each part in plain language. It assumes you can open an SSH
 <a class="card" href="getting-started.html"><div class="card-label">Start here</div><h3>Getting started</h3><p>What server you need, how to install the toolkit, and how the menu works.</p></a>
 <a class="card" href="01-build-node.html"><div class="card-label">Script 01</div><h3>Build or control a Grin node</h3><p>From an empty VPS to a synced node in under an hour, using a chain snapshot.</p></a>
 <a class="card" href="05-wallet-services.html"><div class="card-label">Script 05</div><h3>Wallets and payments</h3><p>What a Grin wallet is, and a command-line wallet next to your node in a few minutes.</p></a>
-<a class="card" href="08-admin-maintenance.html"><div class="card-label">Script 08</div><h3>Admin and maintenance</h3><p>Node status at a glance, backups, disk cleanup, self-update and SSH hardening.</p></a>
+<a class="card" href="08-admin-maintenance.html"><div class="card-label">Script 08</div><h3>Admin and maintenance</h3><p>Node status at a glance, diagnostics, backups, disk cleanup, self-update and SSH hardening.</p></a>
 </div>
 
 The shortest path to a running node is **Getting started → Script 01 → Super Auto**. Everything else in the toolkit is optional and builds on that node.
 
 ## What the toolkit does for you
 
-- **Skips the slow first sync.** Syncing Grin from genesis can take days and the current PIBD mechanism can stall. The toolkit downloads a verified, pre-synced chain snapshot from a community host instead, so a node is running in well under an hour.
-- **Keeps the node alive.** Autostart on reboot, a sync watchdog, log rotation, swap tuning and a Tor `.onion` mirror are set up for you.
+- **Skips the slow first sync.** Syncing Grin from genesis can take days and the current PIBD mechanism can stall. The toolkit downloads a fresh, pre-synced chain snapshot from a community host instead, so a node is running in well under an hour.
+- **Keeps the node alive.** Super Auto sets up autostart on reboot, a sync watchdog, the node event recorder (a log of every outage), log rotation and swap tuning for you, and every build adds a private Tor `.onion` mirror of the node's API.
 - **Turns a node into infrastructure.** Publish the node API over HTTPS, share your own snapshots with the community, run an explorer or a network map, host a web wallet, a giveaway portal, or a mining pool — each one a menu option.
 - **Runs mainnet and testnet side by side.** Every service uses separate ports and directories per network, so one server can serve both.
 
@@ -36,18 +36,19 @@ The toolkit has two levels. The main menu lists the products; most of the *Add-o
 ```text
 Grin Node Toolkit
 │
-├── Core
-│   ├── 1) Build / Control Grin Node
+├── Core Features
+│   ├── 1) Build/Control Grin Node
 │   ├── 2) Manage Nginx Server
 │   └── 3) Share Grin Chain Data / Schedule
 │
-├── Add-ons
+├── Addons
 │   ├── 4) Publish Grin Node API
-│   ├── 5) Grin Wallet & Payment Services   (hub)
-│   ├── 6) Global Grin Health               (+ GrinScan explorer, Tiny Explorer)
-│   ├── 7) Grin Mining Pool Deployment      (hub: solo mining or public pool)
-│   ├── 8) Admin & Maintenance              (hub)
-│   └── 9) Grin Connectivity Hub            (hub)
+│   ├── 5) Grin Wallet & Payment Services (DEV)   (hub)
+│   ├── 6) Global Grin Health                     (+ GrinScan explorer, Tiny Explorer)
+│   ├── 7) Grin Mining Pool Deployment            (hub: solo mining or public pool)
+│   └── 9) Grin Connectivity Hub (DEV)            (hub)
+│
+├── 8) Admin & Maintenance                        (hub)
 │
 └── 0) Exit
 ```
@@ -60,8 +61,8 @@ Grin Node Toolkit
 | **4** · **Publish Grin Node API** — [Script 04](04-publish-node-api.html) | Expose the node's public (Foreign) API over HTTPS so wallets and explorers can use your node |
 | **5** · **Grin Wallet & Payment Services** — [Script 05](05-wallet-services.html) · [Fidelius](051-fidelius.html) · [WooCommerce](053-woocommerce.html) · [Grin Drop](059-grin-drop.html) | Hub for wallet products: a personal web wallet, a self-custodial public web wallet, a WooCommerce gateway, a giveaway portal, a CLI wallet quick setup |
 | **6** · **Global Grin Health** — [Script 06](06-global-health.html) · [GrinScan](06b-grinscan.html) | A network-stats dashboard with a peer map, plus the GrinScan block explorer and a tiny stateless explorer |
-| **7** · **Grin Mining Pool Deployment** — [Solo mining](07-mining-services.html) · [Public pool](07-public-pool.html) | Solo mining against your own node, or a full public pool with Tor payouts |
-| **8** · **Admin & Maintenance** — [Script 08](08-admin-maintenance.html) · [Backup & restore](089-backup-restore.html) | Remote node monitor, host-tamper watch, status screen, nginx extras, SSH hardening, backups, disk cleanup, self-update, full uninstall |
+| **7** · **Grin Mining Pool Deployment** — [Solo mining](07-mining-services.html) · [Public pool](07-public-pool.html) | Solo mining against your own node, or a full public pool that pays over Tor, by slatepack or through Goblin |
+| **8** · **Admin & Maintenance** — [Script 08](08-admin-maintenance.html) · [Backup & restore](089-backup-restore.html) | Remote node monitor, host-tamper watch, host optimisation and SSH hardening, nginx extras, status screen, diagnostics and the node event recorder, backups, disk cleanup, self-update, full uninstall |
 | **9** · **Grin Connectivity Hub** — [Connectivity hub](09-connectivity-hub.html) | Privacy and transport layer: a Nostr relay for Goblin wallets, a store-and-forward slate queue |
 
 **Reference pages:** [Ports and paths](reference-ports-and-paths.html) — every port, which must be open, and where each script keeps its files. [Glossary](reference-glossary.html) — the Grin, server and web terms this manual uses. [Troubleshooting](reference-troubleshooting.html) — every error message in the manual, A–Z, with the fix one click away.
@@ -93,6 +94,6 @@ Everything below was deployed semi-automatically with the menu — they double a
 - **An error message you do not recognise:** search [Troubleshooting](reference-troubleshooting.html) — every symptom this manual covers, A–Z, with a filter box.
 - **Bugs and questions about the toolkit:** open an issue on [GitHub](https://github.com/noobvie/Grin-Node-Toolkit/issues). Include the log file the script names at the end of its run — every action writes one under `/opt/grin/logs/`.
 - **Grin itself:** the [Grin forum](https://forum.grin.mw) and the [official documentation](https://docs.grin.mw).
-- **Source of truth:** the toolkit's [README](https://github.com/noobvie/Grin-Node-Toolkit#readme) and the design documents in its `docs/generated/` folder go deeper than this manual on architecture and security.
+- **Source of truth:** the toolkit's [README](https://github.com/noobvie/Grin-Node-Toolkit#readme) and the design documents in its `docs/reference/` folder go deeper than this manual on architecture and security.
 
 > **Warning:** The toolkit is under active development and performs system-level operations — it installs packages, changes firewall rules and writes to `/etc/nginx`. Run it on a **clean server** you can afford to rebuild, never on a box with data you cannot lose.

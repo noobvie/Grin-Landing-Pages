@@ -5,18 +5,18 @@ section: Scripts
 order: 2
 short: File server
 label: Script 02
-covers: 2026-09-19
-updated: 2026-09-19
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
-Script 02 turns your server into a web host for the chain snapshots that Script 03 produces. It installs **nginx** (a web server), asks for a domain name, gets a free HTTPS certificate from **Let's Encrypt**, and publishes a folder as a plain, browsable download page. Anyone running Script 01 anywhere in the world can then fetch your snapshot instead of syncing from genesis — the same way you fetched one when you built your node.
+Script 02 turns your server into a web host for the [chain snapshots](reference-glossary.html#chain-data-and-snapshots) that Script 03 produces. It installs **[nginx](reference-glossary.html#nginx-vhosts-and-reverse-proxies)** (a web server), asks for a domain name, gets a free HTTPS certificate from **[Let's Encrypt](reference-glossary.html#let-s-encrypt-and-certbot)**, and publishes a folder as a plain, browsable download page. Anyone running Script 01 anywhere in the world can then fetch your snapshot instead of syncing from genesis — the same way you fetched one when you built your node.
 
 You need a synced node from [Script 01](01-build-node.html) and a domain name whose DNS you control. Script 02 sets up the *web host*; [Script 03](03-share-chain-data.html) then fills it with an archive and keeps it fresh.
 
 ## What it does
 
 1. Installs nginx and **certbot** (the Let's Encrypt client) if they are missing, and opens ports 80 and 443 in the firewall.
-2. Checks that a Grin node for the chosen network is actually running on this server, and works out from its configuration whether it is a pruned or a full archive node.
+2. Checks that a Grin node for the chosen network is actually running on this server, and works out from its configuration whether it is a [pruned or a full archive node](reference-glossary.html#pruned-node-and-archive-node).
 3. Creates the web folder — `/var/www/fullmain`, `/var/www/prunemain` or `/var/www/prunetest` — and writes an nginx site for your domain, first over plain HTTP.
 4. Obtains the certificate, then rewrites the site for HTTPS only: HTTP redirects to HTTPS, HSTS is enabled, and the folder is served as a **directory listing** — a bare page of file names, sizes and dates.
 5. Confirms certificate auto-renewal is in place.
@@ -28,12 +28,12 @@ Everything else on the menu is optional protection for a public download host: p
 | You need | Why |
 |----------|-----|
 | A running, synced node for the network you will share | The script refuses to set up a Grin domain when no node is listening on 3414 (mainnet) or 13414 (testnet), and derives the required subdomain from the node it finds |
-| A domain name and access to its DNS | You will create an **A record** — `prunemain.yourdomain.com → your server's IP` — before running the script. Certificates are issued to the domain, not the IP |
+| A domain name and access to its DNS | You will create an **[A record](reference-glossary.html#dns-a-record)** — `prunemain.yourdomain.com → your server's IP` — before running the script. Certificates are issued to the domain, not the IP |
 | Ports **80** and **443** reachable from the internet | Let's Encrypt proves you own the domain by connecting to port 80; visitors download over 443. Open both in your provider's firewall or security group — the script handles the server-side firewall (ufw or firewalld) itself |
 | An email address | Let's Encrypt sends certificate-expiry warnings there. Renewal is automatic; the email is a safety net |
 | Free disk on `/var/www` at least the size of `chain_data` | The archive Script 03 writes here is close to the size of the chain data (the script checks and offers to clear the folder if it is short) |
 
-> **Warning:** If your DNS is on Cloudflare, set the record to **DNS only** (grey cloud), not *Proxied*. Proxying hides your real IP: certbot cannot reach port 80 to validate the domain, and — for the Grin subdomains — other nodes connect directly to your IP to use your node as a peer, which the proxy breaks. Keep a Grin subdomain unproxied permanently. A custom domain can go back to *Proxied* once the certificate is issued.
+> **Warning:** If your DNS is on [Cloudflare](reference-glossary.html#cloudflare-proxy), set the record to **DNS only** (grey cloud), not *Proxied*. Proxying hides your real IP: certbot cannot reach port 80 to validate the domain, and — for the Grin subdomains — other nodes connect directly to your IP to use your node as a peer, which the proxy breaks. Keep a Grin subdomain unproxied permanently. A custom domain can go back to *Proxied* once the certificate is issued.
 
 ## Choices you will make
 
@@ -156,7 +156,7 @@ README.txt                              download and install instructions for hu
 
 Custom domains (menu `3`) default to `/var/www/fileserver` or a folder you name. With the quota option on they also get `/usr/local/bin/nginx-bandwidth-limiter.sh`, a `/etc/cron.d/nginx-bandwidth-limiter` job every 5 minutes with a monthly reset, and a `/var/log/nginx/<domain>-bandwidth.log`.
 
-> **Warning:** Answer **N** to *Enable bandwidth limiting?* when adding a custom domain. The quota feature places an nginx `map` block inside the site's `server` block, which nginx rejects, so the setup stops at the *Enhancing Nginx configuration* step with the certificate already issued. This is a toolkit bug, noted for the maintainers. For per-IP caps use menu `6` instead — that path is separate and works on any site the script created.
+> **Warning:** Answer **N** to *Enable bandwidth limiting?* when adding a custom domain. The prompt defaults to *Y*, so pressing Enter turns it on. The quota feature places an nginx `map` block inside the site's `server` block, which nginx rejects, so the setup stops at the *Enhancing Nginx configuration* step with the certificate already issued. This is a toolkit bug, noted for the maintainers. For per-IP caps use menu `6` instead — that path is separate and works on any site the script created.
 
 ## Protecting a public download host
 
@@ -186,7 +186,7 @@ Menu `7` undoes it: lift one IP's cap, clear every cap (default back to unlimite
 3. Writes `/etc/fail2ban/jail.d/nginx-grin.conf` with three jails: `nginx-limit-req` (10 rate-limit hits within 60 s → banned 10 min), `nginx-botsearch` (2 requests for known exploit paths → banned 1 h), and `nginx-http-auth` (3 failed logins → banned 1 h; rarely relevant on a file server).
 4. Enables and restarts fail2ban, then reloads nginx.
 
-> **Note:** There is no menu action that removes the request limit again — menu `7` only lifts the *speed* caps from menu `6`. To turn throttling off, delete the two `limit_req` lines from the site in `/etc/nginx/sites-available/`, run `nginx -t` and reload nginx.
+> **Note:** There is no menu action that removes the request limit again. Menu `8`'s own screen says you can lift it later in *option 6*, but menus `6` and `7` only set and lift the *speed* caps. To turn throttling off, delete the two `limit_req` lines from the site in `/etc/nginx/sites-available/`, run `nginx -t` and reload nginx.
 
 Menu `9` is the day-to-day view:
 
@@ -202,7 +202,9 @@ Each report is also saved under `/opt/grin/logs/fail2ban_*.log`. `C` and `D` act
 
 ### Blocking addresses (menu 10)
 
-Blocks a single IP or a CIDR range (`1.2.3.0/24`) in whichever firewall is active — firewalld, ufw, or raw iptables — with an optional note, and records it in `/etc/grin-toolkit/blocked_ips.list` so you can unblock or list later. Blocks are server-wide, not just for nginx. With no firewall installed, blocking is unavailable and the script says so.
+Blocks a single IP or a CIDR range (`1.2.3.0/24`) in whichever firewall is active — firewalld, ufw, or raw iptables — with an optional note, and records it in `/etc/grin-toolkit/blocked_ips.list` so you can unblock or list later. Blocks are server-wide, not just for nginx; with raw iptables the address is dropped in both directions, so this server cannot reach it either. With firewalld only IPv4 addresses can be blocked: the rule is written for the IPv4 family, so an IPv6 address fails with *failed to add drop rule*. With no firewall installed, blocking is unavailable and the script says so.
+
+> **Warning:** With **ufw**, a block does not stop traffic to a port that is already allowed. ufw checks its rules in order and uses the first match. The script adds the block at the end of the list, after the `allow 80/tcp` and `allow 443/tcp` rules that the domain setup adds (and your SSH rule). So the address can still download from you. Until the toolkit is fixed, block by hand with `sudo ufw insert 1 deny from 1.2.3.4`, then check with `sudo ufw status numbered` that the deny line is above the allow lines. With **raw iptables**, blocks are not saved: a reboot clears them, but `blocked_ips.list` still lists them. Block the address again after a reboot, or save the rules with your distribution's tool (for example `iptables-persistent` on Debian/Ubuntu).
 
 ## The landing page (menu 11)
 
@@ -226,7 +228,7 @@ Script 03 deliberately leaves `index.html` and these support files alone when it
 | Slow everyone down to protect my bandwidth allowance | Script 02 → `6` → `2`, e.g. `5m` |
 | Give one address a lower cap without affecting others | Script 02 → `6` → `1` |
 | See who is hammering the server | `tail -f /var/log/nginx/<domain>-access.log`, and Script 02 → `9` → `A` if fail2ban is installed |
-| Block a persistent abuser outright | Script 02 → `10` → `1` |
+| Block a persistent abuser outright | Script 02 → `10` → `1`. On ufw, read the [warning about rule order](#blocking-addresses-menu-10) first |
 | Share a different folder under another name | Script 02 → `3` (answer `N` to bandwidth limiting) |
 | Get listed as a community snapshot host | Run Script 03 until the listing shows an archive, then follow the registry steps on [its page](03-share-chain-data.html#join-the-community-registry) |
 
@@ -234,13 +236,13 @@ Script 03 deliberately leaves `index.html` and these support files alone when it
 
 | Symptom | Cause and fix |
 |---------|---------------|
-| `No mainnet Grin node detected on port 3414` (or testnet on 13414) | The Grin domain options need the node running, not just installed. Script 01 → `S` starts it; give it a few minutes to open its ports, then retry |
+| `No mainnet Grin node detected on port 3414` (or testnet on 13414) | The Grin domain options need the node running, not just installed. Script 01 → *Start a node* starts it; give it a few minutes to open its ports, then retry |
 | `Prefix 'files' is not valid for mainnet` / `…reserved for Grin Master Nodes` | Grin domains must start with `fullmain`, `prunemain` or `prunetest` and must match the node; custom domains may not use those names. Use the other menu entry |
 | `Failed to obtain SSL certificate` | The domain does not resolve to this server yet, port 80 is closed in the provider firewall, or Cloudflare proxy is on. The script exits after this message; fix the cause and run the option again — the HTTP-only site it left behind is harmless |
 | `A Grin mainnet domain is already configured` | One per network. Script 02 → `4` removes the old one; keep the files when asked if the snapshot folder should stay |
 | `Nginx configuration test failed` | Another site or a hand-edited file is broken. Run `nginx -t` yourself — it names the file and line. The script restores its own previous config before reporting this |
 | `Insufficient free space — chain_data (~N GiB) exceeds available` | Script 03 will not be able to write the archive. Accept the folder cleanup if offered, or free space on the partition holding `/var/www` |
-| Visitors get HTTP 429 | The request limit from menu `8` (20 requests/s) is triggering — usually a download manager opening many connections. Raise the rate in `/etc/nginx/conf.d/script02-fileserver.conf` or remove the `limit_req` lines from the site |
+| Visitors get HTTP 429 | The request limit from menu `8` (20 requests/s) is triggering — usually a download manager opening many connections. Raise the rate in `/etc/nginx/conf.d/script02-fileserver.conf` or remove the two `limit_req` lines from the site, then run `sudo nginx -t` and, only if it passes, `sudo systemctl reload nginx` |
 | A legitimate address is banned | Script 02 → `9` → `C` for the `nginx-http-auth` jail, or `fail2ban-client set nginx-limit-req unbanip <ip>` for the request-limit jail |
 | `fail2ban is not installed. Run option 7 (Install fail2ban) first` | The message's number is stale — installing fail2ban is menu `8` |
 | `No file-server domains found` in menu `11` | The landing page only installs on a site with directory listing on — a Grin or custom domain created by menu `1`–`3`. Set one up first |

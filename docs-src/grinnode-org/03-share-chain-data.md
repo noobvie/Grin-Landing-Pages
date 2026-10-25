@@ -5,11 +5,11 @@ section: Scripts
 order: 3
 short: Share chain data
 label: Script 03
-covers: 2026-09-19
-updated: 2026-09-20
+covers: 2026-10-23
+updated: 2026-10-24
 ---
 
-Script 03 is how a node becomes a **snapshot host**: it packs the node's `chain_data` folder into a `.tar.gz`, writes it into the web folder Script 02 set up, and does it again on a schedule so the snapshot never goes stale. Other people's Script 01 then downloads from you. The same script also holds three small scheduling chores that any node benefits from — starting the node on reboot, cleaning up state-sync leftovers, and copying the finished archive to mirror servers.
+Script 03 is how a node becomes a **[snapshot host](reference-glossary.html#chain-data-and-snapshots)**: it packs the node's `chain_data` folder into a `.tar.gz`, writes it into the web folder Script 02 set up, and does it again on a schedule so the snapshot never goes stale. Other people's Script 01 then downloads from you. The same script also holds three small scheduling chores that any node benefits from — starting the node on reboot, cleaning up state-sync leftovers, and copying the finished archive to mirror servers.
 
 You need a **synced** node from [Script 01](01-build-node.html) and, for publishing, the matching domain from [Script 02](02-nginx-fileserver.html). The reboot autostart (key `G`) needs neither.
 
@@ -21,10 +21,10 @@ For each network you share, one run of the pipeline:
 
 1. Finds the running node on its P2P port (3414 or 13414), reads its `grin-server.toml` to learn the network, whether it is pruned or archive, and where `chain_data` is, and records that in `/opt/grin/conf/grin_instances_location.conf`.
 2. Verifies the node is **fully synced** — the Owner API's `get_status` must say `no_sync`, or `grin client status` must; either passing is enough. An unsynced node is never snapshotted.
-3. Checks that the web folder's disk can hold the new archive (chain size × an estimated ratio + 512 MiB headroom). If there is room for the old and the new archive, the old one **keeps serving during the build**; if not, it is removed first; if there is room for neither, the run aborts before anything is touched.
-4. Stops the node (SIGTERM, up to 120 s, then SIGKILL), deletes `txhashset_snapshot_*.zip` files from `chain_data` (multi-gigabyte leftovers the node creates when other nodes state-sync from it), and writes a status note telling visitors not to download yet.
-5. Compresses `chain_data` with `tar` piped into **pigz** (parallel gzip, installed on demand; plain gzip if it cannot be) at low CPU and IO priority, into a hidden temporary file, then computes the SHA256 and **swaps** the new archive, checksum, `README.txt` and `chaindata.json` manifest into place in one move — so a downloader never sees a half-written file.
-6. Hands the files to the web user and **restarts the node** as the `grin` user in its tmux session — on the failure path too, so a compression that dies never leaves the node down.
+3. Checks that the web folder's disk can hold the new archive (chain size × a compression ratio + 512 MiB headroom). The ratio is measured from the archive already published when there is exactly one; otherwise it is a cautious estimate (0.90 pruned, 0.95 full). If there is room for the old and the new archive, the old one **keeps serving during the build**; if not, it is removed first; if there is room for neither, the run aborts before anything is touched.
+4. Stops the node (SIGTERM, up to 120 s, then SIGKILL) and [marks the stop as planned](reference-glossary.html#planned-stop-marker), so the [Diagnostics](08-admin-maintenance.html) event recorder does not log it as a crash. It deletes `txhashset_snapshot_*.zip` files from `chain_data` (multi-gigabyte leftovers the node creates when other nodes state-sync from it) and updates the status note. If the old archive was kept, the note still says *Sync completed* and adds that a newer archive is being prepared. If it was removed, the note tells visitors not to download yet.
+5. Compresses `chain_data` with `tar` piped into **pigz** (parallel gzip, installed on demand; plain gzip if it cannot be) at low CPU and IO priority, into a hidden temporary file, then computes the SHA256 and **swaps** the new archive and its checksum into place, so a downloader never sees a half-written file. `README.txt` is rewritten next. The `chaindata.json` manifest is taken down at the swap and written again only once the set is complete.
+6. Hands the files to the web user and **restarts the node** as the `grin` user in its [tmux](reference-glossary.html#tmux-and-gtmux) session — on the failure path too, so a compression that dies never leaves the node down.
 
 The output in the web folder is `grin_pruned_mainnet_20260919.tar.gz` (or `grin_full_mainnet_…`, `grin_pruned_testnet_…`), its `.sha256`, `README.txt` with download instructions, `check_status_before_download.txt` and `chaindata.json`. Script 01 reads the manifest first and the file list as a fallback.
 
@@ -37,7 +37,7 @@ The output in the web folder is `grin_pruned_mainnet_20260919.tar.gz` (or `grin_
 | A running, synced node | Both the setup (key `A`) and the pipeline look for a live process on the P2P port. A node that is still syncing fails the sync check and nothing is published |
 | A Grin domain from Script 02 | Key `A` reads the nginx sites to find `/var/www/fullmain`, `/var/www/prunemain` or `/var/www/prunetest`; with none configured it sends you to Script 02 |
 | Free disk on the web folder's partition about the size of `chain_data` | The archive compresses only a little (the chain is mostly cryptographic data). The pre-flight check refuses to start a run that cannot finish |
-| `cron` installed | Every schedule on this menu is a root crontab entry. Script 01 installs `cron`; the script says so if `crontab` is missing |
+| `cron` installed | Every schedule on this menu is a root [crontab](reference-glossary.html#cron) entry. Script 01 installs `cron`; the script says so if `crontab` is missing |
 | For mirrors: a second server with SSH access | Optional. The remote-copy feature pushes the finished archive to other hosts over `rsync`; the key setup is guided |
 
 ## The menu
@@ -101,7 +101,7 @@ The block under the banner lists every toolkit cron line currently installed —
 | Situation | What the script does |
 |-----------|----------------------|
 | No node on either port | Asks you to start one and press Enter to retry, or `0` to cancel |
-| A domain exists for a network whose node is not running | Stops with *Nginx has a mainnet domain configured but no mainnet node is running* — start it with Script 01 → `S` and run `A` again |
+| A domain exists for a network whose node is not running | Stops with *Nginx has a mainnet domain configured but no mainnet node is running* — start it with Script 01 → *Start a node* and run `A` again |
 | No Grin domain at all | Sends you to Script 02 |
 | Domains for both networks | Asks *Which networks to share?* — `1` both (default), `2` mainnet only, `3` testnet only |
 | A domain for one network | Selects it automatically |
@@ -146,6 +146,8 @@ The proof that everything works end to end is Script 01 on another machine: run 
 
 ## E) Schedule the snapshot
 
+> **Danger:** A schedule created with `E`, `I` or the mirror copy schedule (`C` → `6`) in the current toolkit **never runs anything**. The cron line names the wrong file: a library inside `scripts/lib/` rather than `03_grin_share_chain_data.sh`. The library only defines functions, so the job exits at once without an error. Lines written by older toolkit versions still name the right file. This is a toolkit bug, reported to the maintainers. Until it is fixed, check with `crontab -l` after scheduling. On any line tagged `grin_share_nginx_…`, `grin_clean_txhashset` or `--cron-remote`, replace `lib/03_lib_schedule.sh` or `lib/03_lib_remote_menu.sh` with `03_grin_share_chain_data.sh` (`crontab -e`). Keep the rest of the line as it is.
+
 `E` installs **one cron line per network**, so mainnet and testnet never stop-and-compress at the same time. It asks for the cron log path (default `/opt/grin/logs/cron_nginx.log`), then for each network shows a preset list. Times are UTC.
 
 For a **pruned** node:
@@ -164,11 +166,13 @@ For a **full archive** node the presets are rarer, because the archive is ~20 GB
 
 > **Warning:** Keep the cadence inside what downloaders accept. Script 01 on other servers skips a **pruned** snapshot older than **5 days** and a **full** archive older than **70 days** — a pruned node cannot use a snapshot beyond the chain's cut-through horizon, so a stale one wastes the whole download. The fixed defaults and the daily and three-times-a-week presets stay inside those limits. The **twice-weekly** preset can leave a six-day gap when the two random days it draws are adjacent (Mon & Tue, say) — check the days it shows before accepting, or pick again. A cron line written by hand is your own responsibility.
 
-`F` removes the schedule for both networks (default), or mainnet or testnet alone. The cron lines are tagged `grin_share_nginx_main` / `grin_share_nginx_test`; the job runs `bash …/03_grin_share_chain_data.sh --cron-nginx-main` (or `-test`), and if the node is not running when the job fires it tries to start it first.
+`F` removes the schedule for both networks (default), or mainnet or testnet alone. The cron lines are tagged `grin_share_nginx_main` / `grin_share_nginx_test`; the job runs `bash …/03_grin_share_chain_data.sh --cron-nginx-main` (or `-test`), and if the node is not running when the job fires it tries to start it first. A node the job had to start is rarely synced yet, so that run usually stops at the sync check and publishes nothing. The next scheduled run is the one that works.
 
 ## C and D) Mirrors over SSH
 
-One box can only serve so much bandwidth. The remote-copy feature pushes the **finished archive** — never the raw chain data — from your web folder to other servers with `rsync` over SSH, so several hosts publish the same snapshot while only one of them ever stops its node. A mirror needs nothing but nginx (Script 02) and SSH access; it does not need a node.
+One box can only serve so much bandwidth. The remote-copy feature pushes the **finished archive** — never the raw chain data — from your web folder to other servers with `rsync` over SSH, so several hosts publish the same snapshot while only one of them ever stops its node. A mirror does not need a node. It needs an nginx site that serves `/var/www/<site_key>` over HTTPS, SSH access, and `rsync` installed (the copy runs `rsync` on both ends).
+
+> **Note:** Script 02 cannot set up that site on a mirror that has no node. Its Grin domain options (menu `1` and `2`) stop when no matching node is running, and its custom-domain option (menu `3`) refuses the `fullmain` / `prunemain` / `prunetest` names and their `/var/www` folders. On a mirror without a node, write the nginx site and get the certificate yourself, or run a node there for the setup. The mirror folder must end in `/<site_key>`.
 
 `C` opens its own menu, in the order you should do things:
 
@@ -199,11 +203,11 @@ One box can only serve so much bandwidth. The remote-copy feature pushes the **f
 
 A node started by the custom wizard in Script 01 does not come back after a reboot. `G` fixes that with a root `@reboot` crontab entry — **the same entry Super Auto installs**, so the two never fight.
 
-Choose `1` mainnet, `2` testnet or `3` both. For each, the script finds the node — the running process, or the installed directory (`/opt/grin/node/mainnet-full`, `mainnet-prune`, `testnet-prune`) if it is stopped — and asks for a **boot delay**: default **5 seconds** for mainnet, **1000 seconds** (about 17 minutes) for testnet, because a small VPS cannot boot two Grin nodes at once and mainnet's start-up must be over before testnet begins. The entry then starts the node the right way: as the `grin` user, in its tmux session (`grin_pruned_mainnet` and so on), after fixing file ownership. The `gtmux` viewer is installed at the same time.
+Choose `1` mainnet, `2` testnet or `3` both. For each, the script finds the node — the running process, or the installed directory (`/opt/grin/node/mainnet-full`, `mainnet-prune`, `testnet-prune`) if it is stopped — and asks for a **boot delay**: default **5 seconds** for mainnet, **1000 seconds** (about 17 minutes) for testnet, because a small VPS cannot boot two Grin nodes at once and mainnet's start-up must be over before testnet begins. The entry then starts the node the right way: as the `grin` user, in its tmux session (`grin_pruned_mainnet` and so on), after fixing file ownership. It uses the same launcher command as Script 01. If the node exits, the session stays open showing *Grin process exited with status N* and the panic text above it, and the start and exit times are stamped in `.grin_last_start` / `.grin_last_exit` in the node folder. The `gtmux` viewer is installed at the same time.
 
 If an entry already exists you are asked whether to replace it. `H` lists the entries present and removes one or both.
 
-> **Tip:** Autostart brings a node back after a reboot; it does not notice a node that has *crashed* while the server stayed up. That is the sync watchdog's job — installed from **[Script 07 → Solo mining → Watchdogs](07-mining-services.html#watchdogs-and-autostart)**, and useful on any node.
+> **Tip:** Autostart brings a node back after a reboot; it does not notice a node that has *crashed* while the server stayed up. That is the [sync watchdog](reference-glossary.html#watchdog)'s job — installed from **[Script 07 → Solo mining → Watchdogs](07-mining-services.html#watchdogs-and-autostart)**, and useful on any node.
 
 ## I) Clean up txhashset snapshots
 
@@ -211,7 +215,7 @@ When another node performs a state sync from yours, your node writes a `txhashse
 
 ## J) Compression benchmark
 
-Compression level is a trade-off: chain data is mostly cryptographic material and barely compresses, so a full archive is packed at level 1 (fast) and a pruned snapshot, downloaded far more often, at level 6. `J` lets you check that on your own data: it compresses a sample (default 400 MB) of the largest files at several levels and prints ratio and time for each, without stopping the node or writing to the web folder. It prints ratio, seconds and MB/s per level and a projected archive size. If the numbers say a different level is worth it, set `COMPRESS_LEVEL_FULL=…` or `COMPRESS_LEVEL_PRUNED=…` as a `NAME=value` line at the top of the root crontab (`crontab -e`), which applies to the scheduled job; `COMPRESS_THREADS=…` caps how many cores the compressor takes so other services keep some.
+Compression level is a trade-off: chain data is mostly cryptographic material and barely compresses, so a full archive is packed at level 1 (fast) and a pruned snapshot, downloaded far more often, at level 6. `J` lets you check that on your own data: it compresses a sample (default 400 MB) of the largest files at several levels and prints ratio and time for each, without stopping the node or writing to the web folder. It prints ratio, seconds and MB/s per level and a projected archive size, plus a `--rsyncable` row (what mirrors pay for cheap incremental copies). It also checks whether the files are sparse, which is the only case where `tar --sparse` would save space. If the numbers say a different level is worth it, set `COMPRESS_LEVEL_FULL=…` or `COMPRESS_LEVEL_PRUNED=…` as a `NAME=value` line at the top of the root crontab (`crontab -e`), which applies to the scheduled job; `COMPRESS_THREADS=…` caps how many cores the compressor takes so other services keep some.
 
 ## Join the community registry
 
@@ -236,7 +240,7 @@ Every listed host is checked by the toolkit's remote node monitor (**[Admin & Ma
 | Add a second server as a mirror | Script 03 → `C` → `1`, `2`, `3` in that order, then `6` to schedule |
 | Make a node survive reboots | Script 03 → `G` |
 | Check the last scheduled run | `tail -50 /opt/grin/logs/cron_nginx.log`, then the per-run `share_nginx_*.log` it names |
-| Read how the snapshot is built and why | [Script 03 design](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/generated/script03_design.md) in the repository |
+| Read how the snapshot is built and why | [Script 03 design](https://github.com/noobvie/Grin-Node-Toolkit/blob/main/docs/reference/script03_design.md) in the repository |
 
 ## Troubleshooting
 
@@ -244,12 +248,13 @@ Every listed host is checked by the toolkit's remote node monitor (**[Admin & Ma
 |---------|---------------|
 | `Nginx not configured. Run option A first.` | `B` and `E` need the configuration `A` writes. Run `A` |
 | `No Grin domains configured in nginx` | Script 02 has not created a `fullmain`/`prunemain`/`prunetest` site yet |
-| `Nginx has a mainnet domain configured but no mainnet node is running` | `A` insists every configured network has a live node. Script 01 → `S`, wait for it to open its ports, retry |
-| `SYNC CHECK FAILED — BACKUP ABORTED` | The node is not at the chain tip (API `sync_status` ≠ `no_sync` and `grin client status` agrees). Nothing was stopped or deleted. Wait for the sync to finish — a fresh node needs a few minutes even from a snapshot |
+| `Nginx has a mainnet domain configured but no mainnet node is running` | `A` insists every configured network has a live node. Script 01 → *Start a node*, wait for it to open its ports, retry |
+| `SYNC CHECK FAILED — BACKUP ABORTED` | The node is not at the chain tip (API `sync_status` ≠ `no_sync` and `grin client status` agrees). Nothing was stopped or deleted. Wait for the sync to finish — a fresh node needs a few minutes even from a snapshot. With both networks in one run (`B` → `3`), a mainnet failure here ends the whole run, so testnet is not tried either. Run `B` → `2` for testnet alone |
+| A scheduled share, cleanup or mirror copy never happens, and its cron log stays empty | The cron line names `lib/03_lib_schedule.sh` or `lib/03_lib_remote_menu.sh` rather than `03_grin_share_chain_data.sh`, so it does nothing. See the warning under [E) Schedule the snapshot](#e-schedule-the-snapshot) for the one-word fix in `crontab -e` |
 | `not enough space on … even after reclaiming` | The web folder's partition cannot hold the new archive. Nothing was touched and the node was not stopped. Free space, or move the site to a bigger disk |
-| The log says `SKIPPED mainnet: nothing listening on port 3414 and no usable entry in …` | A scheduled run found no node and could not start one. Start it with Script 01 → `S` and check `G` autostart is in place |
-| `compression failed (tar=N compressor=M) — partial archive removed` | Usually the disk filled mid-run or an IO error. The previous archive is untouched and the node was restarted. Check `df -h` and the per-run log |
-| `Grin did not start within 5s — check: gtmux attach -t …` | The restart at step 9 is slow on a small box rather than failed. `gtmux ls` a minute later; if the session is gone, Script 01 → `S` |
+| The cron log says `No Grin node running or started for the selected network(s)` | A scheduled run found the node stopped, tried to start it from its folder and could not (the log line above it says why, for example `did not start within 120s`). Start it with Script 01 → *Start a node* and check `G` autostart is in place. If the log instead says `SKIPPED mainnet: nothing listening on port 3414 and no usable entry in …`, the node is stopped and the toolkit does not know where it is installed. Start the node with Script 01 → *Start a node*; the next run that finds it running records its folder |
+| `compression failed (tar=N compressor=M) — partial archive removed` | Usually the disk filled mid-run or an IO error. The node was restarted. If the disk check found room for both archives, the previous archive is still being served. If it did not, the previous archive was removed at step 0, so the site has no archive and the status note says *DO NOT download* until a run succeeds. Check `df -h` and the per-run log, free space, then run `B` again |
+| `Grin did not start within 5s — check: gtmux attach -t …` | The restart at step 9 is slow on a small box rather than failed. `gtmux ls` a minute later. If the session shows *Grin process exited with status N*, attach to it and read the error above that line. If the session is gone, use Script 01 → *Start a node* |
 | Status file says *DO NOT download* long after the run should have ended | A run died before step 7. `gtmux ls` to confirm the node is up, then `B` again; the pipeline overwrites the note on success |
 | `crontab unavailable — install cronie/cron and retry` | `apt install cron` (Ubuntu/Debian) or `dnf install cronie` (Rocky/Alma), then rerun |
 | Copy to a mirror fails with a permission or connection error | Script 03 → `C` → `3` tests every mirror. Redo `1` step 3 (verify) for that host; the key must be installed for the exact `user@ip` the mirror line uses |
