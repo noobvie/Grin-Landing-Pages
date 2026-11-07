@@ -5,8 +5,8 @@ section: Scripts
 order: 4
 short: Node API
 label: Script 04
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 Your node already answers questions about the chain — but only to programs on the same server. Script 04 opens that up: it puts the node's **public API** behind **[nginx](reference-glossary.html#nginx-vhosts-and-reverse-proxies)** (a web server) with a free HTTPS certificate, so a wallet or an explorer anywhere in the world can use your node at `https://api.yourdomain.com`. Optionally it adds a live status page, simple REST endpoints, and a [Tor](reference-glossary.html#tor-and-onion-addresses) `.onion` address for people who do not want to reveal where they connect from. The sites [api.grin.money](https://api.grin.money) and [testapi.grin.money](https://testapi.grin.money) are exactly this script's output.
@@ -173,6 +173,7 @@ What a visitor sees at `https://api.yourdomain.com/`:
 - **Live cards** — block height, total difficulty, latest block hash, circulating supply (height × 60), emission rate, node version, header version, and the round-trip time of the last `get_tip`. Connected peers and chain-data size come from the REST collector, so they fill in once `8` is enabled.
 - **Wallet connection cards** with copy buttons — for `grin-wallet.toml`, for the Grim GUI wallet, and for Tor (the Tor card shows the real `.onion` once `T` has run; `T` rewrites `config.js` in the deployed page).
 - **A REST section** listing the endpoints with their status.
+- **An Availability section** — shown only while the node's public uptime record exists (see [The availability record](#the-availability-record) below); otherwise it stays hidden.
 - **Developer tools** — a "Run Test" button that fires `get_tip` from the browser, a CORS test, and a `fetch()` snippet to paste into any website's console.
 - Four themes: dark, light, "Matrix" and "Windows XP".
 
@@ -190,6 +191,7 @@ Not everything speaks JSON-RPC. `8` adds plain `GET` URLs that return small JSON
 | `/rest/difficulty.json` | Total network difficulty only |
 | `/rest/emission.json` | The emission schedule — static |
 | `/rest/node.json` | Connected peers, chain-data size in MB, archive mode |
+| `/rest/availability.json`, `/rest/history.json` | The node's published uptime record and its hash-chained history. Present only while publishing is on — see [The availability record](#the-availability-record) |
 
 They are static files, rewritten **every minute** by two cron jobs and served with `Cache-Control: max-age=60` and CORS `*`:
 
@@ -197,6 +199,25 @@ They are static files, rewritten **every minute** by two cron jobs and served wi
 - `/etc/cron.d/grin-node-api-node` runs `node-collector.py` as **root**, because peers come from the Owner API (`.api_secret`) and chain size from `du` on `chain_data/`. It writes `node.json` with mode 644 so nginx can serve it.
 
 Both collectors are installed to `/opt/grin/grin-api-collector/`; the JSON lands in `/var/www/grin-node-api/rest/`. The script runs each collector once immediately, so the files exist before nginx starts serving them. The status page must be deployed first (`6`) — the REST rules are inserted into the nginx site block that the status page creates.
+
+### The availability record
+
+The status page can also show how often your node has been reachable. This comes from the **node event recorder** in [Admin & Maintenance](08-admin-maintenance.html) (Diagnostics), not from Script 04 itself. The page gains an *Availability* section with:
+
+- a **Node state** card;
+- an **Availability table** for several time windows: available %, observed time, planned time and outages, with *Available = up time / (observed time − planned time)*, all in UTC;
+- the **Outages** and **Planned restarts** lists (planned restarts are not counted against availability) and the node's **chain compactions**;
+- a *Check it yourself* card: a `curl` command to compare the chain tip with another node, and a second command that verifies the published history. Each history entry holds the SHA-256 of the one before it, so a changed entry breaks every later link. It needs `curl`, `jq` and `sha256sum` on your machine.
+
+The section stays hidden unless `/rest/availability.json` exists. Every minute the same root cron job that writes `node.json` (`node-collector.py`) copies `availability.json` and `history.json` from `/opt/grin/node-events/<network>/public/` into `/var/www/grin-node-api/rest/`, and removes its copy when the source goes away or is not valid JSON. nginx serves them through the same `/rest/*.json` rule as the other files.
+
+To get it, you must do three things:
+
+1. Install the recorder and turn publishing on: Admin & Maintenance → `6` Diagnostics → `7` Node event recorder → `I` (install), then `P` (public status page). Publishing is **off by default**.
+2. Run `6` here, to push the new page files.
+3. Run `8` here, to re-copy the collector. A box that only updated the toolkit keeps the old collector and the old page until you do both.
+
+> **Note:** This availability section and the two REST files were read from the code. They have not been seen on a server.
 
 ## The Tor onion
 
@@ -276,7 +297,7 @@ The second one should print *Access denied. Only /v2/foreign is exposed.* If the
 |------------|---------|
 | Change the domain | Script 04 → network → `4` again with the new domain. The status page and REST rules are re-applied for you; run `T` again if you use the onion (it reuses the same address) |
 | Publish the other network too | Script 04 → the other network → `4` with its own subdomain |
-| Update the status page after a toolkit update | `6` — it copies the new files and reloads nginx |
+| Update the status page after a toolkit update | `6` — it copies the new files and reloads nginx. If you use the REST files, run `8` too, which re-installs the collector |
 | See who is using the API | `tail -f /var/log/nginx/grin-node-api.access.log` |
 | Check the certificate | `certbot certificates`. Renewal is automatic; port 80 must stay reachable for it |
 | Move the `.onion` to a new server | Copy `/opt/grin/backups/grin_tor_onion_<network>.tar.gz` over, run `4` then `T` and choose `2` (recover) |

@@ -5,8 +5,8 @@ section: Scripts
 order: 6.5
 short: GrinScan
 label: Script 06b
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 GrinScan is the block explorer behind [grinscan.org](https://grinscan.org) and [test.grinscan.org](https://test.grinscan.org): a Node.js application with its own small SQLite database that shows the latest blocks, one page per block, [kernel](reference-glossary.html#kernel) and output, hashrate and difficulty charts, price, the node's peers and a JSON API — with live updates pushed to the page as blocks arrive, a mobile layout and light and dark themes. It runs one copy per network, so a single server can serve mainnet and testnet under two subdomains.
@@ -73,6 +73,8 @@ The installer checks for an archive node and asks before continuing without one.
   0) Back
   [Enter] Refresh menu
   DNS: ensure A-record points to this server before running Setup Nginx (4)
+
+Select [0-8, U, Z]:
 ```
 
 Every key that acts on a network first asks **which network** — `1` testnet, `2` mainnet, `3` both — except Install, which sets up both services at once, and Status, which shows both.

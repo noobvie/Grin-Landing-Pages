@@ -71,7 +71,7 @@ become callouts.
 is when the page text last changed. Both are printed on the page — keep them
 honest rather than fresh.
 
-### Pages (20, written 2026-09-19 → 09-23, re-checked 2026-10-23 → 10-24)
+### Pages (20, written 2026-09-19 → 09-23, re-checked 2026-11-06)
 
 `index`, `getting-started`; one page per script — `01-build-node`,
 `02-nginx-fileserver`, `03-share-chain-data`, `04-publish-node-api`,
@@ -85,9 +85,10 @@ explorer, Tiny Explorer), `06b-grinscan`, `07-mining-services` (hub + solo),
 `reference-<topic>.md`, never a sub-folder. Sub-product pages sort under their
 hub with a decimal `order` (051 → 5.1, 06b → 6.5, 089 → 8.9).
 
-Every page was re-checked against toolkit branch `add-ons` @ `270e2b3` on
-2026-10-23 → 10-24, with an independent second reader per page; each page's
-`covers` / `updated` says when it was last checked and changed.
+Every page was re-checked against toolkit branch `add-ons` @ `501fb4d` on
+2026-11-06, with an independent second reader per group of pages and a final
+pass across all 20; each page's `covers` / `updated` says when it was last
+checked and changed.
 
 ### Writing a page
 
@@ -157,16 +158,28 @@ the template and read, not run through `nginx -t` — do that on the server.)
 
 ### Open items
 
-- **Deployed, but the live copy is stale.** On 2026-10-24
-  `curl -sI https://grinnode.org/docs/01-build-node` → 200, `….html` → 301,
-  `/docs/nope` → 404 (the clean-URL block is in place), but the live page still
-  shows its 2026-09 dates. Deploy the rebuilt `web/grinnode-org-2026/docs/`.
+- **Deployed, but the live site serves an older build until redeployed.** On
+  2026-11-06 `curl -sI https://grinnode.org/docs/01-build-node` → 200, `….html`
+  → 301, `/docs/nope` → 404 (the clean-URL block is in place), but that page
+  still shows *Covers 23 Oct 2026* and the live home page still says *Nym
+  mixnet*. Deploy the rebuilt `web/grinnode-org-2026/`: `docs/`, `sitemap.xml`
+  and `index.html`.
 - **Warnings that wait on toolkit fixes.** Several pages warn about code bugs
-  logged in the toolkit's findings log (*Act on these first*): the dead Script 03
-  schedules (Danger callout on 03), Script 01 `G` → `3` (Warning on 01), Drop's
-  `-p` passphrase (059 Status), the Top 20 bandwidth parser (Note on 08), the
-  ufw block order (Warning on 02), the pool's `Z` defaults (Danger on the pool
-  page). When the code is fixed, re-check that page and remove its warning.
+  logged in the toolkit's findings log (*Act on these first*): Drop's `-p`
+  passphrase (059 Status), the ufw block order (Warning on 02), the pool's `Z`
+  groups that still default to yes (Danger on the pool page), the pool's
+  log file and invisible alerts (key rows and Note on the pool page), a block
+  "entered by hand" with no tool (Warning on the pool page), a full reinstall
+  that deletes before it asks (Warning on 01), Wipe's *Restore* line after a
+  failed Renew (Danger on 05), the old ecosystem checker (Warning on 08) and the
+  `authorized_keys` rewrite (Warning on 08). When the code is fixed, re-check
+  that page and remove its warning. The warnings for Script 03's dead schedules,
+  Script 01 `G` → `3` and Super Auto's check order, remote *Upgrade grin binary*
+  and the Top 20 bandwidth parser are gone: those bugs are fixed in the code.
+  Script 03's Note stays, because a box scheduled earlier keeps its dead lines
+  until someone opens Script 03.
+- **Nym on another site:** `web/grin-money-2026/index.html` still names Nym for
+  Goblin (lines 581, 794). The grinnode.org home page now says Tor.
 - **Soft 404 elsewhere on the site:** `location /` falls back to `/index.html`,
   so any missing URL outside `/docs/` returns the home page with HTTP 200.
   Fine for a one-page site; worth a real 404 if more pages are added.

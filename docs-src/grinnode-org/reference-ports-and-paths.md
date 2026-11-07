@@ -3,8 +3,8 @@ title: Ports and paths
 description: Every port the Grin Node Toolkit uses, which ones must be open in the provider firewall, and where each script keeps its files, configs and logs on the server.
 section: Reference
 order: 1
-covers: 2026-10-24
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 One page to look things up: the port each service listens on, which of them need a hole in the firewall, and the directories the toolkit creates. Every value here was checked against the scripts' own constants; where a script lets you change a port, the table gives the default.
@@ -108,19 +108,21 @@ Everything the toolkit installs goes under `/opt/grin/`, one folder per product.
 ├── keys/<network>/           node API secrets, kept across rebuilds        Script 01
 ├── bin/                      source-built and replaced node binaries, .info  Script 01
 ├── src/grin/                 grin git checkout for source builds              Script 01
-├── node-events/<network>/    event recorder ledger, status, evidence/         086
+├── node-events/<network>/    event recorder ledger, status, evidence/, public/ 086
+│                             (public/history.jsonl + beside it .public_salt, a secret)
 ├── conf/                     small config files the scripts share (table below)
 ├── logs/                     one log per script run, plus cron/watchdog logs
 ├── lib/                      helper libraries installed for cron and timers
+│   └── pubpool-<network>/    pool wallet launcher, unlock helper, boot script  07 pool
 ├── backups/                  local backup archives, onion identities          089, 04, 059, 07
 ├── temp/                     backup archives from before the shared engine (legacy)
-├── reports/                  host-optimisation reports; diag/ = Diagnostics  083, 086
+├── reports/                  host-optimisation reports; diag/ = Diagnostics (incl. stratum_* runs)  083, 086
 ├── grin-api-collector/       REST collectors for the published node API      04
-├── grin-stats/               dashboard collector: stats.db, config.env       06
+├── grin-stats/               dashboard collector: stats.db, config.env, ecosystem_hidden.json  06
 ├── grin-price/               price collector: grin-price.db                  06
 ├── grinscan/{main,test}/     GrinScan config, DB and copied node secrets     06b
 ├── tiny-explorer/            Tiny Explorer app, config.json, log             06d
-├── cmdwallet/<network>/      the CMD wallet quick setup                       05
+├── cmdwallet/<network>/      the CMD wallet quick setup (+ grin-wallet.toml.before-network-fix-<date_time> after Fix network)  05
 ├── cmdwallet/.retired/       set-aside mainnet CMD wallets — NOT backed up    05
 ├── wallet-bin/<tag>/         grin-wallet binaries, one per version            05 (shared)
 ├── fidelius/                 Fidelius app, config.conf, wallet_<net>_<name>/  051
@@ -142,7 +144,7 @@ Everything the toolkit installs goes under `/opt/grin/`, one folder per product.
 
 Web roots are separate, under `/var/www/`: `fullmain`, `prunemain`, `prunetest` (chain snapshots, Script 02/03), `grin-node-api` and `grin-node-api-testnet` (Script 04), `grin-stats` (06), `web-wallet-xp` (051x), `grin-drop-home` (059), `grin-pool` and `grin-pool-testnet` (07), `grin-play` and `grin-play-testnet` (07 games), `floonet-relay` (091).
 
-A few notes on the tree: `bin/` holds node binaries compiled by Script 01 → `G` and an archived copy of every binary a key-`3` update or a source install replaced, each with an `.info` file saying where it came from; `src/grin/` is the checkout kept for the next compile (`G` → `5` purges its build cache). `wallet-bin/` installs **v5.5.0** by default; Fidelius alone pins **v5.4.1**. `cmdwallet/.retired/` holds mainnet CMD wallets that a re-initialize or *Nuke* moved aside, with their old seed — copy them off the server or delete them. The games database is `pubgames-data/<network>/grinium-games.db`.
+A few notes on the tree: `bin/` holds node binaries compiled by Script 01 → `G` and an archived copy of every binary a key-`3` update or a source install replaced, each with an `.info` file saying where it came from; `src/grin/` is the checkout kept for the next compile (`G` → `5` purges its build cache). `wallet-bin/` installs **v5.5.0** by default; Fidelius alone pins **v5.4.1**. `cmdwallet/.retired/` holds mainnet CMD wallets that a Renew or Wipe moved aside, with their old seed — copy them off the server or delete them. The games database is `pubgames-data/<network>/grinium-games.db`. A CMD wallet setup that was killed half-way can leave a `.init_capture` file in the wallet folder; it holds the seed words. Opening that network's screen in the wallet hub deletes it; if you find one, do that or delete it by hand. The node event recorder's public status files (`availability.json`, `history.json`) are copied by Script 04's collector into `/var/www/grin-node-api/rest/` (or `grin-node-api-testnet`) while the recorder publishes them.
 
 Tor identities are under `/var/lib/tor/`: `grin-<network>-raw-tcp/` (Script 01's private node mirror), `grin-<network>-nginx/` (Script 04's public API onion), and per-product directories for Accio and the Transporter. The `hostname` file in each holds the `.onion` address; the `hs_ed25519_secret_key` beside it *is* the identity.
 
@@ -158,6 +160,7 @@ Small files under `/opt/grin/conf/` that scripts write the first time they run a
 | `grin_share_ssh.conf` | Chain-snapshot sharing over SSH | 03 |
 | `grin_share_targets.conf` | Remote mirror list for the copy job, one per line | 03 |
 | `grin_wallets_location.conf` | Registry of wallet directories, used by backups | 05 / 051x |
+| `pool_wallet_paths_<network>.conf` | Root's record of the pool wallet's paths, written the first time it reads a safe value | 07 pool |
 | `grin_solo_payment.json` | Solo-mining payout settings | 07 solo |
 | `grin_solo_backup.conf`, `grin_solo_quiet.conf` | Solo-mining backup schedule; quiet-hours for its alerts | 07 solo |
 | `grin_pubpool.json`, `grin_pubpool_testnet.json` | Public pool settings per network | 07 pool |
@@ -199,8 +202,11 @@ For completeness — the places outside `/opt/grin` and `/var/www` a script may 
 | `/etc/cron.d/` | `grin-node-sync-watchdog` (every 5 minutes), `grin-node-api-rest` / `-node`, `grin-solo-*`, `grin-stratum-watchdog`, `grin-auto-cleanup`, `grin-pool-manager-vacuum` (Sundays 03:00 UTC), `grin-games-vacuum` (Sundays 03:30 UTC), backup jobs — one file per job, named after it |
 | `/etc/tor/torrc` | Hidden-service stanzas between `# >>> grin-toolkit:… >>>` markers; nothing outside the markers is touched |
 | `/usr/local/bin/` | `gtmux`, `grin-secret-sync`, `grin-node-events`, `grin-stats-collector`, `grin-price-collector`, `grin-node-submit`, `grin-ecosystem-checker`, `grin-solo-mining-collector`, `grin-stratum-watchdog`, `grin-backup-push`, `grin-gateway-ctl`, `floonet-rs` |
-| `/etc/logrotate.d/` | `grin-node-<network>` for `grin-server.log` (Super Auto: daily or past 50 MB, 7 kept, `copytruncate`), `grin-node-events`, and the node-API nginx logs |
+| `/etc/logrotate.d/` | `grin-node-<network>` for `grin-server.log` (Super Auto: past 50 MB, 7 kept, `copytruncate`), `grin-node-events`, and the node-API nginx logs |
 | `/etc/sysctl.d/99-grin-node.conf`, `/swapfile` | Memory tuning (`vm.swappiness = 10`, `vm.vfs_cache_pressure = 50`) and the swapfile from Script 01's step 2b |
+| `/var/lib/grin-toolkit/host-updates/`, `/var/log/grin-host-updates/` | Automatic OS security updates (hub 08 → Host Optimization, and Mass Deploy): the toolkit's state and copies of the files it replaced (`*.pre-enable`), the `run-now/` folder for a run started from the menu, and that run's logs. Kept by the full cleanup |
+| `/etc/apt/apt.conf.d/20auto-upgrades`, `52grin-unattended-upgrades`, `/etc/needrestart/conf.d/50-grin.conf`, `/etc/dnf/automatic.conf` | The update policy itself (apt systems use the first three, dnf systems the last). Kept by the full cleanup |
+| `/root/grin-pool-manager.service.before-deploy.<date_time>` | The pool's old systemd unit, saved when a pool deploy replaced it (`-testnet` in the name on a testnet install) |
 | `/etc/ssh/sshd_config.d/00-grin-hardening.conf` | The SSH hardening drop-in (hub 08 → Host Optimization → SSH Key Hardening); an older `99-grin-hardening.conf` is removed when it is applied or reverted |
 | `/etc/grin-toolkit/` | `landing.conf` (Script 02's landing page) and `blocked_ips.list` (Script 02's IP blocks) |
 | `/etc/fail2ban/jail.d/nginx-grin.conf` | Script 02's fail2ban jails |
@@ -211,7 +217,7 @@ For completeness — the places outside `/opt/grin` and `/var/www` a script may 
 
 ## Logs
 
-Every interactive run writes a log under `/opt/grin/logs/`, named `<script>_<date>_<time>.log`, and prints the path when it finishes — attach that file when you report a problem. Long-running jobs use one fixed name each (`cron_nginx.log`, `cron_remote.log`, `stratum-watchdog.log`, `access-watch.log`…) and are rotated by logrotate. The node event recorder's export lands in `/opt/grin/logs/` as `grin_node_events_export_<UTC>.tar.gz`; Diagnostics writes its support bundles and reports to `/opt/grin/reports/diag/` (readable by root only). The node's own log is `grin-server.log` in the node directory; nginx sites log to `/var/log/nginx/` as `<site>.access.log`.
+Every interactive run writes a log under `/opt/grin/logs/`, named `<script>_<date>_<time>.log`, and prints the path when it finishes — attach that file when you report a problem. Long-running jobs use one fixed name each (`cron_nginx.log`, `cron_remote.log`, `stratum-watchdog.log`, `access-watch.log`…) and are rotated by logrotate. The node event recorder's export lands in `/opt/grin/logs/` as `grin_node_events_export_<UTC>.tar.gz`; Diagnostics writes its support bundles and reports to `/opt/grin/reports/diag/` (readable by root only). The public pool's own service logs to the systemd journal (`journalctl -u grin-pool-manager`, or `grin-pool-manager-testnet`); `/opt/grin/logs/grin-pool.log` (`grin-pool-testnet.log`) only collects the weekly database-vacuum job's output. The node's own log is `grin-server.log` in the node directory; nginx sites log to `/var/log/nginx/` as `<site>.access.log`.
 
 ## Related
 

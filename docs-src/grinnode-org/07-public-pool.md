@@ -5,15 +5,15 @@ section: Scripts
 order: 7.5
 short: Public pool
 label: Script 07
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 The public pool is the second half of the mining hub (the first half, [solo mining](07-mining-services.html), has its own page). It turns your node into a **mining pool** that other people point their rigs at: a [stratum server](reference-glossary.html#stratum) on a public port, a website with live stats, a per-miner account page, and an admin panel where you set the fee and watch the money. The toolkit's job is the infrastructure — Node.js app, database, systemd, nginx and SSL, the pool wallet, backups. Every business decision (name, fee, payout floor) is made in the web admin panel after setup, not in a config file.
 
 You need a synced **mainnet node** from [Script 01](01-build-node.html) (pruned is fine), a domain, and a passphrase for the pool wallet the setup creates.
 
-> **Warning:** Status — the main menu does not mark the mining hub **(DEV)**, but this product is still being built. The reference pool, grinium.com, runs on mainnet with real miners, and that is where the toolkit's pool is tested. Its first [Tor](reference-glossary.html#tor-and-onion-addresses) payout, in September 2026, failed because the pool could not find `grin-wallet` (fixed since). Much of what is on this page was built after that and has **not** run on a server yet: Tor payouts as they work now (one attempt per payout), the [stratum pause](reference-glossary.html#stratum-pause), the hub move (*Migrate OUT / IN*), operator revenue withdrawals, the `/play/` games service, the gateway latency probe and the [Goblin](reference-glossary.html#goblin) rail. Make your first payouts small, and read [Fees and payouts](#fees-and-payouts) before you announce a fee. Nothing on this page should be read as "proven in production".
+> **Warning:** Status — the main menu does not mark the mining hub **(DEV)**, but this product is still being built. The reference pool, grinium.com, runs on mainnet with real miners, and that is where the toolkit's pool is tested. Its first [Tor](reference-glossary.html#tor-and-onion-addresses) payout, in September 2026, failed because the pool could not find `grin-wallet` (fixed since). Much of what is on this page was built after that and has **not** run on a server yet: Tor payouts as they work now (one attempt per payout), the [stratum pause](reference-glossary.html#stratum-pause), the hub move (*Migrate OUT / IN*), operator revenue withdrawals, the `/play/` games service, the gateway latency probe, the [Goblin](reference-glossary.html#goblin) rail, the [daily giveaway](#the-daily-giveaway), the fee rate recorded on each block, and [late and lost block](#late-and-lost-blocks) reporting. Make your first payouts small, and read [Fees and payouts](#fees-and-payouts) before you announce a fee. Nothing on this page should be read as "proven in production".
 
 ## What you get
 
@@ -38,7 +38,7 @@ The deep design — why address-as-identity, why SQLite, why Tor — is in the t
 The pool server install (the *Pool server* mode) puts these on the box:
 
 1. **Node.js 24** from NodeSource (the pool uses Node's built-in SQLite, so 24 is a hard minimum), `logrotate`, `sqlite3`, `wireguard-tools` (only used if you add gateways later) and `fail2ban`. The pool app is copied to `/opt/grin/pubpool/mainnet/`, its dependencies installed with `npm ci`.
-2. A **systemd service** `grin-pool-manager` running as the unprivileged `grinpool` user under a hardened unit, plus a logrotate rule for `/opt/grin/logs/grin-pool.log`, a fail2ban jail on the admin login, and the `grin-gateway-ctl` helper the multi-region path uses.
+2. A **systemd service** `grin-pool-manager` running as the unprivileged `grinpool` user under a hardened unit, plus a fail2ban jail on the admin login and the `grin-gateway-ctl` helper the multi-region path uses. The service logs to the systemd journal: read it with `journalctl -u grin-pool-manager`. The install also adds a logrotate rule for `/opt/grin/logs/grin-pool.log`, but that file is [not the service log](#what-was-created).
 3. A **config file** `/opt/grin/conf/grin_pubpool.json` seeded with defaults (fee 1 %, payout floor 25 GRIN, ports) and a random JWT secret.
 4. The **website** in `/var/www/grin-pool/` with the admin panel under `/admin/`.
 5. An **nginx vhost** for your domain — HTTP first, then a Let's Encrypt certificate, then the full HTTPS vhost with rate-limit zones, security-header snippets, Cloudflare real-IP support if you want it, and an optional IP allowlist on `/admin/`. If nginx or certbot is missing, this step offers to install them.
@@ -165,14 +165,15 @@ Pick the pool server and you land on the pool menu. The `·` next to setup steps
 | `1–7` | The same steps one at a time. Every step is safe to re-run: Install refreshes the code and the service unit without touching the database or the wallet password |
 | `2` | Despite its label, Configure asks for **the domain** and, optionally, where this server is (a region name, country and two-letter code shown as a flag on the connect card). Name, fee and everything else are set in the admin panel |
 | `5` | Opens the [wallet submenu](#the-pool-wallet) — setup, listener start/stop, address, node patch, autostart, watchdog, replace wallet, binary update |
-| `8` | Service state, listening port, database size and URL, plus the last 15 log lines |
-| `9` | After you update the toolkit checkout: copies the new backend and frontend into place, re-runs `npm ci` only when the dependency files changed, and restarts the service **only if** code it runs changed (a change to web pages alone does not restart it). If an earlier deploy was never loaded, it restarts for that too. Also deploys the games service when it is installed |
+| `8` | Service state, listening port, database size and URL, plus the last 15 lines of `/opt/grin/logs/grin-pool.log`. That file is not the service log, so this part shows little: use `journalctl -u grin-pool-manager -n 30 --no-pager` |
+| `9` | After you update the toolkit checkout: copies the new backend and frontend into place and re-runs `npm ci` only when the dependency files changed. It replaces the systemd service unit when the toolkit's version differs (the old one is saved as `/root/grin-pool-manager.service.before-deploy.<date_time>`, so keep local unit changes in a drop-in), refreshes the wallet's generated scripts without restarting the listener, refreshes `grin-secret-sync` unless you disabled its timer, and refreshes the node event recorder if its timer is enabled and running. It restarts the service **only if** code it runs, the service unit or the `grinpool` user's groups changed (a change to web pages alone does not restart it). If an earlier deploy was never loaded, it restarts for that too. Also deploys the games service when it is installed. It does **not** rewrite the nginx vhost; that is `4`. If the wallet paths in the config disagree with root's record, it stops with `Nothing was deployed.` (see [Troubleshooting](#troubleshooting)) |
 | `A` | [Break-glass recovery](#the-admin-panel) for a locked-out admin: list accounts, clear two-factor, set a new password, new recovery codes, unlock |
 | `W` | [Regional gateways](#regional-gateways-multi-region): WireGuard server, add or remove a gateway, list, DNS name for the endpoint |
 | `P` | [Play and chat](#play-and-chat-games): the `/play/` games service — install, deploy, nginx, status, uninstall |
 | `B` | [Backups](#backups-and-scheduled-tasks) and the [hub move](#move-the-pool-to-a-new-server) |
 | `C` | [Scheduled tasks](#backups-and-scheduled-tasks): daily backup, weekly VACUUM, run a VACUUM now |
-| `S` | Opens the config JSON in your editor — for the few keys the admin panel does not own, such as `admin_allowlist` |
+| `L` | Shows the last 50 lines of `/opt/grin/logs/grin-pool.log`. That file is not the service log and holds little beyond the weekly VACUUM's output, so read the journal instead: `journalctl -u grin-pool-manager -n 50 --no-pager` |
+| `S` | Opens the config JSON in your editor — for the few keys the admin panel does not own, such as `admin_allowlist`. `grin_wallet_dir` and `wallet_pass_file` are not free edits: root keeps its own record of them, and a hand change makes `9` refuse to deploy |
 | `DEL` | Deletes `pool.db` — every balance, share, block and withdrawal — after typing `RESET POOL DATABASE` and then `YES`. The service is stopped, the file removed, and the service started again at once with a fresh empty schema |
 
 > **Danger:** `DEL` takes no backup first and cannot be undone. Every miner's balance is in `pool.db` and nowhere else; the coins stay in the pool wallet, but the record of who is owed what is gone. Run `B` → `1` *Backup now* before you use it on a pool that has ever had a miner.
@@ -186,8 +187,8 @@ Pick the pool server and you land on the pool menu. The `·` next to setup steps
 | 1 | Refuses to start if solo mining or a gateway is on the box. Installs packages and Node.js 24, copies the app to `/opt/grin/pubpool/mainnet/`, runs `npm ci`, generates the JWT secret and default config, creates the `grinpool` user and the hardened service unit, logrotate, the fail2ban jail (10 failed admin logins in 15 minutes → a 10-day firewall ban) | Wait |
 | 2 | Asks for the pool's domain and validates it; then the optional region label, country and ISO code for the connect card | Type `pool.yourdomain.com`; Enter through the location fields or fill them in |
 | 3 | Copies the website to `/var/www/grin-pool/`, the admin panel to `/admin/`, writes `js/pool-config.js` with the pool name, fixes ownership for nginx | Nothing |
-| 4 | Offers to install nginx and certbot if either is missing. Writes the five rate-limit zones and the header snippets; asks about Cloudflare; writes an HTTP-only vhost, tests and reloads nginx; runs certbot for the domain **and** its `www.` alias with `admin@<domain>` as the account email; then writes the full HTTPS vhost and reloads again. Warns loudly if the admin panel is open to all IPs | Answer the Cloudflare question; answer `Y` to issue the certificate (or `n` and re-run step 4 later) |
-| 5 | Asks for the wallet directory (default `/opt/grin/pubpoolwallet/mainnet`), downloads and verifies `grin-wallet`, asks for a passphrase twice, initialises a **new** wallet, checks the passphrase actually opens it, saves it to `/opt/grin/pubpool/mainnet/.wallet_pass`, patches the wallet's config (ports, combined listener, the node's foreign secret) and the node's `wallet_listener_url`, starts the listener in a tmux session, unlocks it, and records the wallet's address as `pool_address` in the pool config. If a wallet already exists it asks: use it, create a new one (the old directory is archived, not deleted), or recover from a seed phrase | Enter the passphrase (use a long one); for a recovery, type the 24 words when `grin-wallet` itself asks for them. **Write down the seed** a new wallet prints |
+| 4 | Offers to install nginx and certbot if either is missing. Writes the five rate-limit zones and the header snippets; asks about Cloudflare; writes an HTTP-only vhost, tests and reloads nginx; runs certbot for the domain **and** its `www.` alias with `admin@<domain>` as the account email; then writes the full HTTPS vhost and reloads again. The vhost gzips CSS, JavaScript, SVG and text (never JSON) and rewrites the placeholder host in the static pages' canonical and social tags to your domain as they are served; that rewrite needs nginx's `http_sub_module`, and the step warns if your nginx lacks it. Warns loudly if the admin panel is open to all IPs | Answer the Cloudflare question; answer `Y` to issue the certificate (or `n` and re-run step 4 later) |
+| 5 | Asks for the wallet directory (default `/opt/grin/pubpoolwallet/mainnet`; a custom one must be a plain path of letters, digits, `.`, `_`, `-` and `/`, outside the system and toolkit directories, otherwise the step stops with `… cannot hold the wallet`), downloads `grin-wallet` (checked against the release's SHA256 when the release publishes one), asks for a passphrase twice, initialises a **new** wallet, checks the passphrase actually opens it, saves it to `/opt/grin/pubpool/mainnet/.wallet_pass`, patches the wallet's config (ports, combined listener, the node's foreign secret) and the node's `wallet_listener_url`, starts the listener in a tmux session, unlocks it, and records the wallet's address as `pool_address` in the pool config. If a wallet already exists it asks: use it, create a new one (the old directory is archived, not deleted), or recover from a seed phrase | Enter the passphrase (use a long one); for a recovery, type the 24 words when `grin-wallet` itself asks for them. **Write down the seed** a new wallet prints |
 | 6 | Starts `grin-pool-manager` and waits for port 8080 (the first start creates the database schema, so it takes a moment) | Nothing |
 | 7 | Asks for the admin username (3+ characters), password (8+, twice) and an optional email, and registers the account over loopback — no captcha, nothing on the command line | Choose them; keep the password in a password manager |
 
@@ -211,7 +212,7 @@ cd /opt/grin/node/mainnet-prune
 grep -E 'enable_stratum|stratum_server_addr|wallet_listener_url' grin-server.toml
 ```
 
-> **Note:** The guided setup prints "complete" before this step, and nothing in the menu says the node needs restarting except the wallet step's one-line warning. Until you do it, the pool's own log shows it failing to log in to the node stratum and every miner sees no jobs. This is a gap in the script, not in your setup.
+> **Note:** The guided setup prints "complete" before this step, and nothing in the menu says the node needs restarting except the wallet step's one-line warning. Until you do it, the service journal shows the pool failing to log in to the node stratum and every miner sees no jobs. This is a gap in the script, not in your setup.
 
 The same timer puts the three keys back after a Script 01 rebuild regenerates `grin-server.toml`, and prints `RESTART the mainnet node` when it did; restart the node again after any rebuild.
 
@@ -224,12 +225,12 @@ Now check the parts:
 ```bash
 systemctl status grin-pool-manager --no-pager      # active (running), User=grinpool
 ss -tlnp | grep -E ':(3333|8080|3420|3416) '       # stratum, API, wallet, node stratum
-tail -n 30 /opt/grin/logs/grin-pool.log            # should show the node-stratum login succeeding
+journalctl -u grin-pool-manager -n 30 --no-pager   # look for "Login accepted by node stratum"
 tmux attach -t grin_pubpoolwallet                   # the wallet listener; Ctrl+B D to leave
 curl -s https://pool.yourdomain.com/api/pool/poolstats | python3 -m json.tool
 ```
 
-The last one is the public stats feed; a JSON document with your pool name, hashrate and block count proves nginx, the API and the database are all talking. Open `https://pool.yourdomain.com` and its `/login.html`; sign in with the admin account you created.
+On a testnet pool the service is `grin-pool-manager-testnet`: use that name with `systemctl` and `journalctl`. The last command is the public stats feed; a JSON document with your pool name, hashrate and block count proves nginx, the API and the database are all talking. Open `https://pool.yourdomain.com` and its `/login.html`; sign in with the admin account you created.
 
 Then point a rig at it. Any Grin miner that speaks stratum works (iPollo G1 and G1-Mini, lolMiner, GMiner…); the connect card on the homepage shows the exact endpoint and a mock of a miner's *Pool Setting* form:
 
@@ -247,18 +248,20 @@ A bare worker name without the address is rejected: the address *is* the identit
 |------|---------|
 | `/opt/grin/pubpool/mainnet/` | The pool app. `pool.db` (every balance, share, block and withdrawal — the money) and `.wallet_pass` live here too, with the admin panel's `uploads/` and `custom_assets/` |
 | `/opt/grin/conf/grin_pubpool.json` | Pool config: domain, ports, `pool_address`, `jwt_secret`, `admin_allowlist`, `cloudflare_proxy`. The admin panel's own settings are stored in the database |
-| `/opt/grin/pubpoolwallet/mainnet/` | The pool wallet: `grin-wallet` binary, seed, `grin-wallet.toml`, the listener launcher and the unlock helper |
+| `/opt/grin/pubpoolwallet/mainnet/` | The pool wallet: `grin-wallet` binary, seed and `grin-wallet.toml` |
+| `/opt/grin/lib/pubpool-mainnet/` | The wallet scripts root runs: the listener launcher `listen-wallet.sh`, the unlock helper `pool-wallet-unlock.js` and the boot script `pool-wallet-boot.sh`. Root only, and outside the wallet directory because the pool user owns that. Install, `9` and a restore move an older box's copies here and rewrite the `@reboot` line |
+| `/opt/grin/conf/pool_wallet_paths_mainnet.conf` | Root's own record of the wallet directory and passphrase file paths, so that an edit to the pool config cannot steer what root does |
 | `/var/www/grin-pool/` | The website and `/admin/` |
 | `grin-public-pool-mainnet` in `/etc/nginx/sites-available/` | The vhost; the security-header snippets it includes are under `/etc/nginx/snippets/` |
 | `grin-pool-manager.service` in `/etc/systemd/system/` | The service (runs as `grinpool`) |
 | `grin-pool.conf` in `/etc/fail2ban/jail.d/` and its filter | The `grin-pool-login` jail: 10 failed admin logins in 15 minutes → a 10-day ban |
 | `/usr/local/bin/grin-gateway-ctl` | The one root helper the service may call (through `/etc/sudoers.d/grin-pool-gwctl`), for WireGuard pairing |
 | `grin-pool-admin-reset-mainnet` in `/usr/local/bin/` | The break-glass admin recovery CLI |
-| `/opt/grin/logs/grin-pool.log` | The service log (rotated daily, 10 kept); `grinium_<date>.log` beside it is each menu run's log |
+| `/opt/grin/logs/grin-pool.log` | **Not the service log**, despite the name. The service logs to the systemd journal (`journalctl -u grin-pool-manager`), and this file gets only the weekly VACUUM's output. Pool menu `8` and `L` read this file, so they show little. `grinium_<date>_<time>.log` beside it is each menu run's log |
 
 The five rate-limit zones live in `/etc/nginx/conf.d/` as `script07-grin-pool-manager.conf`.
 
-A testnet pool uses the same layout with `testnet` in place of `mainnet`, `-testnet` on the service, vhost and helper names, and `/var/www/grin-pool-testnet/`.
+A testnet pool uses the same layout with `testnet` in place of `mainnet`, `-testnet` on the service, vhost and helper names, `/var/www/grin-pool-testnet/` and `/opt/grin/logs/grin-pool-testnet.log`.
 
 ## The admin panel
 
@@ -275,25 +278,25 @@ The left rail has four groups:
 
 | Settings page | What it sets |
 |---------|--------------|
-| Pool Info | Pool name, tagline, description, the **pool fee %** (0–50, default 1) |
+| Pool Info | Pool name, tagline, description, the **pool fee %** (0–50, default 1). *Restore Defaults* on this page resets the fee too, effective at once; the dialog warns you |
 | Branding | Logo, colours, which of the 14 public themes visitors may pick, social links, which chain explorer block and payout links open — the white-label layer |
 | SEO / Analytics | Meta tags, sitemap, an analytics provider (GA4, Plausible, Umami or Matomo); with GA4 a miner's address is scrubbed from the page URL before it is reported |
 | Pages / Blog / Announcements / Ads | The built-in CMS: static pages, posts, a site-wide banner, and promo slots you sell or fill yourself. *Announcements* also holds Maintenance Mode and the [stratum pause](#pause-the-stratum) |
 | Payout | **Minimum withdrawal** (default 25 GRIN), the flat **withdrawal fee** (default and minimum 0.04), the cooldown after a reversed payout, the slatepack response window, the Tor pre-flight check, block confirmation depth, the Goblin rail switch (off), the dormant-balance policy (off) |
-| Incentives | Prize pool, join bonus, streaks, jackpot draws and contests, miner donations — all optional, all funded from the pool's own fee bucket or top-ups |
+| Incentives | Prize pool, join bonus, streaks, jackpot draws and contests, the [daily giveaway](#the-daily-giveaway), miner donations — all optional, all funded from the pool's own fee bucket or top-ups |
 | Games / Names | The `/play/` switch (off, preview or on) and chat, and the blocked-word list for player names |
 | Access Control | Admin IP allow/deny lists at the app layer, session timeouts, require-2FA, the password blocklist |
 | Database | Retention windows for shares, per-miner hashrate history, resolved alerts, the raw ledger and the audit log |
 
-Changing the fee, the payout floor or the retention windows takes effect on save (a few keys say *applied at restart* on the page).
+Changing the fee, the payout floor or the retention windows takes effect on save (a few keys say *applied at restart* on the page). A fee save reaches the public pages at once and applies to every block found from then on, so announce a change to your miners before you save it.
 
-**The payout freeze** is a kill-switch on the *Payouts* pages (*Queue* and *Treasury*). Engaged, the pool stops every outbound send — Tor, slatepack, Goblin — while still refunding expired slates to miners. The alert monitor engages it on its own when the money checks trip (wallet balance below what miners are owed, a balance that moved without a ledger row); a restore engages it too; you engage it by hand when a wallet or box looks compromised, or before you swap the wallet. Miners see a *payouts paused* chip on their account page, never the reason. Resume from the same place once you understand what happened.
+**The payout freeze** is a kill-switch on the *Payouts* pages (*Queue* and *Treasury*). Engaged, the pool stops every outbound send — Tor, slatepack, Goblin — while still refunding expired slates to miners. The alert monitor engages it on its own when the money checks trip (wallet balance below what miners are owed, ledger totals that no longer agree, a balance that moved without a ledger row, a different wallet answering); a restore engages it too; you engage it by hand when a wallet or box looks compromised, or before you swap the wallet. Miners see a *payouts paused* chip on their account page, never the reason. Resume from the same place once you understand what happened.
 
 **Locked out?** `A) Admin recovery` on the pool menu needs a root shell on the box and nothing else: list the admin accounts, clear a lost authenticator, set a new password (prompted, never on the command line), mint new recovery codes, or clear a failed-login lockout. Every action writes an audit row.
 
 ## Fees and payouts
 
-The pool fee is a percentage of each **block reward**, taken when the block **matures** — 1440 confirmations on mainnet (about a day) — never at withdrawal time; 0 % is allowed, for a promotion. Rewards are shared **PPLNS** over the shares submitted in the last **60 blocks**, so a miner who leaves just before a block is found still gets their share of it, and pool hopping does not pay. A block that turns out to be an orphan has its exact credits reversed from every account it paid, fee included. Balances are the miner's to withdraw once they reach the **minimum withdrawal**, 25 GRIN by default (each payout is an interactive transaction that leaves a permanent kernel on chain, hence the high floor). A flat **withdrawal fee**, 0.04 GRIN by default and never less, is deducted from each payout to cover the network fee the pool pays as sender.
+The pool fee is a percentage of each **block reward**, taken when the block **matures** — 1440 confirmations on mainnet (about a day) — never at withdrawal time; 0 % is allowed, for a promotion (the flat withdrawal fee below still applies). The rate is the one in force when the share that solved the block reached the pool. It is recorded on the block, so a fee change while that block matures does not touch it. The public *Blocks* page shows each block's rate in a **Fee** column (`—` for an orphan or a rate not on record), the *Payments* page tile **Current pool fee** shows the live rate, and the admin `fee-revenue.csv` export uses each block's own rate. On a pool upgraded from before the rate was recorded, settled blocks get their rate back from the ledger or stay "not on record", and blocks still maturing at the first start take the rate the pool booted with. Rewards are shared **PPLNS** over the shares submitted in the last **60 blocks**, so a miner who leaves just before a block is found still gets their share of it, and pool hopping does not pay. A block that turns out to be an orphan has its exact credits reversed from every account it paid, fee included. Balances are the miner's to withdraw once they reach the **minimum withdrawal**, 25 GRIN by default (each payout is an interactive transaction that leaves a permanent kernel on chain, hence the high floor). A flat **withdrawal fee**, 0.04 GRIN by default and never less, is deducted from each payout to cover the network fee the pool pays as sender.
 
 **Payouts are requested by the miner**, not sent on a schedule — there is no automatic payout. On their account page the miner proves they own the address — by giving the IP one of their rigs has mined from, or a rig's stratum password — enters an amount, and picks a rail:
 
@@ -308,6 +311,51 @@ Only one payout per address can be in flight, and after a reversed payout (an ex
 **[Held payouts](reference-glossary.html#held-payout).** When the pool genuinely cannot tell whether a Tor send went out (it timed out, say), the amount stays locked and the row is *Held*. The pool reads its wallet's transaction log every pass and settles the row by itself: confirmed on chain → *Paid*; absent on two reads at least 10 minutes apart → refunded. Both reads must be taken while payouts are **unfrozen**, so after a restore or a Migrate IN a held row waits until you unfreeze. A payout held for more than 24 hours raises a critical alert. The *Queue* page has **Re-check** and, after a password and typing the payout id back, **Forced refund**; neither ever sends money.
 
 **What you, the operator, do with the money:** the fee accrues in an internal `pool_fee` account and stays in the pool wallet. Withdraw it from **Payouts → Queue → Operator revenue → your wallet**: save a revenue address once (a change to it waits 24 hours and raises an alert), then withdraw; these withdrawals are listed publicly on the Payments page. Do not move the fee with a raw `grin-wallet send`: the ledger would not know, the wallet would no longer cover what it owes, and the reconciliation would freeze payouts. Keep the **hot balance low** — the pool wallet is unlocked 24/7 by design (it must be, to sign coinbases), so treat it as a cash register, not a vault.
+
+### The daily giveaway
+
+An optional daily prize, set under *Settings → Incentives → Daily Giveaway*. It is off by default and needs two switches: **Run the daily giveaway** and **Enable incentive features (master switch)**. The lottery switch is not needed. Saving asks for your password again.
+
+| Field | Default | Limits |
+|-------|---------|--------|
+| Minimum per day, Maximum per day (GRIN) | 1, 5 | Each at least 0.000000001 and **below 60 GRIN** (one block reward), refused on save otherwise. Keep them far below it: a day's total worth more than a block could make it pay a miner to throw a block away for a different result |
+| Minimum prizes per day, Maximum prizes per day | 1, 3 | 1–1000 |
+| Hours mined that day to qualify | 6 | 1–24 |
+
+In each pair the minimum must not exceed the maximum.
+
+**Who enters.** Any address with at least that many hours of mining inside the UTC day, counted from its hashrate records with a non-zero rate. Only minutes with an accepted share count, so a very slow rig may need longer than the setting. Banned addresses and the internal `pool_fee` and `prize_pool` accounts never enter.
+
+**How a draw is decided.** Everything comes from the hash of a seed block chosen in advance. The pool rolls one total between your two amounts and one prize count between your two counts. The total is capped at the prize pool as it stood when the draw opened. Prizes are **equal**: each is rounded down to the nanogrin, and the dust stays in the prize pool. Each prize is then its own pick from the whole entry list, weighted by that day's work. There is **no cap and no one-win limit**: one miner can win several prizes in a day, and a big miner wins often, in proportion to their work. Splitting across addresses gains nothing. Fewer miners than prizes means more wins each, not a smaller total. The seed block is public but the entry list is not, so nobody outside the pool can recompute a draw; do not tell your miners they can.
+
+**When it runs.** The job runs once an hour, counted from when the service started, with no run at start itself. The first run after 00:00 UTC opens the draw for the last completed UTC day and names a seed block 10 blocks ahead, and the next run pays. That is the "within about two hours of 00:00 UTC" on the page, but repeated restarts inside an hour push it back. If you switch the giveaway on during the day, the next run opens a draw for yesterday. Only the last completed day is ever drawn: a pool that was down for three days does not pay three days. A day with no qualifying miner closes with nothing paid.
+
+**Where the money goes.** Prizes come from the prize pool only, in one debit per draw, and a draw pays all its winners or none. A prize lands on the miner's pool **balance** (ledger label *prize won*), so it can be withdrawn once the balance reaches the minimum withdrawal. Prizes count in the *Given away* tile on the Payments page.
+
+**When a draw waits or is lost:**
+
+- **Prize pool below your minimum, or the node not answering, when the draw would open:** no draw, retried every hour. A top-up before the end of the UTC day *after* the one being drawn still draws it; otherwise that day is skipped for good.
+- **Giveaway switched off after the draw opened:** *On hold* until you switch it back on. Switching off never closes an open draw.
+- **Prize pool cannot cover the draw when it pays:** *On hold* until you top it up.
+- **A winner banned before the draw pays:** loses that share, and it stays in the prize pool. If every winner is banned, the draw closes with nothing paid.
+
+**On the page:** **Preview 7 days** moves no money; it simulates a week on the saved limits, shows the real odds above the simulated days, and *Pretend extra miners (capacity test)* (0–1000) tests load, not odds. **Run a real draw now** spends prize pool GRIN: an **extra** draw over the last 24 hours that does not replace the scheduled one, pays once its seed block exists, and needs a browser confirmation and your password; only one can be open at a time. **Recent giveaway draws** lists each draw and its state, with **Refresh**.
+
+**What miners see:** while the giveaway is on, a *Daily giveaway* panel on `/fortune-board.html`. The pot filter and chart on that page list the giveaway too. The account page shows *Draw prizes won: N (X GRIN in total)*, which counts every draw the address has won, not only this one.
+
+### Late and lost blocks
+
+The pool waits 15 seconds for the node to answer a submit, then tells the miner the share failed. A frozen node can still have taken that submit as a block, so the pool keeps checking:
+
+- **The node's reply arrives within 10 minutes of the timeout:** the block is recorded as usual, at the fee in force when the submit arrived.
+- **No reply comes** (the link dropped, or 10 minutes passed): the pool reads the chain, one header per height, retrying for about an hour. A match is **reported, not credited**: a nonce and proof are public once a block is out, so a miner on a stalled job could have sent a stranger's block. The alert tells you to confirm first that the pool wallet holds that block's coinbase.
+- **The node accepted a block but the share row could not be stored:** the block is still recorded.
+
+This check lives in memory, so a pool restart forgets what it was still holding.
+
+> **Warning:** These alerts say a block must be "entered by hand", but neither the pool menu nor the admin panel can do that, and this manual has no procedure for it. Until the block is entered, its reward stays in the wallet and is not shared out. Keep the alert text: it carries the height, hash and, when it can tell, the finder.
+
+> **Note:** The block and share alerts here, and *Daily Giveaway Stopped*, do not appear on *System Health* or anywhere else in the admin panel. They go to the service journal (`journalctl -u grin-pool-manager`), where *Shares Not Recorded* and *Daily Giveaway Stopped* appear only by internal name (`Alert triggered: share_record_failed`, `giveaway_rules_invalid`), and to any alert channel you set in the pool config with `S`, then a service restart: `discord_webhook_url`, `slack_webhook_url`, `telegram_bot_token` with `telegram_chat_id`, or `alert_email_address` with an `smtp` block that sets `enabled` to true. A pool with no channel set tells you nothing unless you read the journal. All of this is read from code, not seen working.
 
 ## The pool wallet
 
@@ -334,7 +382,7 @@ The listener runs `grin-wallet owner_api` only and never publishes a Tor onion o
 
 ## Pause the stratum
 
-*Settings → Announcements → Stratum* in the admin panel closes **every** stratum port — the public 3333 and every gateway's region port — so that during a restore, a move or database trouble no share is accepted that the pool cannot credit. Pausing waits up to 30 seconds for shares already in flight (a block found in that moment is still credited), then drops every miner. The website, the API and payouts keep running.
+*Settings → Announcements → Stratum* in the admin panel closes **every** stratum port — the public 3333 and every gateway's region port — so that during a restore, a move or database trouble no share is accepted that the pool cannot credit. Pausing waits up to 30 seconds for shares already in flight (a block found in that moment is still credited), then drops every miner. If a timed-out submit could still turn out to be a block, the result reads *Paused · settled, but wait before a hub migration.* The website, the API and payouts keep running.
 
 - **Pause** for 15, 30, 60 or 120 minutes, with a reason (admin-only, never published). Every pause ends on its own; **Extend** sets a new end time, and **Resume** ends it early.
 - **Schedule a window** for later: 5 minutes to 6 hours long, starting at least 15 minutes ahead and at most 30 days ahead. Times are entered in UTC.
@@ -425,7 +473,7 @@ The old pool server's tunnel must be down, or the gateways keep talking to it.
 `B` → `6` *Migrate OUT* and `B` → `7` *Migrate IN* move a live pool to a new box with every balance, share, hashrate history, audit row, the wallet seed, the WireGuard identity **and** the TLS certificate, and as little downtime as possible. Both refuse to start until you type `MIGRATE`.
 
 1. **Days before, on the new box:** build the node with Script 01, run **only** pool `1) Install` (not `5) Set up wallet`: it would mint a seed the restore replaces, and `CHECK` warns about it), then `B` → `7` and type `CHECK`. It is read-only: it checks the node is synced, nginx and certbot, the firewall, Tor, and prints a fingerprint of the backend code. The old box's Migrate OUT prints the same fingerprint, and the two must match (update whichever box is behind). If the pool takes a new region tag at its new home, create that region's DNS record now (DNS only, no proxy, TTL 60). Fix every ✗ while the old pool still serves.
-2. **On the old box,** optionally pause the stratum for 60 minutes and wait for "settled". Then `B` → `6` *Migrate OUT*: freezes payouts first; stops the wallet listener and removes its watchdog and boot autostart; turns off the VACUUM cron; stops and disables the pool service, the games service and the WireGuard tunnel; turns off the daily backup; writes a manifest of the ledger figures; takes a final encrypted archive (with the certificate — the only archive that carries one) and verifies it; and copies it to the new box with `scp`, or prints the command. **Miners disconnect now**, and this box will not start the pool again, not even after a reboot. The node keeps running.
+2. **On the old box,** optionally pause the stratum for 60 minutes and wait for "settled". If the panel says *Paused · settled, but wait before a hub migration.*, keep the pool running for 15 minutes with the node healthy first: a restart forgets the [lost submits](#late-and-lost-blocks) it is still checking, and Migrate OUT does not check this for you. Then `B` → `6` *Migrate OUT*: freezes payouts first; stops the wallet listener and removes its watchdog and boot autostart; turns off the VACUUM cron; stops and disables the pool service, the games service and the WireGuard tunnel; turns off the daily backup; writes a manifest of the ledger figures; takes a final encrypted archive (with the certificate — the only archive that carries one) and verifies it; and copies it to the new box with `scp`, or prints the command. **Miners disconnect now**, and this box will not start the pool again, not even after a reboot. The node keeps running.
 3. **On the new box,** `B` → `7`, type `MIGRATE`: checks again, and that the **old pool is dark** (it must not answer on its stratum port or its API); restores with payouts frozen; asks for a new region tag if the pool moved; brings up node secrets, wallet, web files, WireGuard and nginx; then compares every balance, count and highest id with the manifest — any ✗ stops here, before anything starts. Then it starts the wallet and the pool with the stratum **paused** (up to 2 hours) and prints the DNS records to change.
 4. Change DNS, **resume the stratum on the new pool** as soon as the continuity check is all ✓ (waiting for the automatic resume is pure downtime), watch the gateways come back, reconcile, and unfreeze payouts. Never start the old pool again.
 
@@ -460,7 +508,7 @@ Run `1`, then `3`. Installing does not make the section public: switch it in the
 | Stop paying out while I investigate something | Admin *Payouts* → freeze; resume from the same place |
 | Stop accepting miners for maintenance | Admin *Settings → Announcements → Stratum* → pause, or schedule a window |
 | Take my fee revenue | Admin *Payouts → Queue* → *Operator revenue → your wallet* |
-| Update the pool after a toolkit release | Update the toolkit checkout, then pool menu `9`. Re-run `1) Install` too when the release notes mention the service unit |
+| Update the pool after a toolkit release | Update the toolkit checkout, then pool menu `9`. `9` does not rewrite the nginx vhost: re-run `4` too when an update changes it, and once on any pool whose vhost predates the compression and domain rewrite in [step 4](#guided-setup-step-by-step) |
 | Restrict the admin panel to my IP | Add the IP to `admin_allowlist` in the config (pool menu `S`), then pool menu `4` |
 | Add a region on another continent | [Regional gateways](#regional-gateways-multi-region) |
 | Move the pool to a new server | [Migrate OUT / IN](#move-the-pool-to-a-new-server) |
@@ -471,16 +519,16 @@ Run `1`, then `3`. Installing does not make the section public: switch it in the
 
 ## Removing the pool
 
-> **Danger:** Every question in `Z` defaults to **yes** (`[Y/n]`): pressing Enter through it deletes `pool.db`, every miner's balance, along with the rest. Take a backup (`B` → `1`) first, and answer `n` to each group you want to keep. Only the games database question defaults to no.
+> **Danger:** Enter at the first question of `Z` cancels. After you answer `y`, Enter still removes most of the install: two groups default to no (`[y/N]`), the app directory with `pool.db` and `.wallet_pass`, and the games database, and every other group defaults to **yes** (`[Y/n]`). That includes the config file with `jwt_secret`, `pool_address` and the region map, and the WireGuard tunnels and their keys. On those groups answer exactly `n`: typing `no` removes the group anyway, except on the games service question. Take a backup (`B` → `1`) first.
 
-`Z` on the mode-selector menu previews what is present, asks for one master confirmation and then confirms **each group**: services and units, the games service and (separately) its database, the app directory with `pool.db` and `.wallet_pass`, gateway files and tunnels, web root, vhost, zones and snippets, cron and logrotate and the helpers, the JSON configs, logs, the fail2ban jail. It never touches the node, its chain data or `grin-server.toml` (the stratum keys stay as they are and the next install reuses them), the **wallet directory and seed**, or the backups in `/opt/grin/backups/`. Take a backup first if there is any balance in the database — the app directory group deletes every miner's ledger. The TLS certificate stays in `/etc/letsencrypt` (`certbot delete` removes it). The same `Z` also removes a *legacy satellite* install, the multi-region role the toolkit used before gateways (deleted in June 2026); nothing else in the menu knows that name any more.
+`Z` on the mode-selector menu previews what is present, asks for one master confirmation and then confirms **each group**: services and units, the games service and (separately) its database, the app directory with `pool.db` and `.wallet_pass`, gateway files and tunnels, web root, vhost, zones and snippets, cron and logrotate and the helpers, the JSON configs, logs, the fail2ban jail. It never touches the node, its chain data or `grin-server.toml` (the stratum keys stay as they are and the next install reuses them), the **wallet directory and seed**, or the backups in `/opt/grin/backups/`. Take a backup first if there is any balance in the database — the app directory group, if you answer `y`, deletes every miner's ledger. The TLS certificate stays in `/etc/letsencrypt` (`certbot delete` removes it). The same `Z` also removes a *legacy satellite* install, the multi-region role the toolkit used before gateways (deleted in June 2026); nothing else in the menu knows that name any more.
 
 ## Troubleshooting
 
 | Symptom | Cause and fix |
 |---------|---------------|
 | "Solo PRIVATE mining is already set up on this server" | One mining type per box. [Remove solo mining](07-mining-services.html#removing-solo-mining) from its own menu, or run the pool on another VPS |
-| Miners connect but get no work; the log shows the node-stratum login failing | The node's stratum is off or the pool has no `pool_address`. Run `grin-secret-sync`, **restart the node**, check `ss -tlnp` for 3416; check `pool_address` in the config (step 5 writes it) |
+| Miners connect but get no work; the service journal shows the node-stratum login failing | The node's stratum is off or the pool has no `pool_address`. Run `grin-secret-sync`, **restart the node**, check `ss -tlnp` for 3416; check `pool_address` in the config (step 5 writes it) |
 | Miners *Alive*, **GetWorks = 0**, everything else green | The pool wallet is **locked** — typically after a reboot or a crash. Wallet submenu `2` restarts and unlocks it; then enable autostart (`6`) and the watchdog (`7`) so it does not recur |
 | Miners cannot connect at all (connection refused on 3333), or were dropped with "Pool paused" | The stratum is paused: while paused no stratum port is open, and "Pool paused" is only sent to rigs caught in the moment the pause starts. It was paused — by you, by a scheduled window, or because the pool was just restored or migrated. Resume in *Settings → Announcements → Stratum*, or wait for the end time shown there |
 | A red *degraded* strip on every admin page after a resume | A stratum port could not open again. `EADDRNOTAVAIL` on a region port means the WireGuard tunnel is not up — bring it up, then press **Re-bind** |
@@ -499,9 +547,21 @@ Run `1`, then `3`. Installing does not make the section public: switch it in the
 | Gateway *Status* says `:3333 listening` but the pool's port check fails | The gateway's public stratum port was typed wrong once and stuck. Re-paste a current `GRINGW1` string (it carries the port), or update the toolkit on both boxes if the gateway rejects it |
 | A paired region does not take miners after `W` → `2` | The CLI path opens the region's listener only after a pool service restart, and you answered no. Restart the service, or pair from the admin *Regions* page next time |
 | Region stays red on the connect page though the gateway is fine | Wildcard DNS or a stale probe; verify with `nc -vz <region host> 3333`. Deactivate unbuilt regions in admin *Regions* rather than leaving them red |
-| Panel pairing "saves" nothing while *Regions* still lists fine | The service unit predates the `/etc/wireguard` write permission (pool menu `9` warns about it). Re-run `1) Install` once; `W` on the CLI works meanwhile |
+| Panel pairing "saves" nothing while *Regions* still lists fine | The service unit predates the `/etc/wireguard` write permission. Run pool menu `9`, which replaces the unit and restarts the service; `W` on the CLI works meanwhile |
 | Migrate IN stops at "old hub" | The old pool still answers on its stratum port or API. Finish Migrate OUT on the old box first; nothing on the new box has started |
 | Service refuses to start after editing the config | `jwt_secret` missing or shorter than 32 characters — the backend fails loudly on purpose. Restore it from a backup or re-run `1` |
+| `grin_wallet_dir in /opt/grin/conf/grin_pubpool.json is …, but root uses …` from `9` (same for `wallet_pass_file`) | The pool config and root's record of the wallet paths disagree, so `9` deploys nothing. The script adds "If you did not change it, treat the pool user as compromised", because that user owns the config. If you made the edit, put the value back with `S`, or to really move the wallet use wallet submenu `1` and type the new directory. Two harmless causes give the same message: a `Z` cleanup and reinstall with a custom wallet directory (`Z` keeps root's record while the reinstall writes the default to the config; put your directory back with `S`), and a wallet long kept at a path the toolkit now refuses, such as one with a space (move it to a plain path, then give that path to wallet submenu `1`) |
+| `An @reboot node line still resets the secrets' group` during Install or `9` | An old autostart line strips the node secrets' group at every boot, so the pool user cannot read them and sees the node as offline. Remove and re-add node autostart in [Script 03](03-share-chain-data.html#g-and-h-start-the-node-on-reboot) |
+| `Settings did not load. This form cannot be saved until they do.` | A settings page could not read the stored settings, so its form holds defaults. **Save**, **Restore Defaults** and **Save campaign** stay disabled until **Retry** works; your stored settings are unchanged. Buttons that act at once (the draws, *Run cleanup*) still work and use the stored values. The *Donors* page's donation form behaves the same way |
+| Alert *Shares Not Recorded*: `share(s) accepted by the node could not be stored` | Critical: miners are losing credit. Check `pool.db` and the free space on its disk. It clears after five quiet checks |
+| Alert `Block … is on chain with a nonce this pool submitted` | The node's reply to a possible block was lost, so it was not recorded. Confirm the coinbase in the pool wallet first, then see [Late and lost blocks](#late-and-lost-blocks) |
+| Alert `The node reported block … for a submit the pool no longer holds` | The same kind of loss, with only the hash left. Find the block on chain by that hash, then see [Late and lost blocks](#late-and-lost-blocks) |
+| Alert *Lost Submits Not Checked* | The chain could not be read for about an hour, so some unanswered submits were never checked. Compare the listed heights with the pool's blocks by hand |
+| Alert *Daily Giveaway Stopped* | The giveaway is on but its stored rules are invalid, so no draw runs. Open *Settings → Incentives* and save them again, with the maximum below 60 GRIN |
+| A giveaway draw shows *On hold*, or `Last check … skipped` appears under *Recent giveaway draws* | *On hold* says why: the prize pool is too low or the giveaway is off, so top up or switch it on. `Last check` says why too: a low prize pool, a node that did not answer, or invalid saved limits. See [The daily giveaway](#the-daily-giveaway) for when a skipped day is lost |
+| A rig gets `Duplicate share` | The same work, nonce and proof was already submitted. The address is not part of that check, so the same solution sent under a second address is a duplicate too. Repeats count towards the 50 rejects in a row that disconnect a rig. grin-miner draws its nonces at random so its rigs do not collide; other miner software has not been checked (read from code) |
+| A rig gets `Missing or malformed submit params` or `Height mismatch` | The pool wants a canonical 64-bit nonce and a proof of exactly 42 ascending edges with edge bits 29–53, and the height must belong to the job named. Both count as rejects. Update the miner software, or try another (read from code) |
+| A rig gets `Share not recorded` | A pool database fault, not the miner's, and it does not count against the rig. See *Shares Not Recorded* above |
 
 ## Related
 

@@ -3,8 +3,8 @@ title: Glossary
 description: Plain-language definitions of the Grin, server and web terms this manual uses — node, slatepack, Foreign API, stratum, tmux, vhost and more.
 section: Reference
 order: 2
-covers: 2026-10-24
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 The words this manual uses without stopping to explain them, grouped by topic. Each entry is short and links to the page where the term actually matters; the definitions match the ones given on those pages. Every heading is a link target, so a page can point straight at a term.
@@ -77,7 +77,7 @@ The `grin-wallet` version the toolkit installs. Every wallet product shares one 
 
 ### CMD wallet
 
-The command-line wallet that the wallet hub's slot `A` sets up next to your node, in `/opt/grin/cmdwallet/<network>/`. Its screen has `L` to start, stop or restart the listener and `N` (*Nuke*) to start a network over. It has no autostart: after a reboot, start it again with `L`. See [The listener screen](05-wallet-services.html#the-listener-screen-l).
+The command-line wallet that the wallet hub's slot `A` sets up next to your node, in `/opt/grin/cmdwallet/<network>/`. Open a network and you land on that network's screen: `1` is the listener (start, stop or restart it) and `5` is *Wipe*, which starts the network over. It has no autostart: after a reboot, start it again from the listener screen. See [The listener screen](05-wallet-services.html#the-listener-screen).
 
 ### Seed phrase
 
@@ -132,6 +132,10 @@ The **coinbase** is the new money in each block — 60 GRIN — paid to whoever 
 ### Held payout
 
 A public-pool payout over Tor whose outcome the pool cannot tell. The pool never sends it a second time: the amount stays locked and is settled from the wallet's own transaction log. See [Fees and payouts](07-public-pool.html#fees-and-payouts).
+
+### Stale share
+
+A share a miner hands in after the node has already moved on to a newer block, so it counts for nothing. A node that is slow to give out a new job after each block makes more of them. Hub 08's Diagnostics measures that delay. See [Mining / stratum latency](08-admin-maintenance.html#mining-stratum-latency).
 
 ### Stratum pause
 
@@ -243,7 +247,7 @@ Script 01's one-key install: both networks, pruned, from the first fresh snapsho
 
 ### Source build and toolkit grin patches
 
-Script 01's key `G` compiles the `grin` node from source instead of downloading the release — for a fix that is not released yet, or a system whose glibc is too old. After checking out a branch or tag it offers the toolkit's own small patches (`scripts/patches/grin/`), all or none; a patched binary carries `tkp` in its name. See [Compile from source](01-build-node.html#compile-from-source-key-g).
+Script 01's key `G` compiles the `grin` node from source instead of downloading the release — for a fix that is not released yet, or a system whose glibc is too old. After checking out a branch, tag or pull request it dry-runs the toolkit's own small patches (`scripts/patches/grin/`) and offers them, all or none; a set that does not apply is skipped without asking. A patched binary carries `tkp` in its name. See [Compile from source](01-build-node.html#compile-from-source-key-g).
 
 ### grin.prev
 
@@ -252,6 +256,10 @@ The previous node binary, kept as `grin.prev` in the node directory whenever Scr
 ### Node event recorder
 
 A read-only timer that checks every 30 seconds whether each node is up, records every down and up in a ledger, keeps planned stops out of the outage count, saves the node's console and logs at the moment of a failure and can send an alert off the server. It never restarts anything. Super Auto installs it and a normal build offers it. See [Node event recorder](08-admin-maintenance.html#node-event-recorder).
+
+### Public status page
+
+An optional page that shows how reliable your node has been: its state, its uptime percentage and a dated list of closed outages, with a hash-chained copy of that history that visitors can check. It is off by default and built from the node event recorder's numbers. See [Public status page](08-admin-maintenance.html#public-status-page).
 
 ### Planned-stop marker
 

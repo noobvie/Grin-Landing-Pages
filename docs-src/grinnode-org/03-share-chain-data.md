@@ -5,8 +5,8 @@ section: Scripts
 order: 3
 short: Share chain data
 label: Script 03
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 Script 03 is how a node becomes a **[snapshot host](reference-glossary.html#chain-data-and-snapshots)**: it packs the node's `chain_data` folder into a `.tar.gz`, writes it into the web folder Script 02 set up, and does it again on a schedule so the snapshot never goes stale. Other people's Script 01 then downloads from you. The same script also holds three small scheduling chores that any node benefits from — starting the node on reboot, cleaning up state-sync leftovers, and copying the finished archive to mirror servers.
@@ -24,7 +24,7 @@ For each network you share, one run of the pipeline:
 3. Checks that the web folder's disk can hold the new archive (chain size × a compression ratio + 512 MiB headroom). The ratio is measured from the archive already published when there is exactly one; otherwise it is a cautious estimate (0.90 pruned, 0.95 full). If there is room for the old and the new archive, the old one **keeps serving during the build**; if not, it is removed first; if there is room for neither, the run aborts before anything is touched.
 4. Stops the node (SIGTERM, up to 120 s, then SIGKILL) and [marks the stop as planned](reference-glossary.html#planned-stop-marker), so the [Diagnostics](08-admin-maintenance.html) event recorder does not log it as a crash. It deletes `txhashset_snapshot_*.zip` files from `chain_data` (multi-gigabyte leftovers the node creates when other nodes state-sync from it) and updates the status note. If the old archive was kept, the note still says *Sync completed* and adds that a newer archive is being prepared. If it was removed, the note tells visitors not to download yet.
 5. Compresses `chain_data` with `tar` piped into **pigz** (parallel gzip, installed on demand; plain gzip if it cannot be) at low CPU and IO priority, into a hidden temporary file, then computes the SHA256 and **swaps** the new archive and its checksum into place, so a downloader never sees a half-written file. `README.txt` is rewritten next. The `chaindata.json` manifest is taken down at the swap and written again only once the set is complete.
-6. Hands the files to the web user and **restarts the node** as the `grin` user in its [tmux](reference-glossary.html#tmux-and-gtmux) session — on the failure path too, so a compression that dies never leaves the node down.
+6. Hands the files to the web user and **restarts the node** as the `grin` user in its [tmux](reference-glossary.html#tmux-and-gtmux) session — after a failed compression too, so a compression that dies does not leave the node down. A run can still end with the node stopped: for example, if the script cannot enter `chain_data` right after the stop, it exits before this step. After any failed run, check with `gtmux ls`, and if the node is down use Script 01 → *Start a node*.
 
 The output in the web folder is `grin_pruned_mainnet_20260919.tar.gz` (or `grin_full_mainnet_…`, `grin_pruned_testnet_…`), its `.sha256`, `README.txt` with download instructions, `check_status_before_download.txt` and `chaindata.json`. Script 01 reads the manifest first and the file list as a fallback.
 
@@ -37,7 +37,7 @@ The output in the web folder is `grin_pruned_mainnet_20260919.tar.gz` (or `grin_
 | A running, synced node | Both the setup (key `A`) and the pipeline look for a live process on the P2P port. A node that is still syncing fails the sync check and nothing is published |
 | A Grin domain from Script 02 | Key `A` reads the nginx sites to find `/var/www/fullmain`, `/var/www/prunemain` or `/var/www/prunetest`; with none configured it sends you to Script 02 |
 | Free disk on the web folder's partition about the size of `chain_data` | The archive compresses only a little (the chain is mostly cryptographic data). The pre-flight check refuses to start a run that cannot finish |
-| `cron` installed | Every schedule on this menu is a root [crontab](reference-glossary.html#cron) entry. Script 01 installs `cron`; the script says so if `crontab` is missing |
+| `cron` installed | Every schedule on this menu is a root [crontab](reference-glossary.html#cron) entry. Script 01 installs `cron`. If `crontab` is missing, `E`, `I` and `G` install it themselves (`cronie` on Rocky/Alma) and start the daemon. If that fails, the key stops with `crontab unavailable` and nothing is scheduled |
 | For mirrors: a second server with SSH access | Optional. The remote-copy feature pushes the finished archive to other hosts over `rsync`; the key setup is guided |
 
 ## The menu
@@ -146,9 +146,9 @@ The proof that everything works end to end is Script 01 on another machine: run 
 
 ## E) Schedule the snapshot
 
-> **Danger:** A schedule created with `E`, `I` or the mirror copy schedule (`C` → `6`) in the current toolkit **never runs anything**. The cron line names the wrong file: a library inside `scripts/lib/` rather than `03_grin_share_chain_data.sh`. The library only defines functions, so the job exits at once without an error. Lines written by older toolkit versions still name the right file. This is a toolkit bug, reported to the maintainers. Until it is fixed, check with `crontab -l` after scheduling. On any line tagged `grin_share_nginx_…`, `grin_clean_txhashset` or `--cron-remote`, replace `lib/03_lib_schedule.sh` or `lib/03_lib_remote_menu.sh` with `03_grin_share_chain_data.sh` (`crontab -e`). Keep the rest of the line as it is.
+> **Note:** Read from the code, not yet seen on a server. `E`, `I` and the mirror copy schedule (`C` → `6`) write cron lines that run `03_grin_share_chain_data.sh`. Some earlier toolkit versions wrote a library file there instead (`lib/03_lib_schedule.sh` or `lib/03_lib_remote_menu.sh`), and a job like that exits at once and does nothing. **Updating the toolkit does not change your crontab, and nothing repairs these lines from cron**, so on a box scheduled back then they stay dead until you open Script 03 once after updating. It then lists them before the menu and asks `Repair them now? [Y/n]`. Enter points them at the script and changes nothing else on the line; `n` leaves them and asks again next time. A repaired share schedule is live again, so its next run stops the node. To see whether a box has such lines: `crontab -l | grep 'lib/03_lib_'`.
 
-`E` installs **one cron line per network**, so mainnet and testnet never stop-and-compress at the same time. It asks for the cron log path (default `/opt/grin/logs/cron_nginx.log`), then for each network shows a preset list. Times are UTC.
+`E` installs **one cron line per network**, so mainnet and testnet never stop-and-compress at the same time. It asks for the cron log path (default `/opt/grin/logs/cron_nginx.log`), then for each network shows a preset list. Times follow the server's clock, which is UTC once a share has run (see the note under [What it does](#what-it-does)). If you schedule before your first `B`, a box on another timezone switches at the first run and your schedule moves with it.
 
 For a **pruned** node:
 
@@ -250,7 +250,7 @@ Every listed host is checked by the toolkit's remote node monitor (**[Admin & Ma
 | `No Grin domains configured in nginx` | Script 02 has not created a `fullmain`/`prunemain`/`prunetest` site yet |
 | `Nginx has a mainnet domain configured but no mainnet node is running` | `A` insists every configured network has a live node. Script 01 → *Start a node*, wait for it to open its ports, retry |
 | `SYNC CHECK FAILED — BACKUP ABORTED` | The node is not at the chain tip (API `sync_status` ≠ `no_sync` and `grin client status` agrees). Nothing was stopped or deleted. Wait for the sync to finish — a fresh node needs a few minutes even from a snapshot. With both networks in one run (`B` → `3`), a mainnet failure here ends the whole run, so testnet is not tried either. Run `B` → `2` for testnet alone |
-| A scheduled share, cleanup or mirror copy never happens, and its cron log stays empty | The cron line names `lib/03_lib_schedule.sh` or `lib/03_lib_remote_menu.sh` rather than `03_grin_share_chain_data.sh`, so it does nothing. See the warning under [E) Schedule the snapshot](#e-schedule-the-snapshot) for the one-word fix in `crontab -e` |
+| A scheduled share, cleanup or mirror copy never happens, and its cron log stays empty | On a box scheduled with an earlier toolkit, the cron line may name `lib/03_lib_schedule.sh` or `lib/03_lib_remote_menu.sh` rather than `03_grin_share_chain_data.sh`, so it does nothing. Update the toolkit, open Script 03 and answer `Y` at `Repair them now?`. See the note under [E) Schedule the snapshot](#e-schedule-the-snapshot) |
 | `not enough space on … even after reclaiming` | The web folder's partition cannot hold the new archive. Nothing was touched and the node was not stopped. Free space, or move the site to a bigger disk |
 | The cron log says `No Grin node running or started for the selected network(s)` | A scheduled run found the node stopped, tried to start it from its folder and could not (the log line above it says why, for example `did not start within 120s`). Start it with Script 01 → *Start a node* and check `G` autostart is in place. If the log instead says `SKIPPED mainnet: nothing listening on port 3414 and no usable entry in …`, the node is stopped and the toolkit does not know where it is installed. Start the node with Script 01 → *Start a node*; the next run that finds it running records its folder |
 | `compression failed (tar=N compressor=M) — partial archive removed` | Usually the disk filled mid-run or an IO error. The node was restarted. If the disk check found room for both archives, the previous archive is still being served. If it did not, the previous archive was removed at step 0, so the site has no archive and the status note says *DO NOT download* until a run succeeds. Check `df -h` and the per-run log, free space, then run `B` again |

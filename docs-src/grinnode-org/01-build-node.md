@@ -5,13 +5,13 @@ section: Scripts
 order: 1
 short: Build a node
 label: Script 01
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 Script 01 is the foundation of the toolkit: it puts a synced Grin node on the server, and every other script builds on that node. It is also where you come back to start, stop or update a node, or to rebuild a corrupted one.
 
-> **Note:** Status — Script 01's menu was rebuilt in October 2026: one status screen with numbered keys for each node action. The new menu has been tested against a simulated server only, not yet on a real VPS. If a screen differs from this page, the script's own text is the one to trust.
+> **Note:** Status — Script 01's menu was rebuilt in October 2026: one status screen with numbered keys for each node action. The new menu has been tested against a simulated server only, not yet on a real VPS. If a screen differs from this page, the script's own text is the one to trust. Later changes described here (the console log level at step 8, the order of Super Auto's checks, the `G` behaviour) are read from the code and have not been seen on a server either.
 
 ## What it does
 
@@ -112,7 +112,7 @@ A key that can act shows, after the arrow, the networks it would act on. A key t
 | `1` | **Start a node** that is installed but stopped. The normal way to bring a node back after a stop |
 | `2` | **Stop a node.** Asks which network when both run |
 | `3` | **Update Grin binary** to the latest release, for mainnet, testnet or both (the default). Chain data is kept. See [Day-to-day operations](#day-to-day-operations) |
-| `4` | **Rebuild a node**: `1` *chain_data only* (fresh snapshot, same config, secrets and `.onion`; you type `REBUILD`) or `2` *full reinstall* (deletes that network's node directory and runs the [wizard](#the-custom-wizard-step-by-step) for it; you type `REBUILD`, or `DELETE-ARCHIVE` when a full archive would go) |
+| `4` | **Rebuild a node**: `1` *chain_data only* (fresh snapshot, same config, secrets and `.onion`; you type `REBUILD`) or `2` *full reinstall* (deletes that network's node directory and runs the [wizard](#the-custom-wizard-step-by-step) for it from step 4; you type `REBUILD`, or `DELETE-ARCHIVE` when a full archive would go) |
 | `5` | **Install a node** on a network that has none yet: runs the [wizard](#the-custom-wizard-step-by-step) |
 | `G` | [Compile from source](#compile-from-source-key-g), install that build, or roll back to the previous binary |
 | `0` | Back to the main menu |
@@ -136,7 +136,7 @@ When only one network applies, the script picks it and says so; otherwise it ask
 Super Auto is the answer to "just give me a working node". One key, one confirmation, and both networks are built and hardened. It will:
 
 - Build **mainnet-prune** and **testnet-prune** with the chain snapshot streamed on-the-fly from a fresh host in any zone.
-- Enable **autostart on reboot** (a crontab `@reboot` entry: mainnet starts 5 seconds after boot, testnet 1000 seconds later so they never compete for the disk).
+- Enable **autostart on reboot** (a crontab `@reboot` entry: mainnet starts 5 seconds after boot, testnet 1000 seconds after boot so they never compete for the disk).
 - Install the **sync watchdog**, a cron job every 5 minutes that restarts a node that is down, or whose height has stopped advancing while public height references keep moving. Its default config watches **mainnet only**: testnet is listed but disabled in `/opt/grin/conf/grin_node_watchdog.json`.
 - Install the **node event recorder**, a read-only timer (every 30 seconds) that logs each time a node goes down or comes back and saves its console and logs at the moment of failure. It never restarts anything. View it in [Admin & Maintenance](08-admin-maintenance.html#node-event-recorder) → Diagnostics → Node event recorder.
 - Set up **log rotation** for each `grin-server.log` (`/etc/logrotate.d/grin-node-<network>`: rotated once it passes 50 MB, seven compressed copies kept).
@@ -146,11 +146,13 @@ It wants **20 GB free** on the filesystem holding `/opt/grin/node`. With less it
 
 > **Danger:** Super Auto is **destructive on a server that already has a node.** It stops every Grin node and deletes the binaries and `chain_data` of *both* networks before rebuilding, and it only ever builds *pruned* nodes, so a full archive would be gone. It lists what it will remove (version, chain size, date) and asks you to type `REBUILD`, or `DELETE-ARCHIVE` when a full archive is among them. On an empty server it asks a plain `Proceed? [Y/n]`. Wallets are not touched, but if you have anything on the box you are not sure about, use `5` (install) or `4` (rebuild one network) instead.
 
-> **Warning:** Super Auto looks for a legacy `~/.grin` directory only **after** the wipe. If it finds one, answer `D` (delete) or `Enter` (keep): `0` there goes back to the menu with the old nodes already deleted and nothing rebuilt.
+> **Note:** Read from the code, not yet seen on a server. After your confirmation, Super Auto looks for a legacy `~/.grin` directory, updates the system and installs missing packages **before** it stops or deletes anything. So `0` at the `~/.grin` prompt, or a missing package that fails to install, leaves your existing nodes as they were. A failed system update only warns, and the wipe goes ahead. Any failure after the wipe starts, such as GitHub being unreachable at step 6, leaves the old nodes deleted and the rebuild unfinished.
 
 ## The custom wizard, step by step
 
-Key `5` (install) and the *full reinstall* under key `4` run the wizard, a pipeline of numbered steps. It prints each step's header as it goes, so you can follow along. At most prompts `0` goes back to the Script 01 menu.
+Key `5` (install) runs the wizard, a pipeline of numbered steps. The *full reinstall* under key `4` runs the same pipeline from step 4 on, without the legacy check, the package steps and the network choice. It prints each step's header as it goes, so you can follow along. At most prompts `0` goes back to the Script 01 menu.
+
+> **Warning:** A full reinstall deletes the node directory **before** step 4. If you back out with `0` from there on, or a step fails, that network is left without a working node. The API secrets and `.onion` are kept: build it again with key `5`, or with `4` if the status block still shows its directory.
 
 | Step | What happens | What you do |
 |------|--------------|-------------|
@@ -158,11 +160,11 @@ Key `5` (install) and the *full reinstall* under key `4` run the wizard, a pipel
 | 2 | Updates the package index and upgrades the system, then installs what is missing: `tar openssl libncurses tmux jq tor curl wget sqlite3 rsync cron`, and makes sure Tor is running | Wait |
 | 2b | Sets `vm.swappiness = 10` and `vm.vfs_cache_pressure = 50` (`/etc/sysctl.d/99-grin-node.conf`). Adds a `/swapfile` (2 GB, or 4 GB when RAM is under 2 GB) unless about 2 GB of swap already exists, so the node's memory-heavy start-up is not OOM-killed | Nothing |
 | 3 | Network selection, only the networks with no node yet | `1` mainnet, `2` testnet, `3` both (Enter = mainnet) |
-| 4 | Archive mode, then a free-space advisory (10 GB pruned, 25 GB full) | `1` pruned, `2` full (mainnet only); `Y` to go on with low space |
+| 4 | Archive mode, then a free-space advisory (10 GB pruned, 25 GB full) | `1` pruned, `2` full (mainnet only); `Y` to go on with low space. Any other key at the mode choice, or `2` on testnet, ends the action with an error rather than asking again |
 | 5 | Prepares the node directory `/opt/grin/node/<network>-<mode>`. A mainnet build removes the other mainnet mode's directory. A fresh install stops here if free disk is below 10 GB (pruned) or 25 GB (full). **Any existing files in the directory are removed without asking**, because the directory belongs to the node being built | Nothing |
-| 6 | Downloads the latest `grin` release for linux-x86_64 from GitHub. With *Both* it is downloaded once and copied to each node. A binary armed with [`G`](#compile-from-source-key-g) → `3` is meant to be used instead, but currently is not | Wait |
+| 6 | Downloads the latest `grin` release for linux-x86_64 from GitHub. With *Both* it is downloaded once and copied to each node. A binary armed with [`G`](#compile-from-source-key-g) → `3` is used instead: nothing is downloaded and the step prints `Using the SOURCE-BUILT binary: <name>` | Wait |
 | 7 | Runs `./grin server config` (`--testnet` for testnet) so grin writes its own default `grin-server.toml` with the right chain type and ports | Nothing |
-| 8 | Patches the config: archive mode, absolute paths for `chain_data`, the log and both API secret files; peer limits (999 in, 199 out); 10 rotated log files; file log level `Debug`. The stratum (mining) settings are left alone — they belong to [Script 07](07-mining-services.html) | Nothing |
+| 8 | Patches the config: archive mode, absolute paths for `chain_data`, the log and both API secret files; peer limits (999 in, 199 out); 10 rotated log files; file and console log levels `Debug`, so the tmux pane shows the same detail as the log. Only a build writes these: a chain_data rebuild, a binary update and `G` keep the node's existing config. The stratum (mining) settings are left alone — they belong to [Script 07](07-mining-services.html) | Nothing |
 | 8b | Ensures `.api_secret` and `.foreign_api_secret` exist, restored from the vault at `/opt/grin/keys/<network>/` if this is a rebuild, otherwise generated and saved there | Nothing |
 | 9 | Chain data source: transfer mode, then zone and host discovery | `1` on-the-fly, `2` full download, `3` slow sync; then a zone |
 | 10–12 | On-the-fly: one streaming step. Full download: SHA256 check of the archive, a free-space check (archive size × 1.2), extraction, then deletion of the archive | Confirm removal of an old archive or `chain_data/` if one exists |
@@ -180,7 +182,7 @@ With *Both* selected, steps 4–14d run for mainnet, then straight away for test
 
 ## Compile from source (key G)
 
-`G` opens its own menu for running a `grin` binary you compiled yourself. Use it when a fix is on grin's `staging` branch but not in a release yet, when your system's glibc is too old for the release binary, or to go back to the previous binary after an update.
+`G` opens its own menu for running a `grin` binary you compiled yourself. Use it when a fix is on grin's `staging` branch or in a pull request but not in a release yet, when your system's glibc is too old for the release binary, or to go back to the previous binary after an update.
 
 ```text
   1) Compile a branch/tag into a binary   (default: staging)
@@ -196,19 +198,27 @@ With *Both* selected, steps 4–14d run for mainnet, then straight away for test
 
 | Key | What it does |
 |-----|--------------|
-| `1` | Asks for a git ref (branch, tag or commit; Enter = `staging`), checks disk and memory, installs the build tools and Rust if missing, checks out `/opt/grin/src/grin` and runs `cargo build --release`. The result is kept in `/opt/grin/bin/`. Then offers `2` or `3` |
-| `2` | Installs a binary from `/opt/grin/bin/` into the installed node(s), keeping the old one as `<node_dir>/grin.prev` plus an archived copy in `/opt/grin/bin/`, then starts the node(s) |
-| `3` | Meant to arm the binary for the next install (key `5`, `4` full reinstall or `A`) in this Script 01 session, instead of the GitHub download. It does not carry over at the moment: see the known problem below |
-| `4` | Puts `grin.prev` back |
+| `1` | Asks for a git ref (branch, tag, commit or [pull request](#build-a-pull-request); Enter = `staging`), checks disk and memory, installs the build tools and Rust if missing, checks out `/opt/grin/src/grin` and runs `cargo build --release`. The result is kept in `/opt/grin/bin/`. Then offers `2` or `3` |
+| `2` | Installs a binary from `/opt/grin/bin/` into the node(s) you [pick](#which-nodes-g-touches), keeping the old one as `<node_dir>/grin.prev` plus an archived copy in `/opt/grin/bin/`, then starts them |
+| `3` | Arms the binary for every later install (key `5`, `4` full reinstall or `A`), instead of the GitHub download, until you leave Script 01. The status screen does not show that a binary is armed, and leaving Script 01 is the only way to clear it |
+| `4` | Puts `grin.prev` back on the node(s) you [pick](#which-nodes-g-touches), then starts them. Only nodes that have a `grin.prev` are offered |
 | `5` | Deletes the cargo `target/` cache. The next compile then takes much longer |
 
-After the checkout, `1` offers the **toolkit's grin patches** (`scripts/patches/grin/` in the toolkit): fixes the toolkit carries until grin ships its own. At the time of writing they speed up the daily chain compaction that can freeze an archive node's API for hours, and log how long each compaction took. They are applied all-or-nothing; if one does not fit the chosen ref you can build plain upstream instead. A patched binary's name contains `-tkp<N>-` so it never passes for a release.
+After the checkout, `1` tries the **toolkit's grin patches** (`scripts/patches/grin/` in the toolkit): fixes the toolkit carries until grin ships its own. At the time of writing they speed up the daily chain compaction that can freeze an archive node's API for hours, and log how long each compaction took. They are all-or-nothing, and the whole set gets a dry run first. If one does not fit the chosen ref, the script prints `Toolkit patches skipped: <file> does not apply to this ref.` and builds plain upstream **without asking**; a ref that already carries grin's own fix ends up here. If they all fit it asks `Apply them to this build?`, default Yes (No for a pull request), and No builds plain upstream. A patched binary's name contains `-tkp<N>-` so it never passes for a release.
 
 > **Warning:** A compile takes 20–45 minutes and needs about 5 GB of disk and 3 GB of RAM plus swap; the script warns below that and offers to add swap. Run it inside `tmux new -s grinbuild`, because a dropped SSH session kills the build. The patched build has not been compiled on a VPS yet.
 
-> **Note:** `2` and `4` stop **every** running node, then start only the nodes they changed, with no pause between mainnet and testnet. `2` changes every installed node, so a node that was stopped before is started too. `4` changes only nodes that have a `grin.prev`: a node without one is stopped and **left stopped**, so start it again with Script 01 → `1`. A rollback uses up `grin.prev`, so a second `4` has nothing to restore.
+### Build a pull request
 
-> **Warning:** Known problem, read from the code: `3` (and the `3` offered after a compile) does not survive leaving the `G` menu. The menu runs each action in a separate process, so the armed binary is forgotten when you go back to the Script 01 menu, and the next install downloads the GitHub release as usual. Until this is fixed, build the node normally, then use `G` → `2` to swap in your compiled binary.
+At the ref prompt, `pr/3939` compiles that grin pull request, to test a proposed fix (`#3939`, `pr3939` and `pull/3939` mean the same). Before anything is built the script warns `A pull request is UNREVIEWED code. Compiling it runs its build scripts as root.`, prints the head commit and a link to the pull request's commits, and asks `Build this exact commit?` with No as the default. Compare the commit with that page before you answer.
+
+### Which nodes G touches
+
+With two nodes to choose from, `2` and `4` ask which one: `1` mainnet, `2` testnet, `3` both, `0` back. There is no default, so **Enter cancels** and nothing changes. With only one candidate there is no question.
+
+Only the chosen nodes stop, each one just before its own swap, so the other node keeps running. With *both*, the second node waits 1000 seconds after the first restarts so the two do not boot at once: press Enter to skip the wait, and keep the session open until it ends. A chosen node is started afterwards even if it was stopped before. If the install fails, `grin.prev` is put back and the node restarted; if that cannot be done, the script says so and the node stays stopped. A rollback uses up `grin.prev`, so a second `4` has nothing to restore.
+
+> **Note:** The pull request option, the patch dry run, arming with `3` and the node choice above are read from the code, not yet seen on a server.
 
 ## After it finishes
 
@@ -224,12 +234,12 @@ A healthy node's log shows the tip height advancing every minute or so and a sta
 
 ```bash
 cd /opt/grin/node/mainnet-prune
-curl -s -u "grin:$(cat .api_secret)" -H 'Content-Type: application/json' \
+printf 'user = "grin:%s"\n' "$(cat .api_secret)" | curl -s -K - -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","method":"get_status","params":[],"id":1}' \
   http://127.0.0.1:3413/v2/owner
 ```
 
-Look for `"sync_status":"no_sync"` (grin's way of saying *synced*) and a `height` close to what a public explorer shows. For testnet use `testnet-prune` and port `13413`. **[Admin & Maintenance → Node Status & Sync](08-admin-maintenance.html#node-status-sync-key-5)** prints the same for every node.
+The secret reaches `curl` on its input rather than its command line, so it does not show in `ps`. Look for `"sync_status":"no_sync"` (grin's way of saying *synced*) and a `height` close to what a public explorer shows. For testnet use `testnet-prune` and port `13413`. **[Admin & Maintenance → Node Status & Sync](08-admin-maintenance.html#node-status-sync-key-5)** prints the same for every node.
 
 Make sure inbound **3414** (mainnet) and **13414** (testnet) are open in your provider's firewall or security group, otherwise other nodes cannot reach yours and you only make outbound connections.
 
@@ -240,7 +250,7 @@ Make sure inbound **3414** (mainnet) and **13414** (testnet) are open in your pr
 | `/opt/grin/node/<network>-<mode>/grin` | The node binary (`grin.prev` beside it after an update or source install) |
 | `…/grin-server.toml` | Node configuration (patched by the script; edit by hand only if you know grin's options) |
 | `…/chain_data/` | The chain database: the thing the snapshot filled |
-| `…/grin-server.log` | The node's own log; grin keeps 10 rotated files, and Super Auto adds daily rotation |
+| `…/grin-server.log` | The node's own log; grin keeps 10 rotated files, and Super Auto adds rotation once it passes 50 MB |
 | `…/.api_secret`, `…/.foreign_api_secret` | Credentials for the node's Owner and Foreign APIs; copies live in `/opt/grin/keys/<network>/` |
 | `/opt/grin/conf/grin_instances_location.conf` | Where each node is installed, read by every other script |
 | `/var/lib/tor/grin-<network>-raw-tcp/` | The Tor hidden-service identity (`hostname` holds the `.onion` address) |
@@ -249,6 +259,11 @@ Make sure inbound **3414** (mainnet) and **13414** (testnet) are open in your pr
 | `/opt/grin/bin/`, `/opt/grin/src/grin` | Compiled and replaced binaries; the source checkout for `G` |
 | `/etc/sysctl.d/99-grin-node.conf`, `/swapfile` | Memory tuning and swap from step 2b |
 | `/etc/logrotate.d/grin-node-<network>` | Log rotation (Super Auto only) |
+| Root crontab line tagged `grin_autostart_<network>` | The `@reboot` autostart (Super Auto, or step 14c) |
+| `/etc/cron.d/grin-node-sync-watchdog`, `/usr/local/bin/grin-node-sync-watchdog`, `/opt/grin/conf/grin_node_watchdog.json` | The sync watchdog and its settings (Super Auto, or Script 07) |
+| `/usr/local/bin/grin-node-events`, `grin-node-events.service` and `.timer` | The node event recorder (Super Auto, or step 14d) |
+| `grin-secret-sync.service` and `.timer` in `/etc/systemd/system/` | The 5-minute secret re-sync from step 14b |
+| `/etc/tor/torrc` | The hidden-service stanza from step 13b, between `# >>> grin-toolkit:<network>-raw-tcp >>>` markers |
 
 ### If you did not use Super Auto
 
@@ -266,6 +281,8 @@ The wizard offers autostart on reboot (step 14c) and the event recorder (step 14
 | Switch pruned ↔ full | Script 01 → `4` → mainnet → `2` *full reinstall*, then pick the other mode at step 4 (the old directory is removed) |
 | Add testnet next to mainnet | Script 01 → `5` *Install a node* |
 | Run a fix that is only on grin's `staging` branch | Script 01 → `G` → `1`, then `2` to install it into your node(s) |
+| Test a fix that is still a grin pull request | Script 01 → `G` → `1`, enter `pr/<number>`, check the commit, then `2` |
+| Build a new node with a compiled binary | Script 01 → `G` → `3`, back to the Script 01 menu, then `5`, `4` *full reinstall* or `A` without leaving Script 01 |
 | Change the API secrets deliberately | `grin-secret-sync --rotate <network>` from a root shell, then restart the node |
 
 ## Troubleshooting
@@ -280,7 +297,7 @@ The wizard offers autostart on reboot (step 14c) and the event recorder (step 14
 | `No fresh hosts in <zone> — trying all zones` | Every snapshot host in the chosen zone is older than the freshness limit or unreachable. The script carries on with all zones by itself |
 | `All known sources are unavailable or have chain data older than 5 days` (70 for a full archive) | No host in any zone is fresh. Paste a custom base URL, or `0` and choose slow sync |
 | `Insufficient disk space` in step 5, or the check fails in step 11 | Free space, or choose pruned instead of full. Old archives in `/opt/grin/node/*/` and `apt clean` are the usual quick wins; **[Admin & Maintenance → Disk cleanup](08-admin-maintenance.html#disk-cleanup-key-7)** does it from the menu |
-| `Another instance of script 01 is already running` | Script 01 is open in another SSH session. Finish or close that one. If none exists, remove `/var/run/grin-toolkit-01.lock` |
+| `Another instance of script 01 is already running` | Script 01 is open in another SSH session. Finish or close that one. The lock is freed when that process ends, so the message's advice to remove the lock file is not needed. If you see no other session, look for it with `pgrep -af 01_build_new_grin_node` |
 | Both nodes are slow or one gets killed shortly after boot | A small VPS cannot boot two Grin nodes at once. Start one, wait until its height advances, then start the other. Check `free -m`: the swapfile from step 2b should be active. Or run only mainnet |
 | `get_status` returns `401` | The secret in `.api_secret` does not match what the running node loaded, typically after editing the file while the node ran. Restart the node; the 5-minute `grin-secret-sync` timer keeps the consumers aligned |
 | Height stops advancing | Wait ten minutes first: a node occasionally pauses while it verifies a batch. If it stays stuck, `4` → *chain_data only* rebuilds the chain data from a fresh snapshot |

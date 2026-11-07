@@ -4,8 +4,8 @@ description: What server to rent, which Linux to install, how to run the Grin No
 section: Start here
 order: 1
 short: Getting started
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 By the end of this page you will have the toolkit installed on a server and its main menu open. Building the node itself is the next page, [Script 01](01-build-node.html).
@@ -27,6 +27,7 @@ By the end of this page you will have the toolkit installed on a server and its 
 |--------------|--------|
 | **Ubuntu 24.04 / 26.04 LTS** | **Tested and recommended** |
 | Ubuntu 22.04 LTS | **Not supported** — glibc 2.35. Many providers still default to it; pick 24.04 when you order |
+| Ubuntu older than 22.04 | **Not supported** — its glibc is older still. The start-up check says it "may work" and carries on, but the node will not run |
 | Debian 13 (trixie) or newer | Best effort, not fully tested. Debian 12 has glibc 2.36 — too old |
 | Other Debian-based (Mint, Pop!_OS, Kali…) | Best effort; must still meet the glibc floor |
 | Rocky Linux / AlmaLinux 10+ | Runs, not fully tested |
@@ -36,7 +37,7 @@ By the end of this page you will have the toolkit installed on a server and its 
 
 > **Danger:** On Ubuntu 22.04 (or any glibc below 2.38) **do not try to upgrade glibc.** `libc.so.6` is the library every program on the machine links against; installing a newer `libc6` from another release breaks the system, usually beyond SSH. Reinstall the VPS on Ubuntu 24.04, or compile the node yourself with Script 01 → key `G` (build from source), which links against whatever glibc you have. Note that the wallet products download the same kind of pre-built binary, so a source build is only a partial escape.
 
-> **Note:** The toolkit's start-up check still calls Ubuntu 22.04 "fully supported" and lets you in. It looks only at the version number; the glibc floor above is what decides whether the node runs.
+> **Note:** The toolkit's start-up check still calls Ubuntu 22.04 "fully supported" and lets you in, and only warns on anything older. It looks only at the version number; the glibc floor above is what decides whether the node runs.
 
 **Root access.** Every script runs with `sudo`. The toolkit creates a dedicated `grin` system user and runs the node as that user — you never run the node as root yourself.
 
@@ -64,18 +65,20 @@ The toolkit itself lives where you cloned it; everything it *installs* goes unde
 
 ## Your first run
 
-On start the main script checks your operating system. The distributions listed as unsupported above exit with a message, one it does not recognise gets a warning, and Rocky/Alma releases older than 10 get upgrade instructions. Then the menu appears:
+On start the main script checks your operating system. Fedora, Arch and the others the table says exit do so with a message, an Ubuntu older than 22.04 or a distribution it does not recognise gets a warning, and Rocky/Alma releases older than 10 get upgrade instructions. Then the menu appears:
 
 ```text
- Grin Node Toolkit v2026.10.25
+ Grin Node Toolkit v2026.11.08
  Keeping Grin shining bright...
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Core Features
 
   1) Build/Control Grin Node
   2) Manage Nginx Server
   3) Share Grin Chain Data / Schedule
 
+  ─────────────────────────────────────────
   Addons
 
   4) Publish Grin Node API
@@ -84,10 +87,13 @@ On start the main script checks your operating system. The distributions listed 
   7) Grin Mining Pool Deployment
   9) Grin Connectivity Hub (DEV)
 
+  ─────────────────────────────────────────
   8) Admin & Maintenance
 
+  ─────────────────────────────────────────
   0) Exit
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Select an option [0-9]:
 ```
 
@@ -155,12 +161,12 @@ The node's own log is `grin-server.log` in the node directory. A one-line health
 
 ```bash
 cd /opt/grin/node/mainnet-prune
-curl -s -u "grin:$(cat .api_secret)" -H 'Content-Type: application/json' \
+printf 'user = "grin:%s"\n' "$(cat .api_secret)" | curl -s -K - -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","method":"get_status","params":[],"id":1}' \
   http://127.0.0.1:3413/v2/owner
 ```
 
-The reply includes the current `height` and the number of connected peers. For testnet, use `testnet-prune` and port `13413`. **[Admin & Maintenance → Node Status & Sync](08-admin-maintenance.html#node-status-sync-key-5)** shows the same information for every node on one screen without any typing.
+The reply includes the current `height` and the number of connected peers. The secret reaches `curl` on its input rather than its command line, so it does not show in `ps`. For testnet, use `testnet-prune` and port `13413`. **[Admin & Maintenance → Node Status & Sync](08-admin-maintenance.html#node-status-sync-key-5)** shows the same information for every node on one screen without any typing.
 
 > **Tip:** Do not start the node by hand as root "just to test". A root-run node writes root-owned files into the node directory and the next start as the `grin` user fails with *permission denied*. Always start and stop nodes through the menu.
 

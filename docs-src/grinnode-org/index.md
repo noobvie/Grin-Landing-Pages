@@ -3,7 +3,7 @@ title: Grin Node Toolkit Manual
 description: A plain-language guide to installing and running a Grin node and its services on a Linux VPS with the Grin Node Toolkit — for first-time operators.
 section: Start here
 order: 0
-covers: 2026-10-24
+covers: 2026-11-06
 updated: 2026-10-24
 ---
 

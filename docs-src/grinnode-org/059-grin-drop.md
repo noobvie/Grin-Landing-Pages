@@ -5,8 +5,8 @@ section: Scripts
 order: 5.9
 short: Grin Drop
 label: Script 059
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 Grin Drop is a small public website that hands GRIN out and takes GRIN in. Visitors can **claim** a little GRIN from a hot wallet on your server — a *faucet*, useful for letting newcomers try a wallet on testnet, for events, or for tips on mainnet — and can **donate** to the same wallet. One domain serves both networks: `https://yourdomain.com/testnet/` and `/mainnet/`, each with its own wallet, service and settings, plus a unified homepage at `/`. The live example is [drop.grin.money](https://drop.grin.money), built with this script. On the wallet hub it is marked ✅ *ready*.
@@ -153,7 +153,7 @@ Choosing a network shows a status block — domain, mode, node, wallet, and the 
 |------|--------------|-------------|
 | Top menu `1` → `1` | Site name and domain are saved to `/opt/grin/conf/drop_shared.conf`. Then the SSL choice: Let's Encrypt writes a temporary port-80 vhost, runs `certbot --nginx`, and only then writes the real vhost; Cloudflare asks you to paste the certificate and key. The vhost is tested and loaded, the homepage files are copied, logrotate is set | Name, domain, `1` or `2`, an email for Let's Encrypt |
 | `2` or `3` | Enter the network | |
-| `1` → `1` Install new wallet | Creates the `grin` system user; downloads the pinned `grin-wallet` release (v5.5.0) through the toolkit's shared installer (checksum-verified); runs `grin-wallet init` (new: prints the seed; recover: asks for your words); asks whether to save the passphrase and the seed words; probes the public node list and the local node and lets you pick; patches `grin-wallet.toml` (a public node's address, or the local node's secret path plus the 5-minute secret-sync timer that keeps it valid across node rebuilds; Owner port 3420 / 13420; Foreign API on the same port; absolute secret path; 3 log files); fixes ownership to `grin` | `1` new or `2` recover; passphrase twice; **write the seed down**; `Y` to save the passphrase; pick the node (Enter takes the default) |
+| `1` → `1` Install new wallet | Creates the `grin` system user; downloads the pinned `grin-wallet` release (v5.5.0) through the toolkit's shared installer (checked against the release's SHA256 when the release publishes one; with no checksum to compare it warns and installs anyway); runs `grin-wallet init` (new: prints the seed; recover: asks for your words); asks whether to save the passphrase and the seed words; probes the public node list and the local node and lets you pick; patches `grin-wallet.toml` (a public node's address, or the local node's secret path plus the 5-minute secret-sync timer that keeps it valid across node rebuilds; Owner port 3420 / 13420; Foreign API on the same port; absolute secret path; 3 log files); fixes ownership to `grin` | `1` new or `2` recover; passphrase twice; **write the seed down**; `Y` to save the passphrase; pick the node (Enter takes the default) |
 | `2` → `1` Start listener | Kills any old session, starts `grin-wallet owner_api` in tmux as `grin`, waits 5 s, fetches the wallet address and saves it to the config. Then `3` and `4` in the same menu to enable the reboot cron (asks for a boot delay, default 300 s so the node is up first) and the 5-minute watchdog | Enter, then `3`, then `4` |
 | `3` Install | Node.js 24, `npm` latest; copies `server/` and `public_html/` into `/opt/grin/drop-<net>/`; `npm install`; log file + logrotate; creates the data directory; writes the config defaults; writes `grin-drop-<net>.service` | `Y` to enable at boot, `Y` to start now |
 | `4` Configure | Every setting with its current value in brackets; Enter keeps it, `0` cancels. Detects the wallet address from the running app or wallet. Restarts the service at the end | Set amounts and caps; read the Turnstile advice above |

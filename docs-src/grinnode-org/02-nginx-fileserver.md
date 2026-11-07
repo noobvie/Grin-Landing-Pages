@@ -5,8 +5,8 @@ section: Scripts
 order: 2
 short: File server
 label: Script 02
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 Script 02 turns your server into a web host for the [chain snapshots](reference-glossary.html#chain-data-and-snapshots) that Script 03 produces. It installs **[nginx](reference-glossary.html#nginx-vhosts-and-reverse-proxies)** (a web server), asks for a domain name, gets a free HTTPS certificate from **[Let's Encrypt](reference-glossary.html#let-s-encrypt-and-certbot)**, and publishes a folder as a plain, browsable download page. Anyone running Script 01 anywhere in the world can then fetch your snapshot instead of syncing from genesis — the same way you fetched one when you built your node.
@@ -91,7 +91,7 @@ Enter choice [0-11]:
 | `1` | Set up the **mainnet** snapshot domain — `fullmain.` or `prunemain.`, whichever matches the running node |
 | `2` | Set up the **testnet** snapshot domain — `prunetest.` |
 | `3` | Serve any other folder under any other domain; optionally with a monthly per-IP download quota |
-| `4` | Remove a domain: its nginx site, certificate and logs. The files are kept unless you say otherwise |
+| `4` | Remove a domain: its nginx site, certificate and logs. The files are kept unless you say otherwise. It does **not** touch [Script 03](03-share-chain-data.html)'s schedule, so a scheduled share keeps running (and stopping the node) for a domain that is gone — remove it in Script 03 too |
 | `5` | List every nginx site on the server with its folder, whether it is enabled and whether it has a certificate |
 | `6` / `7` | Add or lift [download speed caps](#per-ip-speed-caps-menu-6-and-7), per IP or for everyone |
 | `8` / `9` | Install [fail2ban with request throttling](#request-throttling-and-fail2ban-menu-8-and-9), then check its status and unban addresses |
@@ -164,7 +164,7 @@ A snapshot host serves multi-gigabyte files to strangers. The rest of the menu l
 
 ### Per-IP speed caps (menu 6 and 7)
 
-Speed caps are applied with nginx's `limit_rate`, which caps **each connection** — a client opening two connections gets twice the rate. Values are written as `500k` (500 KB/s) or `5m` (5 MB/s).
+Speed caps are applied with nginx's `limit_rate`, which caps **each connection** — a client opening two connections gets twice the rate. Values are written as `500k` (500 KB/s) or `5m` (5 MB/s). A per-IP cap takes **IPv4 addresses only**; the prompt refuses anything else as *Invalid IPv4 address*.
 
 ```text
   1) Set per-IP speed cap          - cap a specific IP address
@@ -186,6 +186,8 @@ Menu `7` undoes it: lift one IP's cap, clear every cap (default back to unlimite
 3. Writes `/etc/fail2ban/jail.d/nginx-grin.conf` with three jails: `nginx-limit-req` (10 rate-limit hits within 60 s → banned 10 min), `nginx-botsearch` (2 requests for known exploit paths → banned 1 h), and `nginx-http-auth` (3 failed logins → banned 1 h; rarely relevant on a file server).
 4. Enables and restarts fail2ban, then reloads nginx.
 
+If the box already has a `grin_req` zone from an older toolkit (the file `/etc/nginx/conf.d/grin_limit_req.conf`, or the zone defined anywhere else under `/etc/nginx`), step 2 keeps that zone and does not write `script02-fileserver.conf`; the rate you get is then whatever that older file says.
+
 > **Note:** There is no menu action that removes the request limit again. Menu `8`'s own screen says you can lift it later in *option 6*, but menus `6` and `7` only set and lift the *speed* caps. To turn throttling off, delete the two `limit_req` lines from the site in `/etc/nginx/sites-available/`, run `nginx -t` and reload nginx.
 
 Menu `9` is the day-to-day view:
@@ -202,17 +204,17 @@ Each report is also saved under `/opt/grin/logs/fail2ban_*.log`. `C` and `D` act
 
 ### Blocking addresses (menu 10)
 
-Blocks a single IP or a CIDR range (`1.2.3.0/24`) in whichever firewall is active — firewalld, ufw, or raw iptables — with an optional note, and records it in `/etc/grin-toolkit/blocked_ips.list` so you can unblock or list later. Blocks are server-wide, not just for nginx; with raw iptables the address is dropped in both directions, so this server cannot reach it either. With firewalld only IPv4 addresses can be blocked: the rule is written for the IPv4 family, so an IPv6 address fails with *failed to add drop rule*. With no firewall installed, blocking is unavailable and the script says so.
+Blocks a single IP or a CIDR range (`1.2.3.0/24`) in whichever firewall is active — firewalld, ufw, or raw iptables — with an optional note, and records it in `/etc/grin-toolkit/blocked_ips.list` so you can unblock or list later. Blocks are server-wide, not just for nginx; with raw iptables the address is dropped in both directions, so this server cannot reach it either. With firewalld only IPv4 addresses can be blocked: the rule is written for the IPv4 family, so an IPv6 address fails with *failed to add drop rule*. With no firewall installed, blocking is unavailable and the script says so. The list screen shows the toolkit's own record, and below it, on a box without firewalld, the `DROP` rules of the **iptables `INPUT` chain**. On ufw that is not ufw's own rule list (use `ufw status numbered` for that), so a block can be in the record and not in that second list.
 
 > **Warning:** With **ufw**, a block does not stop traffic to a port that is already allowed. ufw checks its rules in order and uses the first match. The script adds the block at the end of the list, after the `allow 80/tcp` and `allow 443/tcp` rules that the domain setup adds (and your SSH rule). So the address can still download from you. Until the toolkit is fixed, block by hand with `sudo ufw insert 1 deny from 1.2.3.4`, then check with `sudo ufw status numbered` that the deny line is above the allow lines. With **raw iptables**, blocks are not saved: a reboot clears them, but `blocked_ips.list` still lists them. Block the address again after a reboot, or save the rules with your distribution's tool (for example `iptables-persistent` on Debian/Ubuntu).
 
 ## The landing page (menu 11)
 
-The bare directory listing works but tells a visitor nothing. Menu `11` replaces it, for one of your snapshot sites, with a styled download page that:
+The bare directory listing works but tells a visitor nothing. Menu `11` replaces it, for one of your file-server sites (it lists every site on the box whose nginx config has `autoindex on;`, not only the snapshot hosts this script created), with a styled download page that:
 
 - shows the latest snapshot — name, size, checksum, how long ago it was built — with a download button, copy-ready install commands for Linux/macOS, Windows and streaming extraction, and a table of every file;
 - polls the site every 20 seconds, so while Script 03 is rebuilding the archive the page **blocks the download** and points visitors at the other mirrors from the community registry (`mirrors.json`, copied from `extensions/grinmasternodes.json`);
-- adds `robots.txt`, `sitemap.xml` and a logo, and optionally a Google Analytics 4 tag (asked once, kept in `/etc/grin-toolkit/landing.conf`; leave blank for none).
+- adds `robots.txt`, `sitemap.xml` and a logo, and optionally a Google Analytics 4 tag (the ID is kept in `/etc/grin-toolkit/landing.conf` and offered as the default each time the page is built or regenerated; enter `-` to turn it off, blank for none the first time).
 
 Pick the site, and the script writes `index.html` and the support files into the web root and patches the nginx site. Script 01 and other tools still get the plain listing: the root URL serves the page only to browsers and the file list to everything else, and a JSON listing is exposed at `/__listing/`. For an already-installed page the menu offers **Regenerate** (refresh page, mirror list and SEO files) or **Remove** (back to the bare listing).
 

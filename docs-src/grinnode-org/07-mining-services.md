@@ -5,8 +5,8 @@ section: Scripts
 order: 7
 short: Solo mining
 label: Script 07
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 A Grin **[miner](reference-glossary.html#miner-and-cuckatoo32)** is a machine that races to solve the *Cuckatoo32* proof-of-work; whoever solves the next block earns its **[coinbase](reference-glossary.html#coinbase-and-maturity)**, 60 GRIN, and there is a block about every minute. Today that machine is almost always an ASIC such as the iPollo G1 Mini. Most miners join a **[pool](reference-glossary.html#solo-mining-and-pools)** that shares blocks and rewards among many rigs for a fee. **Solo mining** cuts the pool out: your node itself hands work to your rig over the **[stratum](reference-glossary.html#stratum)** protocol, and when your rig finds a block the whole 60 GRIN lands in a wallet on your server — no fee, no account, no Tor, no payout to wait for. The price is luck: a single rig finds blocks rarely and irregularly, so solo suits an owner (or a trusted group) who wants full rewards and full control, not a smooth daily income. Script 07's *Solo private mining* sets it all up on the node you built with [Script 01](01-build-node.html); the live example is [solo.grin.money](https://solo.grin.money).
@@ -200,7 +200,7 @@ Enter the network branch and open **Wallet**:
 
 | Step | What happens | What you do |
 |------|--------------|-------------|
-| 1 | Downloads the pinned `grin-wallet` release (**v5.5.0**) into `/opt/grin/solowallet/<network>/` and checks its SHA256. The binary is kept in a shared store, so the *grin-wallet binary* screen can later update it or roll it back in one key | Wait |
+| 1 | Downloads the pinned `grin-wallet` release (**v5.5.0**) into `/opt/grin/solowallet/<network>/`, checked against the release's SHA256 when the release publishes one. The binary is kept in a shared store, so the *grin-wallet binary* screen can later update it or roll it back in one key | Wait |
 | 2 | Asks for the setup mode: **new wallet** (`init`) or **recover from seed**. If a wallet already exists it asks before overwriting | `1` or `2`. On mainnet, read the red warning: this wallet receives real GRIN |
 | 3 | Asks for a **passphrase** twice (at least 3 characters), then runs `grin-wallet init`. A new wallet prints its **24-word seed** — write it down now; it is the only way to recover the wallet on another machine. In recover mode grin-wallet asks you to type the 24 words itself | Type the passphrase; save the seed. If init prints `get_version: Cannot parse response`, ignore it — the wallet is not yet pointed at the node at that moment; the next step fixes it |
 | 4 | **Saves the passphrase** to `.passphrase` in the wallet directory, readable by root only (mode 600). This is what lets the listener open the wallet unattended after a reboot or a crash | Nothing — but understand it: anyone with root on this server can spend this wallet. Keep the balance low and sweep rewards out (see [Day-to-day](#day-to-day-operations)) |
@@ -273,6 +273,12 @@ The page (see solo.grin.money) shows per network: found blocks in 24 h and how m
 The collector keeps its durable state in **SQLite** — `/opt/grin/solo-stats/solo_mining_stats_main.db` and `…_test.db` — and regenerates the JSON files from it on every run. On mainnet, blocks are **chain-verified**: a found block is checked against the node at 60 confirmations and marked *orphaned* if the chain kept a different block at that height, and counted as matured only at 1,440 confirmations, so an orphan never inflates a payout. Testnet keeps no ledger, so its blocks are counted from the log alone.
 
 > **Note:** *Solo Health* answers the question every solo miner asks — why did I earn less than a pool would have paid for the same hashrate? At equal *effective* hashrate you earn the same on average, minus the pool's fee; a real gap is lost effective hashrate. The card breaks it into an **orphan rate** (from the verified ledger; high means slow block propagation or poor peering) and **stale / rejected share rates** parsed from the node log, over daily to all-time windows, per worker where the log names one. Over a short window the rest is variance.
+
+Under the card's meta line there is also a **Node binary** line: the node's version and the first 12 characters of its checksum, then either *changed* with the UTC time (and *was* the previous version) or *unchanged since tracking began* with a date. When the binary changed, a ⚑ marks the Daily, Weekly and Monthly rows that contain the change, with a key on that line. It is mainnet only and appears only while the payout split is on, because it is written by the same collector run that writes the split file. A stats page deployed before this update does not have it: run *Maintenance → Deploy new code*, which re-copies the page and the collector.
+
+> **Note:** The Node binary line was read from the code. It has not been seen on a server.
+
+If the stale-share rate looks high, [Admin & Maintenance](08-admin-maintenance.html) → `6` Diagnostics → `8` *Mining / stratum latency* measures how long your node takes to hand out a job after a new block. It never submits a share, and the steps that go further ask first: *Stack capture* pauses the node briefly, and it may offer to install `elfutils` and `gdb`. This too was read from code, not seen on a server.
 
 ### Step 6 — Watchdogs and autostart
 

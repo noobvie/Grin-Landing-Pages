@@ -3,8 +3,8 @@ title: Troubleshooting
 description: Every error message in the Grin Node Toolkit manual in one A–Z index, plus problems any script can hit: GLIBC, permissions, busy ports, certbot, 401.
 section: Reference
 order: 3
-covers: 2026-10-24
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 Start here when something fails and you are not sure which page covers it. The first section covers the problems that can come from any script; below it is an index of every symptom listed on the other pages of this manual, sorted A–Z, each linked to the row that explains it.

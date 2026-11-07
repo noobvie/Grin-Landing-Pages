@@ -5,8 +5,8 @@ section: Scripts
 order: 5.1
 short: Fidelius
 label: Script 051
-covers: 2026-10-23
-updated: 2026-10-24
+covers: 2026-11-06
+updated: 2026-11-06
 ---
 
 Fidelius is a wallet you use from a browser — on your phone, on a laptop, anywhere — while the wallet itself runs on your server next to your node. One small Node.js service manages as many wallets as you like, on mainnet and testnet at once, and the page is served by nginx over HTTPS behind a username and password. **The keys stay on the server**: every wallet is a normal `grin-wallet` whose seed lives in `/opt/grin/fidelius/`, and the browser only drives it. (Accio, the toolkit's other web wallet, is the opposite — keys in the visitor's browser, nothing on the server — and it has not run anywhere yet; see the [wallet hub](05-wallet-services.html#accio-the-public-web-wallet-not-yet-run).)
@@ -17,7 +17,7 @@ It is a **personal** wallet: it is meant for the server owner and nobody else. [
 
 ## What it does
 
-1. Installs the [pinned](reference-glossary.html#grin-wallet-pin) `grin-wallet` binary (**v5.4.1** — Fidelius keeps its own pin; every other wallet product in the toolkit now installs v5.5.0) once, shared by every wallet, plus Node.js 24, nginx, certbot, `htpasswd`, tor, `qrencode` and `jq`.
+1. Installs the [pinned](reference-glossary.html#grin-wallet-pin) `grin-wallet` binary (**v5.4.1** — Fidelius keeps its own pin; every other wallet product in the toolkit installs v5.5.0 by default, except that the pool's Migrate IN installs the version recorded in the migrated wallet folder) once, shared by every wallet, plus Node.js 24, nginx, certbot, `htpasswd`, tor, `qrencode` and `jq`.
 2. Deploys the app to `/opt/grin/fidelius/app/` and runs it as the [systemd service](reference-glossary.html#systemd-service) **`grin-fidelius`**, bound to `127.0.0.1:7420` — never reachable directly from outside.
 3. Writes an nginx site for your domain that proxies to that port with **Basic Auth**, a strict Content-Security-Policy, per-IP rate limits (3 sends a minute, 10 API calls a minute, 20 page loads a minute) and HTTPS from Let's Encrypt or a Cloudflare Origin certificate.
 4. Opens ports 80 and 443 in the firewall and adds a **fail2ban** jail: five wrong passwords in ten minutes bans the address for an hour.
@@ -99,7 +99,7 @@ The status block at the top updates on every refresh, so you can see at a glance
 
 | Step | What happens | What you do |
 |------|--------------|-------------|
-| 1 | **grin-wallet binary.** Opens the toolkit's shared binary screen: `1` installs the pinned **v5.4.1** (downloaded from GitHub into `/opt/grin/wallet-bin/<tag>/`, SHA256-verified, copied to `/opt/grin/fidelius/grin-wallet`), `2` updates to upstream's latest after a warning, `3` rolls back to the previous version, `4` picks any cached version, `5` re-verifies the installed file, `6` prunes the cache. It stops and restarts `grin-fidelius` around a swap | `1` |
+| 1 | **grin-wallet binary.** Opens the toolkit's shared binary screen: `1` installs the pinned **v5.4.1** (downloaded from GitHub into `/opt/grin/wallet-bin/<tag>/`, checked against the release's SHA256 when the release publishes one, copied to `/opt/grin/fidelius/grin-wallet`; a mismatch stops the install, and with no checksum to compare it warns `the binary is unverified` and installs anyway), `2` updates to upstream's latest after a warning, `3` rolls back to the previous version, `4` picks any cached version, `5` re-verifies the installed file, `6` prunes the cache. If wallets are still running the old binary after a swap it asks `Restart the listener now? [y/N]`: `y` stops and starts `grin-fidelius`, `N` leaves them on the old binary | `1` |
 | 2 | **Dependencies.** Checks for `node`, `nginx`, `certbot`, `htpasswd`, `tor`, `qrencode`, `jq`; asks `Install missing packages now? [Y/n/0]`. If Apache is holding port 80 it offers to stop and disable it. Installs **Node.js 24** from NodeSource when `node` is missing or older than 24 (a newer one is left alone), then `nginx certbot python3-certbot-nginx apache2-utils tor qrencode jq`, and enables tor. Finally checks that `script` (util-linux) exists — wallet **recovery** needs it, because grin-wallet asks for the seed phrase on a real terminal | Enter |
 | 3 | **Deploy app + systemd.** Lists what it will do, asks `Proceed? [Y/n/0]`, then copies `server.js`, `transporter.js`, `package.json` and `client/` to `/opt/grin/fidelius/app/`, runs `npm install --omit=dev`, writes `wallet.env`, the unit file `/etc/systemd/system/grin-fidelius.service` (logging to `/opt/grin/logs/grin-fidelius.log`, rotated weekly), enables and starts the service, and installs the `grin-secret-sync` timer | Enter |
 | 4 | **Configure nginx.** Asks for the domain (validated as a hostname), then `Write HTTP vhost (step 5 adds HTTPS)? [Y/n/0]`. Creates the three rate-limit zones in `/etc/nginx/conf.d/script051-fidelius-ratelimit.conf` and writes an **HTTP-only** site at `/etc/nginx/sites-available/grin-fidelius` that redirects everything to HTTPS; `nginx -t`, reload, and the domain is saved to `config.conf` and `wallet.env` (the app checks the `Host` header against it) | Domain, Enter |
@@ -236,7 +236,7 @@ Hub key `3` opens **Grin XP** (script `051x`): a wallet page dressed up as a Win
 | Change the Basic Auth password | Script 051 → `6` → `1` (add/update the user) |
 | Add a second login user | Script 051 → `6`, type the new username, then `1` |
 | Change the domain | `9` to save it, then `4` and `5` again to rewrite the site and get a certificate for the new name |
-| Update `grin-wallet` | `1` → `1` for the pinned version; roll back with `3` if unlocking breaks. Wallets pick it up when the service restarts, which the screen does for you |
+| Update `grin-wallet` | `1` → `1` for the pinned version; roll back with `3` if unlocking breaks. Wallets pick it up when the service restarts: answer `y` at `Restart the listener now?` (asked only if a wallet is running the old binary), which locks every wallet |
 | Update the app after a toolkit `git pull` | `3` again — it re-copies the files and restarts the service; wallets and settings are untouched |
 | See the app's log | `tail -f /opt/grin/logs/grin-fidelius.log` |
 | Restart the service | `systemctl restart grin-fidelius` — every wallet locks; receiving resumes when you unlock and start the listener again |
