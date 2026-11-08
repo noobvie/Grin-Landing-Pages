@@ -7,7 +7,8 @@
 // Zero dependencies on purpose: the landing-page repo has no package.json and the
 // deploy script (site_manager.sh) rsyncs web/<site>/ as-is, so the rendered HTML is
 // committed and nothing runs on the server. Sources live in docs-src/grinnode-org/,
-// output goes to web/grinnode-org-2026/docs/. Only the subset of Markdown used by
+// output goes to web/<EDITION>/docs/ (EDITION below names the current yearly edition of
+// the landing page, e.g. grinnode-org-2027). Only the subset of Markdown used by
 // the manual is supported — see renderMarkdown() — which is why this file is small.
 //
 // Front matter (--- block at the top of every page):
@@ -39,7 +40,10 @@ import { execSync } from "node:child_process";
 
 const ROOT     = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC_DIR  = join(ROOT, "docs-src", "grinnode-org");
-const SITE_DIR = join(ROOT, "web", "grinnode-org-2026");
+// The current landing-page edition: the folder the manual, sitemap.xml and robots.txt
+// are written into. A new yearly edition is a change to this one line.
+const EDITION  = "grinnode-org-2027";
+const SITE_DIR = join(ROOT, "web", EDITION);
 const OUT_DIR  = join(SITE_DIR, "docs");
 const SITE_URL = "https://grinnode.org";
 const DOCS_URL = `${SITE_URL}/docs/`;
@@ -268,15 +272,16 @@ function page(p, pages, idx) {
   const pager = `<nav class="pager" aria-label="Previous and next page">${prev ? `<a class="pager-prev" href="${prev.slug}.html"><span>Previous</span><strong>${esc(prev.meta.title)}</strong></a>` : "<span></span>"}${next ? `<a class="pager-next" href="${next.slug}.html"><span>Next</span><strong>${esc(next.meta.title)}</strong></a>` : ""}</nav>`;
 
   return cleanHrefs(`<!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>${esc(fullTitle)}</title>
   <meta name="description" content="${esc(meta.description)}">
   <meta name="robots" content="index, follow">
   <meta name="author" content="GrinNode.org">
-  <meta name="theme-color" content="#3dffa0">
+  <meta name="theme-color" content="#050a06">
+  <meta name="color-scheme" content="dark">
   <link rel="canonical" href="${url}">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="article">
@@ -284,34 +289,35 @@ function page(p, pages, idx) {
   <meta property="og:title" content="${esc(fullTitle)}">
   <meta property="og:description" content="${esc(meta.description)}">
   <meta property="og:url" content="${url}">
-  <meta property="og:image" content="${SITE_URL}/og-image.svg">
+  <meta property="og:image" content="${SITE_URL}/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(fullTitle)}">
   <meta name="twitter:description" content="${esc(meta.description)}">
-  <meta name="twitter:image" content="${SITE_URL}/og-image.svg">
+  <meta name="twitter:image" content="${SITE_URL}/og-image.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&amp;family=VT323&amp;display=swap">
   <link rel="stylesheet" href="docs.css">
-  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
   <script type="application/ld+json">${JSON.stringify(ld)}</script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <header class="header">
     <nav class="nav" aria-label="Primary navigation">
-      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><span>[grinnode.org]</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
       <div class="links">
-        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+        <a href="../#why-nodes">Why nodes</a><a href="../#run">Run a node</a><a href="../#toolkit">Toolkit</a><a href="../#grim">Wallets &amp; Docker</a><a href="../#why-grin">Why Grin</a><a href="../#status">Status</a>
       </div>
       <div class="actions">
-        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
-        <a class="btn ghost" href="${REPO_URL}" target="_blank" rel="noopener">GitHub</a>
-        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+        <a class="btn" href="${REPO_URL}" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
       </div>
     </nav>
   </header>
 
   <div class="layout">
     <aside class="sidebar" id="sidebar" aria-label="Manual contents">
-      <nav>${sidebar(pages, p)}</nav>
+      <nav>${sidebar(pages, p)}<div class="nav-group site-links"><div class="nav-title">grinnode.org</div><a href="../#why-nodes">Why nodes</a><a href="../#run">Run a node</a><a href="../#toolkit">Toolkit</a><a href="../#grim">Wallets &amp; Docker</a><a href="../#why-grin">Why Grin</a><a href="../#status">Status</a></div></nav>
     </aside>
 
     <main id="main">
@@ -336,13 +342,9 @@ ${html}
     </div>
   </footer>
 
+  <span id="copyStatus" class="sr" aria-live="polite"></span>
   <script>
     (function () {
-      var root = document.documentElement;
-      document.getElementById("themeToggle").addEventListener("click", function () {
-        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
-        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
-      });
       var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
       btn.addEventListener("click", function () {
         var open = side.classList.toggle("open");
@@ -350,10 +352,19 @@ ${html}
       });
       document.querySelectorAll(".copy").forEach(function (b) {
         b.addEventListener("click", function () {
-          var code = b.parentNode.querySelector("code").textContent;
-          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
-          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
-          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+          var el = b.parentNode.querySelector("code"), status = document.getElementById("copyStatus");
+          var say = function (msg) {
+            b.textContent = msg; status.textContent = msg;
+            clearTimeout(b._t); b._t = setTimeout(function () { b.textContent = "Copy"; status.textContent = ""; }, 2000);
+          };
+          var select = function () {
+            var r = document.createRange(); r.selectNodeContents(el); var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+            say("Selected \u2014 copy it");
+          };
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.textContent).then(function () { say("Copied"); }, select);
+            else select();
+          } catch (e) { select(); }
         });
       });
       var filter = document.getElementById("symptomFilter");
@@ -377,6 +388,16 @@ ${html}
           });
         }, { rootMargin: "-80px 0px -70% 0px" });
         Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+      if (links.length) {
+        // The active entry is the last heading at or above the bottom of the sticky header.
+        var settle = function () {
+          var band = document.querySelector(".header").getBoundingClientRect().bottom + 24, cur = null;
+          links.forEach(function (a) { var h = document.getElementById(a.getAttribute("href").slice(1)); if (h && h.getBoundingClientRect().top <= band) cur = a; });
+          links.forEach(function (a) { a.classList.toggle("active", a === cur); });
+        };
+        addEventListener("load", function () { requestAnimationFrame(settle); });
+        addEventListener("hashchange", function () { requestAnimationFrame(settle); });
       }
     })();
   </script>
@@ -437,7 +458,7 @@ for (const p of pages) {
 const rendered = pages.map((p, i) => ({ path: join(OUT_DIR, `${p.slug}.html`), html: page(p, pages, i) }));
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${SITE_URL}/</loc><lastmod>${gitDate("web/grinnode-org-2026/index.html") || today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>${SITE_URL}/</loc><lastmod>${gitDate(`web/${EDITION}/index.html`) || today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
 ${pages.map((p) => `  <url><loc>${pageUrl(p.slug)}</loc><lastmod>${p.meta.updated || today}</lastmod><changefreq>monthly</changefreq><priority>${p.slug === "index" ? "0.9" : "0.8"}</priority></url>`).join("\n")}
 </urlset>
 `;

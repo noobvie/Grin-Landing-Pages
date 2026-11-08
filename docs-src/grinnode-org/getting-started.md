@@ -12,7 +12,7 @@ By the end of this page you will have the toolkit installed on a server and its 
 
 ## What you need
 
-**A VPS (virtual private server).** A small, always-on Linux box rented from a hosting provider. You connect to it over SSH from your own computer; the node runs there 24/7. A low-cost SSD or NVMe VPS is plenty — around **US$30 a year** buys enough for a pruned node. [LowEndTalk](https://lowendtalk.com) and [LowEndBox](https://lowendbox.com) list deals.
+**A VPS (virtual private server).** A small, always-on Linux box rented from a hosting provider. You connect to it over SSH from your own computer; the node runs there 24/7. A low-cost SSD or NVMe VPS is plenty — around **US$20 a year** buys enough for a pruned node. [LowEndTalk](https://lowendtalk.com) and [LowEndBox](https://lowendbox.com) list deals.
 
 | Resource | Minimum | Comfortable |
 |----------|---------|-------------|

@@ -1,13 +1,14 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Fidelius — your personal web wallet — Grin Node Toolkit Manual</title>
   <meta name="description" content="How Script 051 deploys Fidelius, a browser wallet for your own node with server-held keys behind nginx, Basic Auth and HTTPS, plus WireGuard-only access.">
   <meta name="robots" content="index, follow">
   <meta name="author" content="GrinNode.org">
-  <meta name="theme-color" content="#3dffa0">
+  <meta name="theme-color" content="#050a06">
+  <meta name="color-scheme" content="dark">
   <link rel="canonical" href="https://grinnode.org/docs/051-fidelius">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="article">
@@ -15,34 +16,35 @@
   <meta property="og:title" content="Fidelius — your personal web wallet — Grin Node Toolkit Manual">
   <meta property="og:description" content="How Script 051 deploys Fidelius, a browser wallet for your own node with server-held keys behind nginx, Basic Auth and HTTPS, plus WireGuard-only access.">
   <meta property="og:url" content="https://grinnode.org/docs/051-fidelius">
-  <meta property="og:image" content="https://grinnode.org/og-image.svg">
+  <meta property="og:image" content="https://grinnode.org/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Fidelius — your personal web wallet — Grin Node Toolkit Manual">
   <meta name="twitter:description" content="How Script 051 deploys Fidelius, a browser wallet for your own node with server-held keys behind nginx, Basic Auth and HTTPS, plus WireGuard-only access.">
-  <meta name="twitter:image" content="https://grinnode.org/og-image.svg">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&amp;family=VT323&amp;display=swap">
   <link rel="stylesheet" href="docs.css">
-  <script>(function(){try{var t=localStorage.getItem("grinnode-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;else if(matchMedia("(prefers-color-scheme: light)").matches)document.documentElement.dataset.theme="light";}catch(e){}})();</script>
   <script type="application/ld+json">[{"@context":"https://schema.org","@type":"TechArticle","headline":"Fidelius — your personal web wallet","description":"How Script 051 deploys Fidelius, a browser wallet for your own node with server-held keys behind nginx, Basic Auth and HTTPS, plus WireGuard-only access.","url":"https://grinnode.org/docs/051-fidelius","dateModified":"2026-11-06","inLanguage":"en","isPartOf":{"@type":"WebSite","name":"GrinNode.org","url":"https://grinnode.org/"},"about":{"@type":"SoftwareApplication","name":"Grin Node Toolkit","operatingSystem":"Linux","applicationCategory":"DeveloperApplication","url":"https://github.com/noobvie/Grin-Node-Toolkit"},"author":{"@type":"Organization","name":"GrinNode.org","url":"https://grinnode.org/"}},{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"GrinNode.org","item":"https://grinnode.org/"},{"@type":"ListItem","position":2,"name":"Manual","item":"https://grinnode.org/docs/"},{"@type":"ListItem","position":3,"name":"Fidelius — your personal web wallet","item":"https://grinnode.org/docs/051-fidelius"}]}]</script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <header class="header">
     <nav class="nav" aria-label="Primary navigation">
-      <div class="brand"><a href="../" aria-label="GrinNode.org home"><img src="../favicon.svg" width="32" height="32" alt="" aria-hidden="true" class="brand-logo"><span>GrinNode.org</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
+      <div class="brand"><a href="../" aria-label="GrinNode.org home"><span>[grinnode.org]</span></a><span class="brand-sep" aria-hidden="true">/</span><a href="./" class="brand-manual">Manual</a></div>
       <div class="links">
-        <a href="../#run">Run a node</a><a href="../#grim">Wallets</a><a href="../#why-grin">Why Grin</a>
+        <a href="../#why-nodes">Why nodes</a><a href="../#run">Run a node</a><a href="../#toolkit">Toolkit</a><a href="../#grim">Wallets &amp; Docker</a><a href="../#why-grin">Why Grin</a><a href="../#status">Status</a>
       </div>
       <div class="actions">
-        <button class="theme" id="themeToggle" type="button" aria-label="Toggle light and dark theme"><span class="sun" aria-hidden="true"></span></button>
-        <a class="btn ghost" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
-        <button class="btn ghost menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
+        <a class="btn" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
       </div>
     </nav>
   </header>
 
   <div class="layout">
     <aside class="sidebar" id="sidebar" aria-label="Manual contents">
-      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="./">Grin Node Toolkit Manual</a><a href="getting-started">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="051-fidelius" aria-current="page"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="06-global-health"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="089-backup-restore"><span class="nav-label">Script 089</span>Back up and restore</a><a href="09-connectivity-hub"><span class="nav-label">Script 09</span>Connectivity hub — relay and slate transport</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths">Ports and paths</a><a href="reference-glossary">Glossary</a><a href="reference-troubleshooting">Troubleshooting</a></div></nav>
+      <nav><div class="nav-group"><div class="nav-title">Start here</div><a href="./">Grin Node Toolkit Manual</a><a href="getting-started">Getting started</a></div><div class="nav-group"><div class="nav-title">Scripts</div><a href="01-build-node"><span class="nav-label">Script 01</span>Build or control a Grin node</a><a href="02-nginx-fileserver"><span class="nav-label">Script 02</span>Host a file server for chain snapshots</a><a href="03-share-chain-data"><span class="nav-label">Script 03</span>Share your chain data with the community</a><a href="04-publish-node-api"><span class="nav-label">Script 04</span>Publish your node's API for wallets and explorers</a><a href="05-wallet-services"><span class="nav-label">Script 05</span>Wallet &amp; payment services</a><a href="051-fidelius" aria-current="page"><span class="nav-label">Script 051</span>Fidelius — your personal web wallet</a><a href="053-woocommerce"><span class="nav-label">Script 053</span>Accept GRIN in WooCommerce</a><a href="059-grin-drop"><span class="nav-label">Script 059</span>Grin Drop — a giveaway and donation portal</a><a href="06-global-health"><span class="nav-label">Script 06</span>Network dashboard, peer map and a tiny explorer</a><a href="06b-grinscan"><span class="nav-label">Script 06b</span>GrinScan — a self-hosted block explorer</a><a href="07-mining-services"><span class="nav-label">Script 07</span>Mine Grin on your own node (solo)</a><a href="07-public-pool"><span class="nav-label">Script 07</span>Run a public mining pool</a><a href="08-admin-maintenance"><span class="nav-label">Script 08</span>Admin and maintenance</a><a href="089-backup-restore"><span class="nav-label">Script 089</span>Back up and restore</a><a href="09-connectivity-hub"><span class="nav-label">Script 09</span>Connectivity hub — relay and slate transport</a></div><div class="nav-group"><div class="nav-title">Reference</div><a href="reference-ports-and-paths">Ports and paths</a><a href="reference-glossary">Glossary</a><a href="reference-troubleshooting">Troubleshooting</a></div><div class="nav-group site-links"><div class="nav-title">grinnode.org</div><a href="../#why-nodes">Why nodes</a><a href="../#run">Run a node</a><a href="../#toolkit">Toolkit</a><a href="../#grim">Wallets &amp; Docker</a><a href="../#why-grin">Why Grin</a><a href="../#status">Status</a></div></nav>
     </aside>
 
     <main id="main">
@@ -168,13 +170,9 @@ Select [1-7 / 0]:</code></pre></div>
     </div>
   </footer>
 
+  <span id="copyStatus" class="sr" aria-live="polite"></span>
   <script>
     (function () {
-      var root = document.documentElement;
-      document.getElementById("themeToggle").addEventListener("click", function () {
-        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
-        try { localStorage.setItem("grinnode-theme", root.dataset.theme); } catch (e) {}
-      });
       var side = document.getElementById("sidebar"), btn = document.getElementById("menuToggle");
       btn.addEventListener("click", function () {
         var open = side.classList.toggle("open");
@@ -182,10 +180,19 @@ Select [1-7 / 0]:</code></pre></div>
       });
       document.querySelectorAll(".copy").forEach(function (b) {
         b.addEventListener("click", function () {
-          var code = b.parentNode.querySelector("code").textContent;
-          var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
-          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function () {});
-          else { var r = document.createRange(); r.selectNodeContents(b.parentNode.querySelector("code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); try { document.execCommand("copy"); done(); } catch (e) {} s.removeAllRanges(); }
+          var el = b.parentNode.querySelector("code"), status = document.getElementById("copyStatus");
+          var say = function (msg) {
+            b.textContent = msg; status.textContent = msg;
+            clearTimeout(b._t); b._t = setTimeout(function () { b.textContent = "Copy"; status.textContent = ""; }, 2000);
+          };
+          var select = function () {
+            var r = document.createRange(); r.selectNodeContents(el); var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+            say("Selected — copy it");
+          };
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(el.textContent).then(function () { say("Copied"); }, select);
+            else select();
+          } catch (e) { select(); }
         });
       });
       var filter = document.getElementById("symptomFilter");
@@ -209,6 +216,16 @@ Select [1-7 / 0]:</code></pre></div>
           });
         }, { rootMargin: "-80px 0px -70% 0px" });
         Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      }
+      if (links.length) {
+        // The active entry is the last heading at or above the bottom of the sticky header.
+        var settle = function () {
+          var band = document.querySelector(".header").getBoundingClientRect().bottom + 24, cur = null;
+          links.forEach(function (a) { var h = document.getElementById(a.getAttribute("href").slice(1)); if (h && h.getBoundingClientRect().top <= band) cur = a; });
+          links.forEach(function (a) { a.classList.toggle("active", a === cur); });
+        };
+        addEventListener("load", function () { requestAnimationFrame(settle); });
+        addEventListener("hashchange", function () { requestAnimationFrame(settle); });
       }
     })();
   </script>

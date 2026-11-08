@@ -2,7 +2,9 @@
 
 Landing pages for the Grin ecosystem — currently
 [grin.money](https://grin.money) and [grinnode.org](https://grinnode.org).
-Each edition lives in `web/<site-name>-<year>/` so every version is preserved.
+Each edition lives in `web/<site-name>-<year>/` so every version is preserved;
+a past edition can stay online under `/<year>/` of its domain (see
+[Archived editions](#archived-editions-year)).
 
 Sites are plain HTML/CSS/JS — zero dependencies, zero build step.
 
@@ -17,7 +19,7 @@ pick a menu option, follow the prompts.
 Grin-Landing-Pages/
 ├── site_manager.sh                # interactive menu — run this
 ├── deploy/
-│   ├── sites.conf                 # site manifest (batch git deploy: key→domain)
+│   ├── sites.conf                 # site manifest (key→domain, archived editions)
 │   ├── analytics.conf             # GA4 site→ID map
 │   ├── custom_repo.conf           # git deploy config
 │   └── installer.conf             # install.ps1 publishing config
@@ -26,10 +28,12 @@ Grin-Landing-Pages/
 ├── docs-src/
 │   └── grinnode-org/              # Markdown source of the toolkit manual
 ├── tools/
-│   └── build-docs.mjs             # renders docs-src → web/grinnode-org-2026/docs/
+│   └── build-docs.mjs             # renders docs-src → web/grinnode-org-2027/docs/
 └── web/
     ├── grin-money-2026/           # grin.money
-    └── grinnode-org-2026/         # grinnode.org  (+ docs/ = the generated manual)
+    ├── grinnode-org-2027/         # grinnode.org  (+ docs/ = the generated manual)
+    ├── grinnode-org-2026/         # grinnode.org/2026/ — archived edition
+    └── fidelius-2026/             # fidelius.grin.money
 ```
 
 Config files in `deploy/` are committed with working defaults — edit in place.
@@ -41,17 +45,20 @@ Config files in `deploy/` are committed with working defaults — edit in place.
 | Directory | Domain | Purpose |
 |---|---|---|
 | `web/grin-money-2026/` | [grin.money](https://grin.money) | Main landing — wallets, ecosystem, toolkit |
-| `web/grinnode-org-2026/` | [grinnode.org](https://grinnode.org) | Node operator hub — Linux toolkit, Grim wallet |
-| `web/grinnode-org-2026/docs/` | [grinnode.org/docs/](https://grinnode.org/docs/) | Grin Node Toolkit manual — **generated, do not edit the HTML by hand** (only `docs.css` is hand-maintained; see below) |
+| `web/grinnode-org-2027/` | [grinnode.org](https://grinnode.org) | Node operator hub — Linux toolkit, Grim wallet |
+| `web/grinnode-org-2027/docs/` | [grinnode.org/docs/](https://grinnode.org/docs/) | Grin Node Toolkit manual — **generated, do not edit the HTML by hand** (only `docs.css` is hand-maintained; see below) |
+| `web/grinnode-org-2026/` | [grinnode.org/2026/](https://grinnode.org/2026/) | Archived 2026 edition — published by the grinnode.org deploy, `noindex`, banner to the current site |
 
 ---
 
-## Toolkit manual (`docs-src/` → `web/grinnode-org-2026/docs/`)
+## Toolkit manual (`docs-src/` → `web/grinnode-org-2027/docs/`)
 
 The manual at grinnode.org/docs/ is written in Markdown under
 `docs-src/grinnode-org/`, one file per page, and rendered to static HTML by a
 zero-dependency Node script. The rendered HTML **is committed**, so the server
-still deploys plain files and nothing runs there.
+still deploys plain files and nothing runs there. The output edition folder
+(`web/grinnode-org-2027/`) is one constant near the top of
+`tools/build-docs.mjs` — change it there when a new edition becomes current.
 
 ```bash
 node tools/build-docs.mjs            # render every page + sitemap.xml + robots.txt
@@ -162,8 +169,8 @@ the template and read, not run through `nginx -t` — do that on the server.)
   2026-11-06 `curl -sI https://grinnode.org/docs/01-build-node` → 200, `….html`
   → 301, `/docs/nope` → 404 (the clean-URL block is in place), but that page
   still shows *Covers 23 Oct 2026* and the live home page still says *Nym
-  mixnet*. Deploy the rebuilt `web/grinnode-org-2026/`: `docs/`, `sitemap.xml`
-  and `index.html`.
+  mixnet*. Deploy grinnode.org (`web/grinnode-org-2027/` with the 2026 edition
+  archived under `/2026/`).
 - **Warnings that wait on toolkit fixes.** Several pages warn about code bugs
   logged in the toolkit's findings log (*Act on these first*): Drop's `-p`
   passphrase (059 Status), the ufw block order (Warning on 02), the pool's `Z`
@@ -238,14 +245,17 @@ pass — each `web/<key>/` is copied straight from the clone on the server to it
 web dir. Web dir is derived from the domain automatically — no per-site typing:
 
 ```
-# <site_key>          <domain>          [web_dir_override]
+# <site_key>          <domain>          [web_dir_override | archive]
 grin-money-2026       grin.money
-grinnode-org-2026     grinnode.org
+grinnode-org-2027     grinnode.org
+grinnode-org-2026     grinnode.org      archive
 some-other-2026       example.org       /var/www/custom/pub
 ```
 
 - `site_key` matches a subdirectory under `web/` (same key as `analytics.conf`).
-- `domain` → web dir `<nginx_root>/<domain>/public` (override column optional).
+- `domain` → web dir `<nginx_root>/<domain>/public` (override column optional;
+  it must start with `/`).
+- `archive` marks a past edition — see below.
 - GA4 is joined on `site_key` from `analytics.conf` and applied per site.
 
 When ≥2 sites are listed, **Deploy Site (3)** detects them and asks
@@ -267,6 +277,49 @@ first with **option 9** or `git pull`. Each `web/<key>/` is rsynced to its web
 dir, GA4 applied, ownership reapplied. The run prints a `deployed / skipped`
 summary and exits non-zero if any site failed (cron-friendly).
 
+### Archived editions (`/<year>/`)
+
+A row whose third column is `archive` is a past edition. It is never deployed
+on its own: whenever its domain's current edition deploys, the site is built in
+a temp staging dir — the current edition at the root, each archive under
+`/<year>/` (the trailing `-YYYY` of its `site_key`) — GA4 is applied to the
+staging dir, and **one** rsync publishes it (`--delay-updates --delete-after`).
+So the archive is part of every deploy and never deleted by one. For each
+archived copy:
+
+- `docs/`, `robots.txt` and `sitemap.xml` are left out — the current
+  edition's copies at the root serve the whole domain;
+- every `*.html` / `*.htm` gets `<meta name="robots" content="noindex, follow">`
+  (replacing the page's own) and its canonical set to `https://<domain>/`;
+- relative `href=` / `src=` values become absolute `/<year>/…` —
+  `try_files $uri $uri/` can serve `/2026` without a trailing-slash redirect,
+  and a relative `favicon.svg` would then load the current edition's file;
+- manual links (`docs/…`) go to the current manual, extension-less:
+  `docs/getting-started.html` → `/docs/getting-started`;
+- a one-line banner after `<body>`: *You're viewing the 2026 edition of
+  grinnode.org · see the current site* (inline-styled, normal flow).
+
+The rewrite is idempotent, keeps each file's mode, and touches only the staged
+copy — `web/` is never modified. A page whose first `<head>` is inside a
+comment or `<script>`, or whose robots/canonical tag spans lines, stops the
+deploy. Rules, checked on every deploy that reads `sites.conf`: one current
+(non-archive) row per domain, an archive needs that row, two archives of a
+domain cannot share a year. A broken manifest stops the deploy; any failure
+while staging leaves the live web dir untouched.
+
+All four deploy modes assemble archives when the edition being deployed has
+them: `ALL`, `git` (single site — archives come from the deployed branch's own
+`deploy/sites.conf`, and the sparse clone fetches them too), `local` and
+`rsync` when the source is one `web/<site_key>/` folder (its archives are read
+from the sibling folders). Deploying an `archive` key on its own is refused. A
+direct copy (`ALL`, `git`, `local`) into a web dir that already serves an
+archive but has no `archive` row is refused too, rather than deleting it; a
+direct `rsync` push to a remote server is first dry-run (`-n --delete -i`) and
+refused if it would delete any `<YYYY>/index.html` there.
+No vhost change is needed: `/2026/` and `/2026` both reach `2026/index.html`
+through `location /` (`try_files $uri $uri/` + `index`). Check with
+`curl -sI https://grinnode.org/2026/` after the first deploy.
+
 ---
 
 ## GA4 Analytics (Option A)
@@ -276,7 +329,11 @@ Each site maps to its own GA4 Measurement ID in `deploy/analytics.conf`:
 ```
 grin-money-2026="G-98GRB5MKDT"
 grinnode-org-2026="G-EERXEJ55PZ"
+grinnode-org-2027="G-EERXEJ55PZ"
 ```
+
+A new edition keeps its domain's ID so the analytics history continues; an
+archived edition is tagged with its current site's ID.
 
 **Every deploy mode tags automatically** — you do not normally need option A.
 `local`, `git` and `ALL` inject into the published web dir after the copy;

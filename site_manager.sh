@@ -46,6 +46,10 @@
 #   All four apply the GA4 tag from deploy/analytics.conf to the PUBLISHED
 #   copy only — the git source tree is never modified.
 #
+#   A site whose domain has 'archive' rows in deploy/sites.conf is assembled in
+#   a staging dir in every mode (current edition at the root, each past edition
+#   under /<year>/, marked noindex with a banner) and published with one rsync.
+#
 # LOG FILE
 #   /opt/grin-landing/logs/site_<action>_YYYYMMDD_HHMMSS.log
 #
@@ -762,13 +766,25 @@ action_deploy() {
     # Auto-detect a multi-site server: if deploy/sites.conf lists ≥2 sites, offer
     # to batch them all BEFORE the saved single-site state can short-circuit the
     # menu — this is the "deploy every site on this box" fast path.
-    if [[ -f "$SITES_CONF_FILE" ]] && _load_sites_conf >/dev/null 2>&1 \
-       && (( ${#_SITE_KEYS[@]} >= 2 )); then
+    # Archive rows are published inside their current site, so only current
+    # rows count as sites to deploy.
+    local _k _ndeploy=0
+    if [[ -f "$SITES_CONF_FILE" ]] && _load_sites_conf >/dev/null 2>&1; then
+        for (( _k=0; _k<${#_SITE_KEYS[@]}; _k++ )); do
+            [[ -n "${_SITE_ARCHIVED[$_k]}" ]] || _ndeploy=$(( _ndeploy + 1 ))
+        done
+    fi
+    if (( _ndeploy >= 2 )); then
         echo ""
-        print_info "Detected ${#_SITE_KEYS[@]} sites in deploy/sites.conf:"
-        local _k
-        for _k in "${_SITE_KEYS[@]}"; do echo "    - $_k"; done
-        ask "  Deploy ALL ${#_SITE_KEYS[@]} sites now? (Y/n): " _all
+        print_info "Detected ${_ndeploy} sites in deploy/sites.conf:"
+        for (( _k=0; _k<${#_SITE_KEYS[@]}; _k++ )); do
+            if [[ -n "${_SITE_ARCHIVED[$_k]}" ]]; then
+                echo "    - ${_SITE_KEYS[$_k]}  (archive → ${_SITE_DOMAINS[$_k]}/$(_site_archive_year "${_SITE_KEYS[$_k]}")/)"
+            else
+                echo "    - ${_SITE_KEYS[$_k]}"
+            fi
+        done
+        ask "  Deploy ALL ${_ndeploy} sites now? (Y/n): " _all
         if [[ "${_all,,}" != "n" ]]; then
             DEPLOY_MODE="all"
             _deploy_all
@@ -908,6 +924,22 @@ _deploy_local() {
 
     get_web_dir
 
+    # Source is one web/<site_key>/ whose domain has archived editions in
+    # sites.conf: stage it with the sibling archive folders and publish once.
+    local _src_dir _src_key _prc=0
+    _src_dir="$(cd "$LOCAL_SRC" && pwd)" || { print_error "Cannot resolve $LOCAL_SRC"; return 1; }
+    _src_key="$(basename "$_src_dir")"
+    _site_archive_plan "$_src_key" || _prc=$?
+    [[ $_prc -eq 2 ]] && return 1
+    if [[ $_prc -eq 0 ]]; then
+        _deploy_staged "$(dirname "$_src_dir")" "$_src_key" "$_PLAN_DOMAIN" "$WEB_DIR" local "${_PLAN_ARCHIVES[@]}" || return 1
+        _prompt_ownership "$WEB_DIR"
+        _save_deploy_state
+        print_info "Deploy complete."
+        return 0
+    fi
+
+    if _target_holds_archive "$WEB_DIR"; then return 1; fi
     print_info "Copying $LOCAL_SRC → $WEB_DIR"
     mkdir -p "$WEB_DIR"
     rsync -av --delete "$LOCAL_SRC/" "$WEB_DIR/"
@@ -939,6 +971,23 @@ _deploy_rsync() {
         ask "Remote web directory (e.g. /var/www/grin.money/public): " REMOTE_PATH
     fi
 
+    # Source is one web/<site_key>/ whose domain has archived editions in
+    # sites.conf: push a staged tree (current + /<year>/ archives, tagged).
+    # Unlike the GA4-only staging below, a failed stage aborts — pushing the
+    # bare edition with --delete would remove the remote archive.
+    local _src_dir _src_key _prc=0
+    _src_dir="$(cd "$LOCAL_SRC" && pwd)" || { print_error "Cannot resolve $LOCAL_SRC"; return 1; }
+    _src_key="$(basename "$_src_dir")"
+    _site_archive_plan "$_src_key" || _prc=$?
+    [[ $_prc -eq 2 ]] && return 1
+    if [[ $_prc -eq 0 ]]; then
+        _deploy_staged "$(dirname "$_src_dir")" "$_src_key" "$_PLAN_DOMAIN" \
+            "$REMOTE_USER:$REMOTE_PATH" remote "${_PLAN_ARCHIVES[@]}" || return 1
+        _save_deploy_state
+        print_info "rsync deploy complete."
+        return 0
+    fi
+
     # ── GA4 via a local staging copy ──────────────────────────────────────────
     # local/git/all deploys inject into the *published* dir after the copy; over
     # SSH there is no local published dir to post-process, and injecting into
@@ -965,6 +1014,26 @@ _deploy_rsync() {
     else
         print_info "Pushing $LOCAL_SRC → $REMOTE_USER:$REMOTE_PATH"
     fi
+    # No archive rows are known for this source, but the remote web dir may
+    # already serve one under /<year>/: a dry run lists what --delete would
+    # remove, and the push is refused if that includes a <YYYY>/index.html
+    # (or if the dry run itself fails, since nothing could be checked).
+    local _dry="" _drc=0
+    _dry="$(rsync -anz --delete -i "$_push_src/" "$REMOTE_USER:$REMOTE_PATH/" 2>&1)" || _drc=$?
+    if [[ $_drc -ne 0 ]]; then
+        if [[ -n "$_stage" ]]; then rm -rf "$_stage"; fi
+        print_error "rsync dry run failed (exit $_drc) — nothing pushed."
+        printf '%s\n' "$_dry" | tail -n 5
+        return "$_drc"
+    fi
+    if printf '%s\n' "$_dry" | grep -qE '^\*deleting +[0-9]{4}/index\.html$'; then
+        if [[ -n "$_stage" ]]; then rm -rf "$_stage"; fi
+        print_error "$REMOTE_USER:$REMOTE_PATH serves an archived edition this push would delete:"
+        printf '%s\n' "$_dry" | grep -E '^\*deleting +[0-9]{4}/index\.html$' | sed 's/^/    /'
+        print_warn "Add '<site_key> <domain> archive' to deploy/sites.conf, or remove that folder on the server by hand to retire it."
+        return 1
+    fi
+
     print_cmd "rsync -avz --delete $_push_src/ $REMOTE_USER:$REMOTE_PATH/"
     rsync -avz --delete "$_push_src/" "$REMOTE_USER:$REMOTE_PATH/" || _rc=$?
 
@@ -1028,19 +1097,21 @@ _deploy_git() {
     print_info "Target: $WEB_DIR  branch: $GIT_BRANCH"
 
     # ── Clone or pull ──────────────────────────────────────────────────────────
-    local tmp_clone=""
+    local tmp_clone="" staged=false _prc=0 _sparse_dirs _ak
 
     if $use_subdir; then
         # Clone to a temp dir, then rsync just the site subdir into WEB_DIR
         tmp_clone="$(mktemp -d)"
+        _STAGE_CLONE_DIR="$tmp_clone"
         print_info "Cloning $GIT_REPO ($GIT_BRANCH) into temp dir..."
 
         if [[ "${SPARSE_CHECKOUT:-no}" == "yes" ]]; then
-            # Sparse clone — only fetch web/<SITE_NAME>/
+            # Sparse clone — only fetch web/<SITE_NAME>/ and deploy/ (the
+            # branch's own sites.conf); archived editions are added below.
             git clone --filter=blob:none --no-checkout --depth 1 \
                 --branch "$GIT_BRANCH" "$GIT_REPO" "$tmp_clone"
             git -C "$tmp_clone" sparse-checkout init --cone
-            git -C "$tmp_clone" sparse-checkout set "web/$SITE_NAME"
+            git -C "$tmp_clone" sparse-checkout set "web/$SITE_NAME" deploy
             git -C "$tmp_clone" checkout
         else
             git clone --depth 1 --branch "$GIT_BRANCH" "$GIT_REPO" "$tmp_clone"
@@ -1049,14 +1120,38 @@ _deploy_git() {
         local site_src="$tmp_clone/web/$SITE_NAME"
         if [[ ! -d "$site_src" ]]; then
             print_error "Site directory not found in repo: web/$SITE_NAME"
-            rm -rf "$tmp_clone"
+            rm -rf "$tmp_clone"; _STAGE_CLONE_DIR=""
             return 1
         fi
 
-        mkdir -p "$WEB_DIR"
-        print_info "Syncing web/$SITE_NAME → $WEB_DIR"
-        rsync -av --delete "$site_src/" "$WEB_DIR/"
-        rm -rf "$tmp_clone"
+        # Archived editions come from the DEPLOYED branch's sites.conf — the
+        # one that matches the web/ folders being published — not from this
+        # server's copy, which may be older.
+        _site_archive_plan "$SITE_NAME" "$tmp_clone/deploy/sites.conf" || _prc=$?
+        if [[ $_prc -eq 2 ]]; then rm -rf "$tmp_clone"; _STAGE_CLONE_DIR=""; return 1; fi
+        if [[ $_prc -eq 0 && "${SPARSE_CHECKOUT:-no}" == "yes" ]]; then
+            _sparse_dirs=("web/$SITE_NAME" deploy)
+            for _ak in "${_PLAN_ARCHIVES[@]}"; do _sparse_dirs+=("web/$_ak"); done
+            if ! git -C "$tmp_clone" sparse-checkout set "${_sparse_dirs[@]}"; then
+                print_error "Could not add the archived editions to the sparse checkout."
+                rm -rf "$tmp_clone"; _STAGE_CLONE_DIR=""
+                return 1
+            fi
+        fi
+
+        if [[ $_prc -eq 0 ]]; then
+            if ! _deploy_staged "$tmp_clone/web" "$SITE_NAME" "$_PLAN_DOMAIN" "$WEB_DIR" local "${_PLAN_ARCHIVES[@]}"; then
+                rm -rf "$tmp_clone"; _STAGE_CLONE_DIR=""
+                return 1
+            fi
+            staged=true
+        else
+            if _target_holds_archive "$WEB_DIR"; then rm -rf "$tmp_clone"; _STAGE_CLONE_DIR=""; return 1; fi
+            mkdir -p "$WEB_DIR"
+            print_info "Syncing web/$SITE_NAME → $WEB_DIR"
+            rsync -av --delete "$site_src/" "$WEB_DIR/"
+        fi
+        rm -rf "$tmp_clone"; _STAGE_CLONE_DIR=""
 
     elif [[ -d "$WEB_DIR/.git" ]]; then
         # Full repo already on server — just pull
@@ -1070,44 +1165,568 @@ _deploy_git() {
         git clone --depth 1 --branch "$GIT_BRANCH" "$GIT_REPO" "$WEB_DIR"
     fi
 
-    _ga4_apply_after_deploy "$WEB_DIR" "${SITE_NAME:-}"
+    # A staged deploy was tagged before it was published.
+    $staged || _ga4_apply_after_deploy "$WEB_DIR" "${SITE_NAME:-}"
     _prompt_ownership "$WEB_DIR"
     _save_deploy_state
     print_info "Git deploy complete  →  $WEB_DIR  [branch: $GIT_BRANCH]"
 }
 
 # Load deploy/sites.conf into the parallel arrays _SITE_KEYS / _SITE_DOMAINS /
-# _SITE_WEBDIRS. Web dir is derived from the domain unless a row gives an
-# explicit override column. Returns 1 if the manifest is missing/empty.
+# _SITE_WEBDIRS / _SITE_ARCHIVED. Web dir is derived from the domain unless a
+# row gives an explicit override column (a third column starting with "/"). A
+# third column of the literal word "archive" marks a past edition ("yes" in
+# _SITE_ARCHIVED): it is published under /<year>/ of its domain's current site
+# and never deployed on its own. Returns 1 if the manifest is missing/empty or
+# the archive rules are broken (see _sites_conf_check) — a deploy that cannot
+# tell which editions belong under a domain would wipe them with --delete.
 _load_sites_conf() {
-    _SITE_KEYS=(); _SITE_DOMAINS=(); _SITE_WEBDIRS=()
+    _SITE_KEYS=(); _SITE_DOMAINS=(); _SITE_WEBDIRS=(); _SITE_ARCHIVED=()
 
     if [[ ! -f "$SITES_CONF_FILE" ]]; then
         print_error "Missing site manifest: $SITES_CONF_FILE"
-        print_warn  "Create it (one row per site: <site_key> <domain> [web_dir])."
+        print_warn  "Create it (one row per site: <site_key> <domain> [web_dir|archive])."
         return 1
     fi
 
-    local line _key _domain _override _idx=0
+    local line _key _domain _third _webdir _archived _idx=0
     while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%$'\r'}"                     # a CRLF-edited file
         line="${line%%#*}"                       # strip inline/full comments
-        [[ -z "${line// /}" ]] && continue        # skip blank lines
+        [[ -z "${line//[[:space:]]/}" ]] && continue   # skip blank / whitespace-only lines
+        # Word-split on whitespace with globbing off, so a '*' in a row is
+        # never expanded against the current directory.
+        set -f
         # shellcheck disable=SC2086
-        set -- $line                              # word-split on whitespace
-        _key="$1"; _domain="${2:-}"; _override="${3:-}"
+        set -- $line
+        set +f
+        _key="${1:-}"; _domain="${2:-}"; _third="${3:-}"
+        if [[ $# -gt 3 ]]; then
+            print_warn "sites.conf: skipping row with $# columns (expected <site_key> <domain> [web_dir|archive]): $line"
+            continue
+        fi
         if [[ -z "$_key" || -z "$_domain" ]]; then
             print_warn "sites.conf: skipping malformed row: $line"
             continue
         fi
+        _webdir="$NGINX_DEFAULT_ROOT/$_domain/public"; _archived=""
+        if [[ "$_third" == "archive" ]]; then
+            _archived="yes"
+        elif [[ "$_third" == /* ]]; then
+            _webdir="$_third"
+        elif [[ -n "$_third" ]]; then
+            print_error "sites.conf: third column must be an absolute web dir or 'archive': $line"
+            return 1
+        fi
         _SITE_KEYS[$_idx]="$_key"
         _SITE_DOMAINS[$_idx]="$_domain"
-        _SITE_WEBDIRS[$_idx]="${_override:-$NGINX_DEFAULT_ROOT/$_domain/public}"
+        _SITE_WEBDIRS[$_idx]="$_webdir"
+        _SITE_ARCHIVED[$_idx]="$_archived"
         _idx=$(( _idx + 1 ))
     done < "$SITES_CONF_FILE"
 
     if [[ ${#_SITE_KEYS[@]} -eq 0 ]]; then
         print_warn "sites.conf has no usable site rows."
         return 1
+    fi
+    _sites_conf_check || return 1
+    return 0
+}
+
+# Validate the loaded manifest: keys are unique; a domain has at most one
+# current (non-archive) row; every archive row has a current row on its domain,
+# a site_key ending in -YYYY, and a year no other archive of that domain uses.
+_sites_conf_check() {
+    local i j n=${#_SITE_KEYS[@]} bad=0 cur first
+    for (( i=0; i<n; i++ )); do
+        for (( j=i+1; j<n; j++ )); do
+            if [[ "${_SITE_KEYS[$i]}" == "${_SITE_KEYS[$j]}" ]]; then
+                print_error "sites.conf: site_key '${_SITE_KEYS[$i]}' is listed twice."
+                bad=1
+            fi
+        done
+        cur=0; first=""
+        for (( j=0; j<n; j++ )); do
+            if [[ "${_SITE_DOMAINS[$j]}" == "${_SITE_DOMAINS[$i]}" && -z "${_SITE_ARCHIVED[$j]}" ]]; then
+                cur=$(( cur + 1 ))
+                [[ -n "$first" ]] || first="$j"
+            fi
+        done
+        if [[ -z "${_SITE_ARCHIVED[$i]}" ]]; then
+            if (( cur > 1 )) && [[ "$first" == "$i" ]]; then
+                print_error "sites.conf: domain '${_SITE_DOMAINS[$i]}' has $cur current rows — mark past editions 'archive' so exactly one is current."
+                bad=1
+            fi
+            continue
+        fi
+        if (( cur == 0 )); then
+            print_error "sites.conf: '${_SITE_KEYS[$i]}' is an archive of '${_SITE_DOMAINS[$i]}', but that domain has no current (non-archive) row."
+            bad=1
+        fi
+        if ! _site_archive_year "${_SITE_KEYS[$i]}" >/dev/null; then
+            print_error "sites.conf: archive '${_SITE_KEYS[$i]}' has no trailing -YYYY to publish it under /<year>/."
+            bad=1
+            continue
+        fi
+        for (( j=i+1; j<n; j++ )); do
+            if [[ -n "${_SITE_ARCHIVED[$j]}" && "${_SITE_DOMAINS[$j]}" == "${_SITE_DOMAINS[$i]}" ]] \
+               && [[ "$(_site_archive_year "${_SITE_KEYS[$j]}" 2>/dev/null || true)" == "$(_site_archive_year "${_SITE_KEYS[$i]}")" ]]; then
+                print_error "sites.conf: '${_SITE_KEYS[$i]}' and '${_SITE_KEYS[$j]}' would both publish under /$(_site_archive_year "${_SITE_KEYS[$i]}")/ of ${_SITE_DOMAINS[$i]}."
+                bad=1
+            fi
+        done
+    done
+    (( bad == 0 ))
+}
+
+# Print the year of an archive edition (the trailing -YYYY of its site_key).
+_site_archive_year() {
+    if [[ "$1" =~ -([0-9]{4})$ ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    return 1
+}
+
+# Look up which past editions belong under a current site.
+#   $1 = site_key of the edition being deployed
+#   $2 = manifest to read (default: this clone's deploy/sites.conf; git mode
+#        passes the deployed branch's own copy)
+# Fills _PLAN_DOMAIN and _PLAN_ARCHIVES (site_keys of that domain's archive
+# rows). Returns 0 when the site has archives to assemble, 1 when it has none
+# (no manifest, key not listed, or no archive rows), 2 when the deploy must
+# not go ahead: the manifest is broken, or $1 is itself an archive row (its
+# folder belongs under /<year>/, publishing it at the root would replace the
+# current edition). A return of 1 still leaves the target to be checked with
+# _target_holds_archive before a direct --delete copy.
+_site_archive_plan() {
+    local _manifest="${2:-$SITES_CONF_FILE}"
+    local SITES_CONF_FILE="$_manifest"
+    _PLAN_DOMAIN=""; _PLAN_ARCHIVES=()
+    [[ -f "$SITES_CONF_FILE" ]] || return 1
+    if ! _load_sites_conf; then
+        print_error "$SITES_CONF_FILE is invalid — fix it before deploying (archived editions depend on it)."
+        return 2
+    fi
+    _site_archive_plan_loaded "$1"
+}
+
+# Return 0 (and explain) when a web dir already serves an archived edition:
+# some <dir>/<name>/index.html carries the banner/marker this script adds. A
+# direct rsync --delete into it would remove that archive, so the legacy
+# copy paths refuse instead.
+#   $1 = target web dir
+_target_holds_archive() {
+    local dir="$1" f
+    [[ -d "$dir" ]] || return 1
+    for f in "$dir"/*/index.html; do
+        [[ -f "$f" ]] || continue
+        if grep -q 'data-archive-edition=' "$f" 2>/dev/null; then
+            print_error "$dir serves an archived edition at /$(basename "$(dirname "$f")")/, but deploy/sites.conf has no 'archive' row for this site."
+            print_warn  "A direct copy would delete it. Add '<site_key> <domain> archive' to sites.conf, or remove that folder by hand to retire the archive."
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Return 0 when a publish target is an absolute path of at least two
+# components with no empty, '.' or '..' component (so never '/', '/var',
+# '//', '/.', or a relative path).
+#   $1 = path
+_safe_target_path() {
+    local p="$1" c n=0
+    [[ "$p" == /* ]] || return 1
+    p="${p%/}"
+    [[ "$p" != *//* ]] || return 1
+    local IFS=/
+    set -f
+    # shellcheck disable=SC2086
+    set -- ${p#/}
+    set +f
+    for c in "$@"; do
+        [[ -n "$c" && "$c" != "." && "$c" != ".." ]] || return 1
+        n=$(( n + 1 ))
+    done
+    (( n >= 2 ))
+}
+
+# _site_archive_plan against the manifest already in the _SITE_* arrays (the
+# batch deploy iterates those arrays, so it must not reload them mid-loop).
+_site_archive_plan_loaded() {
+    local key="$1" i found=""
+    _PLAN_DOMAIN=""; _PLAN_ARCHIVES=()
+    for (( i=0; i<${#_SITE_KEYS[@]}; i++ )); do
+        if [[ "${_SITE_KEYS[$i]}" == "$key" ]]; then found="$i"; break; fi
+    done
+    [[ -n "$found" ]] || return 1
+    if [[ -n "${_SITE_ARCHIVED[$found]}" ]]; then
+        print_error "'$key' is marked 'archive' in sites.conf — it is published under /$(_site_archive_year "$key")/ when its domain's current edition deploys."
+        return 2
+    fi
+    _PLAN_DOMAIN="${_SITE_DOMAINS[$found]}"
+    for (( i=0; i<${#_SITE_KEYS[@]}; i++ )); do
+        if [[ -n "${_SITE_ARCHIVED[$i]}" && "${_SITE_DOMAINS[$i]}" == "$_PLAN_DOMAIN" ]]; then
+            _PLAN_ARCHIVES+=("${_SITE_KEYS[$i]}")
+        fi
+    done
+    (( ${#_PLAN_ARCHIVES[@]} > 0 ))
+}
+
+#############################################################################
+# Archived editions — staged build
+#############################################################################
+# A domain's current edition is published at the web root and each archived
+# edition under /<year>/. Everything is assembled in a staging dir and pushed
+# with ONE rsync (--delay-updates --delete-after), so a deploy never removes
+# the archive and a failure at any step leaves the live web dir untouched.
+
+# Rewrite one HTML file of an archived edition in place (idempotent):
+#   - relative href=/src= values become absolute /<year>/<value>: nginx's
+#     `try_files $uri $uri/` can serve /<year> (no slash) without redirecting,
+#     and a relative favicon.svg would then load the CURRENT edition's file.
+#     Values starting with /, #, // or a scheme (https:, mailto:, data:, …)
+#     are left alone;
+#   - manual links (docs, docs/…, ./docs/…) go to the current manual at
+#     /docs/…, extension-less as the /docs/ vhost block serves them (the
+#     archive carries no docs/);
+#   - robots meta → "noindex, follow"; canonical → https://<domain>/;
+#   - a one-line banner right after <body …> linking to the current site.
+# Lines this adds are exact strings, deleted and re-added on every run;
+# existing robots/canonical tags are replaced in place. Fails (returns 1) when
+# the page has no <head>, when the first <head> sits inside a comment or a
+# <script>, or when a robots/canonical tag spans lines (it cannot be replaced
+# safely, and adding a second one would leave the page's own in force).
+# The file keeps its own mode: the rewrite is copied back into it.
+#   $1 = html file  $2 = domain  $3 = year
+_archive_transform_html() {
+    local f="$1" domain="$2" year="$3" tmp rc=0
+    if [[ ! "$domain" =~ ^[A-Za-z0-9.-]+$ || ! "$year" =~ ^[0-9]{4}$ ]]; then
+        print_error "Archive: refusing domain '$domain' / year '$year'"
+        return 1
+    fi
+    tmp="${f}.archive-tmp"
+    ARCH_YEAR="$year" \
+    ARCH_ROBOTS="  <meta name=\"robots\" content=\"noindex, follow\" data-archive-edition=\"${year}\">" \
+    ARCH_CANON="  <link rel=\"canonical\" href=\"https://${domain}/\" data-archive-edition=\"${year}\">" \
+    ARCH_ROBOTS_INPLACE="<meta name=\"robots\" content=\"noindex, follow\">" \
+    ARCH_CANON_INPLACE="<link rel=\"canonical\" href=\"https://${domain}/\">" \
+    ARCH_BANNER="<div data-archive-edition=\"${year}\" role=\"note\" style=\"display:block;box-sizing:border-box;width:100%;margin:0;padding:6px 16px;background:#15181b;color:#f3f5f7;border-bottom:1px solid #3d444b;font:13px/1.45 system-ui,sans-serif;text-align:center;position:relative;z-index:40\">You&rsquo;re viewing the ${year} edition of ${domain} &middot; <a href=\"/\" style=\"color:#ffd86b;text-decoration:underline;font-weight:600\">see the current site</a></div>" \
+    awk '
+        # Replace every match of re (matched case-insensitively) in s: the
+        # first one in the file with NEW[kind], later ones with nothing.
+        function sub_tag(s, re, kind,    out, l) {
+            out = ""
+            while (1) {
+                l = tolower(s)
+                if (!match(l, re)) break
+                out = out substr(s, 1, RSTART - 1)
+                if (!(kind in done)) { out = out NEW[kind]; done[kind] = 1 }
+                s = substr(s, RSTART + RLENGTH)
+            }
+            return out s
+        }
+        # Position of the last occurrence of t in s (0 when absent).
+        function lastidx(s, t,    p, r, k) {
+            r = 0; p = 0
+            while ((k = index(substr(s, p + 1), t)) > 0) { p += k; r = p }
+            return r
+        }
+        # Map one attribute value of an archived page to its absolute URL.
+        function rewrite_url(v,    p, rest, tail, k, c) {
+            c = substr(v, 1, 1)
+            if (v == "" || c == "/" || c == "#") return v
+            if (tolower(v) ~ /^[a-z][a-z0-9+.-]*:/) return v
+            p = v
+            while (substr(p, 1, 2) == "./") p = substr(p, 3)
+            if (p == "docs" || substr(p, 1, 5) == "docs/" || p ~ /^docs[?#]/) {
+                rest = substr(p, 5)
+                if (substr(rest, 1, 1) == "/") rest = substr(rest, 2)
+                tail = ""
+                k = match(rest, /[?#]/)
+                if (k) { tail = substr(rest, k); rest = substr(rest, 1, k - 1) }
+                if (rest == "index.html" || rest == "index.htm" || rest == "index") rest = ""
+                else sub(/\.html?$/, "", rest)
+                return "/docs/" rest tail
+            }
+            return "/" YEAR "/" p
+        }
+        # Rewrite every quoted href=/src= value on a line. The attribute name
+        # must follow whitespace (or start the line), so data-href= and the
+        # like never match. A value whose closing quote is on a later line is
+        # left as it is.
+        function rewrite_attrs(s,    t, out, q, e) {
+            t = " " s; out = ""
+            while (match(tolower(t), RE_ATTR)) {
+                out = out substr(t, 1, RSTART + RLENGTH - 1)
+                q = substr(t, RSTART + RLENGTH - 1, 1)
+                t = substr(t, RSTART + RLENGTH)
+                e = index(t, q)
+                if (e == 0) break
+                out = out rewrite_url(substr(t, 1, e - 1)) q
+                t = substr(t, e + 1)
+            }
+            return substr(out t, 2)
+        }
+        BEGIN {
+            YEAR = ENVIRON["ARCH_YEAR"]
+            q = "[\"\047]?"
+            RE_ROBOTS = "<meta[^>]*name=" q "robots" q "[^>]*>"
+            RE_CANON  = "<link[^>]*rel=" q "canonical" q "[^>]*>"
+            RE_HEAD   = "<head>|<head[ \t][^>]*>"
+            RE_BODY   = "<body>|<body[ \t][^>]*>"
+            RE_ATTR   = "[ \t](href|src)[ \t]*=[ \t]*[\"\047]"
+            RE_ML     = "[ \t](name[ \t]*=[ \t]*" q "robots|rel[ \t]*=[ \t]*" q "canonical)"
+            NEW["robots"] = ENVIRON["ARCH_ROBOTS_INPLACE"]
+            NEW["canon"]  = ENVIRON["ARCH_CANON_INPLACE"]
+        }
+        { L[NR] = $0 }
+        END {
+            # A <meta>/<link> left open at the end of a line: if the tag
+            # (up to its ">") has name=robots or rel=canonical, refuse.
+            for (i = 1; i <= NR; i++) {
+                l = tolower(L[i])
+                p = lastidx(l, "<meta"); k = lastidx(l, "<link")
+                if (k > p) p = k
+                if (p == 0 || index(substr(l, p), ">") > 0) continue
+                tag = substr(l, p)
+                for (j = i + 1; j <= NR; j++) {
+                    e = index(tolower(L[j]), ">")
+                    if (e > 0) { tag = tag " " substr(tolower(L[j]), 1, e); break }
+                    tag = tag " " tolower(L[j])
+                }
+                if (tag ~ RE_ML) exit 6
+            }
+            m = 0
+            for (i = 1; i <= NR; i++) {
+                s = L[i]
+                if (s == ENVIRON["ARCH_ROBOTS"] || s == ENVIRON["ARCH_CANON"] || s == ENVIRON["ARCH_BANNER"]) continue
+                o = s
+                s = sub_tag(s, RE_ROBOTS, "robots")
+                s = sub_tag(s, RE_CANON,  "canon")
+                s = rewrite_attrs(s)
+                if (o ~ /[^ \t\r]/ && s !~ /[^ \t\r]/) continue
+                O[++m] = s
+            }
+            hd = 0; bd = 0; seen = ""
+            for (i = 1; i <= m; i++) {
+                s = O[i]
+                if (!hd && match(tolower(s), RE_HEAD)) {
+                    pre = seen tolower(substr(s, 1, RSTART - 1))
+                    if (lastidx(pre, "<!--") > lastidx(pre, "-->")) exit 5
+                    if (lastidx(pre, "<script") > lastidx(pre, "</script")) exit 5
+                    print substr(s, 1, RSTART + RLENGTH - 1)
+                    if (!("robots" in done)) print ENVIRON["ARCH_ROBOTS"]
+                    if (!("canon"  in done)) print ENVIRON["ARCH_CANON"]
+                    hd = 1
+                    s = substr(s, RSTART + RLENGTH)
+                    if (s !~ /[^ \t\r]/) continue
+                }
+                if (!hd) seen = seen tolower(s) "\n"
+                if (hd && !bd && match(tolower(s), RE_BODY)) {
+                    print substr(s, 1, RSTART + RLENGTH - 1)
+                    print ENVIRON["ARCH_BANNER"]
+                    bd = 1
+                    s = substr(s, RSTART + RLENGTH)
+                    if (s !~ /[^ \t\r]/) continue
+                }
+                print s
+            }
+            if (!hd) exit 3
+            if (!bd) exit 4
+        }
+    ' "$f" > "$tmp" || rc=$?
+    case "$rc" in
+        0) ;;
+        4) print_warn "Archive: no <body> in ${f##*/} — banner NOT added (noindex/canonical applied)" ;;
+        3) rm -f -- "$tmp"; print_error "Archive: no <head> in $f — cannot mark it noindex"; return 1 ;;
+        5) rm -f -- "$tmp"; print_error "Archive: the first <head> in $f is inside a comment or <script> — rewrite it by hand"; return 1 ;;
+        6) rm -f -- "$tmp"; print_error "Archive: a robots/canonical tag in $f spans lines — put it on one line"; return 1 ;;
+        *) rm -f -- "$tmp"; print_error "Archive: rewriting $f failed (awk exit $rc)"; return 1 ;;
+    esac
+    if [[ ! -s "$tmp" ]]; then
+        rm -f -- "$tmp"; print_error "Archive: rewrite of $f came out empty"; return 1
+    fi
+    # Copy back into the original file (not mv) so its mode is kept.
+    cat -- "$tmp" > "$f" || { rm -f -- "$tmp"; print_error "Archive: could not rewrite $f"; return 1; }
+    rm -f -- "$tmp" || { print_error "Archive: could not remove $tmp"; return 1; }
+    return 0
+}
+
+# Copy one archived edition into the staging tree and rewrite its pages
+# (*.html and *.htm, every depth). docs/, robots.txt and sitemap.xml stay out:
+# the manual and the crawl files belong to the current edition at the root.
+#   $1 = edition source dir  $2 = destination (<stage>/<year>)  $3 = domain  $4 = year
+_archive_stage_edition() {
+    local src="$1" dest="$2" domain="$3" year="$4" f n=0 found=0 list
+    [[ -d "$src" && -f "$src/index.html" ]] || { print_error "Archive: $src has no index.html"; return 1; }
+    rsync -a --exclude='/docs/' --exclude='/robots.txt' --exclude='/sitemap.xml' "$src/" "$dest/" \
+        || { print_error "Archive: copying $src → $dest failed"; return 1; }
+    list="$(mktemp 2>/dev/null)" || list=""
+    [[ -n "$list" && -f "$list" ]] || { print_error "Archive: could not create a temp file"; return 1; }
+    if ! find "$dest" -type f \( -name '*.html' -o -name '*.htm' \) -print0 > "$list"; then
+        rm -f -- "$list"; print_error "Archive: listing pages in $dest failed"; return 1
+    fi
+    found="$(tr -cd '\000' < "$list" | wc -c)" || found=-1
+    found="${found//[[:space:]]/}"
+    while IFS= read -r -d '' f; do
+        if ! _archive_transform_html "$f" "$domain" "$year"; then
+            rm -f -- "$list"; return 1
+        fi
+        n=$(( n + 1 ))
+    done < "$list"
+    rm -f -- "$list"
+    if [[ "$n" != "$found" || "$n" -eq 0 ]]; then
+        print_error "Archive: rewrote $n of ${found} page(s) in $dest — refusing a partial archive"
+        return 1
+    fi
+    [[ -f "$dest/index.html" ]] || { print_error "Archive: $dest/index.html missing after copy"; return 1; }
+    print_info "  Archive: $(basename "$src") → /$year/ ($n page(s) marked noindex + banner)"
+    return 0
+}
+
+# Tag a staged tree with the GA4 ID of site_key from analytics.conf. A site
+# with no mapping deploys untagged, as every other deploy path does; a mapping
+# that fails to apply aborts the deploy. Verified on the pages _ga4_inject_dir
+# covers (top level and one directory down — an archive's /<year>/ pages
+# included) that have a </head>: each must carry the loader with this ID.
+#   $1 = staged dir  $2 = site_key
+_stage_apply_ga4() {
+    local dir="$1" key="$2" i id="" f bad=0
+    if ! _load_analytics_conf; then
+        print_warn "GA4: no analytics.conf mappings — skipping injection."
+        return 0
+    fi
+    for (( i=0; i<${#_GA4_SITES[@]}; i++ )); do
+        if [[ "${_GA4_SITES[$i]}" == "$key" ]]; then id="${_GA4_IDS[$i]}"; break; fi
+    done
+    if [[ -z "$id" ]]; then
+        print_warn "GA4: no analytics.conf entry for $key — deploying untagged."
+        return 0
+    fi
+    print_info "GA4: applying $id to staged site ($key)"
+    _ga4_inject_dir "$dir" "$id" || return 1
+    [[ -s "$dir/js/ga4.js" ]] || { print_error "GA4: $dir/js/ga4.js was not written"; return 1; }
+    for f in "$dir"/*.html "$dir"/*/*.html; do
+        [[ -f "$f" ]] || continue
+        # Same skip rule as _ga4_inject_dir: a page with no </head> (e.g. a
+        # Search Console verification file) is never tagged.
+        grep -q "</head>" "$f" 2>/dev/null || continue
+        if ! grep -q "googletagmanager.com/gtag/js?id=${id}\"" "$f" 2>/dev/null; then
+            print_error "GA4: ${f#"$dir"/} is not tagged with $id"
+            bad=1
+        fi
+    done
+    (( bad == 0 ))
+}
+
+# Assemble <stage> = current edition + archives under /<year>/, tagged.
+#   $1 = source root holding the <site_key>/ folders  $2 = current site_key
+#   $3 = domain  $4 = stage dir to create (must not exist)
+#   remaining args = archive site_keys
+_stage_site_build() {
+    local src_root="$1" key="$2" domain="$3" st="$4" akey year
+    shift 4
+    [[ -n "$st" && ! -e "$st" ]] || { print_error "Staging: bad staging path '$st'"; return 1; }
+    [[ -f "$src_root/$key/index.html" ]] || { print_error "Staging: $src_root/$key has no index.html"; return 1; }
+    rsync -a "$src_root/$key/" "$st/" || { print_error "Staging: copying web/$key failed"; return 1; }
+    for akey in "$@"; do
+        year="$(_site_archive_year "$akey")" || { print_error "Staging: '$akey' has no trailing -YYYY"; return 1; }
+        [[ -d "$src_root/$akey" ]] || { print_error "Staging: archived edition web/$akey is not in the source"; return 1; }
+        if [[ -e "$st/$year" ]]; then
+            print_error "Staging: web/$key already has a '$year' entry — it would collide with the $akey archive"
+            return 1
+        fi
+        _archive_stage_edition "$src_root/$akey" "$st/$year" "$domain" "$year" || return 1
+    done
+    _stage_apply_ga4 "$st" "$key" || return 1
+    [[ -f "$st/index.html" ]] || { print_error "Staging: $st/index.html missing"; return 1; }
+    return 0
+}
+
+# Staging dir of the deploy in progress, read by the INT/TERM trap.
+_STAGE_DIR=""
+
+# Temp git clone of the single-site git deploy in progress (set and cleared by
+# _deploy_git), removed by the same INT/TERM trap as the staging dir.
+_STAGE_CLONE_DIR=""
+
+# Remove the staging dir; with "all" (the INT/TERM trap) the registered git
+# clone too.
+_stage_cleanup() {
+    if [[ -n "$_STAGE_DIR" && -d "$_STAGE_DIR" ]]; then rm -rf -- "$_STAGE_DIR"; fi
+    _STAGE_DIR=""
+    if [[ "${1:-}" == "all" && -n "$_STAGE_CLONE_DIR" && -d "$_STAGE_CLONE_DIR" ]]; then
+        rm -rf -- "$_STAGE_CLONE_DIR"
+        _STAGE_CLONE_DIR=""
+    fi
+}
+
+# Build the staged site and push it with one rsync. The live target is only
+# touched by that final rsync, after every staging step succeeded; it runs
+# with --delay-updates --delete-after, so files are swapped in at the end and
+# removals happen only once the new tree is in place.
+#   $1 = source root  $2 = current site_key  $3 = domain
+#   $4 = target: a local web dir, or user@host:/path when $5 = "remote"
+#   $5 = "local" | "remote"
+#   remaining args = archive site_keys
+# The staging dir is removed on success, on failure, and on INT/TERM (the
+# caller's INT/TERM traps are restored afterwards). Staging runs under umask
+# 022 so files it creates (js/ga4.js and its dir) are readable by nginx.
+_deploy_staged() {
+    local src_root="$1" key="$2" domain="$3" target="$4" how="$5" rc=0
+    local old_int old_term old_umask
+    shift 5
+    case "$how" in
+        local)  if ! _safe_target_path "$target"; then
+                    print_error "Refusing to publish into web dir '${target:-<empty>}'"; return 1
+                fi ;;
+        remote) if [[ "$target" != *:* ]] || [[ "${target%%:*}" == "" ]] || ! _safe_target_path "${target#*:}"; then
+                    print_error "Refusing to publish into remote path '${target:-<empty>}'"; return 1
+                fi ;;
+        *)      print_error "_deploy_staged: unknown mode '$how'"; return 1 ;;
+    esac
+    _STAGE_DIR="$(mktemp -d 2>/dev/null)" || _STAGE_DIR=""
+    if [[ -z "$_STAGE_DIR" || ! -d "$_STAGE_DIR" ]]; then
+        _STAGE_DIR=""
+        print_error "Staging: could not create a temp dir — live site left untouched."
+        return 1
+    fi
+    old_int="$(trap -p INT)"; old_term="$(trap -p TERM)"; old_umask="$(umask)"
+    trap '_stage_cleanup all; exit 130' INT
+    trap '_stage_cleanup all; exit 143' TERM
+    umask 022
+
+    _deploy_staged_run "$src_root" "$key" "$domain" "$target" "$how" "$@" || rc=$?
+
+    umask "$old_umask"
+    _stage_cleanup
+    if [[ -n "$old_int" ]]; then eval "$old_int"; else trap - INT; fi
+    if [[ -n "$old_term" ]]; then eval "$old_term"; else trap - TERM; fi
+    return "$rc"
+}
+
+# Body of _deploy_staged, run with $_STAGE_DIR created and cleaned up by it.
+_deploy_staged_run() {
+    local src_root="$1" key="$2" domain="$3" target="$4" how="$5" rc=0
+    shift 5
+    print_info "Staging $key + ${#} archive(s) in $_STAGE_DIR"
+    if ! _stage_site_build "$src_root" "$key" "$domain" "$_STAGE_DIR/site" "$@"; then
+        print_error "Staging failed for $key — live site left untouched."
+        return 1
+    fi
+    if [[ "$how" == "local" ]]; then
+        mkdir -p -- "$target" || { print_error "Could not create $target"; return 1; }
+        print_info "Publishing staged $key → $target"
+        rsync -a --delay-updates --delete-after "$_STAGE_DIR/site/" "$target/" || rc=$?
+    else
+        print_info "Pushing staged $key → $target"
+        print_cmd "rsync -avz --delay-updates --delete-after <staging>/ $target/"
+        rsync -avz --delay-updates --delete-after "$_STAGE_DIR/site/" "$target/" || rc=$?
+    fi
+    if [[ $rc -ne 0 ]]; then
+        print_error "rsync to $target failed (exit $rc)."
+        return "$rc"
     fi
     return 0
 }
@@ -1122,6 +1741,8 @@ _load_sites_conf() {
 # No re-clone — the repo is already on the server (refresh it first with option
 # 9 / git pull). Web dir per site is derived from its domain unless the manifest
 # row overrides it. Non-interactive friendly: with --all nothing is prompted.
+# A domain with 'archive' rows is staged first (current edition + /<year>/
+# copies, see _deploy_staged) so the archive survives every --delete.
 _deploy_all() {
     _load_sites_conf || return 1
 
@@ -1141,16 +1762,41 @@ _deploy_all() {
         DEPLOY_OWNER="${_owner:-}"
     fi
 
-    local i ok=0 fail=0 site_src target
+    local i ok=0 fail=0 site_src target _prc
     for (( i=0; i<${#_SITE_KEYS[@]}; i++ )); do
         site_src="$src_root/${_SITE_KEYS[$i]}"
         target="${_SITE_WEBDIRS[$i]}"
         echo ""
+        # Archive rows are published inside their domain's current site below.
+        if [[ -n "${_SITE_ARCHIVED[$i]}" ]]; then
+            print_info "[${_SITE_KEYS[$i]}] archived edition — published under ${_SITE_DOMAINS[$i]}/$(_site_archive_year "${_SITE_KEYS[$i]}")/"
+            continue
+        fi
         print_info "[${_SITE_KEYS[$i]}] → $target"
         if [[ ! -d "$site_src" ]]; then
             print_error "  Not in clone: web/${_SITE_KEYS[$i]} — skipping"
             fail=$(( fail + 1 )); continue
         fi
+        # A site with archived editions is assembled in a staging dir and
+        # pushed in one rsync; one without keeps the direct copy below.
+        _prc=0; _site_archive_plan_loaded "${_SITE_KEYS[$i]}" || _prc=$?
+        if [[ $_prc -eq 0 ]]; then
+            if ! _deploy_staged "$src_root" "${_SITE_KEYS[$i]}" "$_PLAN_DOMAIN" "$target" local "${_PLAN_ARCHIVES[@]}"; then
+                fail=$(( fail + 1 )); continue
+            fi
+            if [[ -n "$DEPLOY_OWNER" ]]; then
+                if ! chown -R "$DEPLOY_OWNER" "$target"; then
+                    print_error "  Ownership $DEPLOY_OWNER could not be set on $target"
+                    fail=$(( fail + 1 )); continue
+                fi
+                print_info "  Ownership: $DEPLOY_OWNER"
+            fi
+            ok=$(( ok + 1 ))
+            continue
+        elif [[ $_prc -ne 1 ]]; then
+            fail=$(( fail + 1 )); continue
+        fi
+        if _target_holds_archive "$target"; then fail=$(( fail + 1 )); continue; fi
         mkdir -p "$target"
         if rsync -a --delete "$site_src/" "$target/"; then
             _ga4_apply_after_deploy "$target" "${_SITE_KEYS[$i]}"
