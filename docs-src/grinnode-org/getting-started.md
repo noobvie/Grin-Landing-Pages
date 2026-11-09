@@ -5,7 +5,7 @@ section: Start here
 order: 1
 short: Getting started
 covers: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-08
 ---
 
 By the end of this page you will have the toolkit installed on a server and its main menu open. Building the node itself is the next page, [Script 01](01-build-node.html).
@@ -45,7 +45,30 @@ By the end of this page you will have the toolkit installed on a server and its 
 
 ## Install the toolkit
 
-Connect to the server over SSH, then paste these four lines:
+Connect to the server over SSH, then paste this one line:
+
+```bash
+curl -fsSL https://grinnode.org/install | sudo bash
+```
+
+The installer checks that it runs as root on Linux with `apt-get` or `dnf`, installs `git` if it is missing, downloads the toolkit into `/opt/grin-node-toolkit` and starts the main menu. If a toolkit is already in that folder it is left as it is. Next time, start the menu with:
+
+```bash
+cd /opt/grin-node-toolkit && sudo ./grin-node-toolkit.sh
+```
+
+To read the installer before running it, download it, check it against its published SHA256, then run it:
+
+```bash
+curl -fsSLO https://grinnode.org/install.sh
+curl -fsSL https://grinnode.org/install.sh.sha256 | sha256sum -c -
+less install.sh
+sudo bash install.sh
+```
+
+Options go after `bash -s --` when the script is piped: `--dir PATH` installs elsewhere, `--no-launch` installs without starting the menu. Already logged in as root (some minimal images have no `sudo`)? Drop it: `curl -fsSL https://grinnode.org/install | bash`. The page [grinnode.org/install](https://grinnode.org/install) shows all of this, plus the Windows installer for Grin Money Desktop.
+
+### Or install by hand
 
 ```bash
 git clone https://github.com/noobvie/Grin-Node-Toolkit.git
@@ -54,14 +77,12 @@ chmod +x grin-node-toolkit.sh scripts/*.sh
 sudo ./grin-node-toolkit.sh
 ```
 
-What each line does:
-
 1. `git clone` downloads the toolkit into a folder named `Grin-Node-Toolkit` in your current directory (install `git` first if the command is missing: `sudo apt install git`).
 2. `cd` moves into that folder. You run the toolkit from here every time.
 3. `chmod +x` marks the scripts as executable.
 4. `sudo ./grin-node-toolkit.sh` starts the main menu as root.
 
-The toolkit itself lives where you cloned it; everything it *installs* goes under `/opt/grin/` (see [Where things live](#where-things-live-on-the-server)). Deleting the clone does not remove a node.
+The toolkit itself lives where you installed it; everything it *installs* goes under `/opt/grin/` (see [Where things live](#where-things-live-on-the-server)). Deleting the toolkit folder does not remove a node.
 
 ## Your first run
 
@@ -172,10 +193,10 @@ The reply includes the current `height` and the number of connected peers. The s
 
 ## Keeping the toolkit up to date
 
-The toolkit changes often. Update it from the menu — **[Admin & Maintenance → Self-update](08-admin-maintenance.html#self-update-key-8)** (which also lets you pick a branch) — or by hand from the clone directory:
+The toolkit changes often. Update it from the menu — **[Admin & Maintenance → Self-update](08-admin-maintenance.html#self-update-key-8)** (which also lets you pick a branch) — or by hand from the toolkit directory (`/opt/grin-node-toolkit` when you used the one-line installer, otherwise wherever you cloned it):
 
 ```bash
-cd ~/Grin-Node-Toolkit && git pull
+cd /opt/grin-node-toolkit && git pull
 ```
 
 Pick one of the two and stick to it. Self-update downloads the branch as an archive and copies it over the clone, so afterwards `git log` in the clone is out of date, `git status` lists the updated files as changed, and a file that was deleted upstream stays on disk.

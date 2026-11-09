@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <title>The Jedusor File — Grin, private electronic cash</title>
+  <defs>
+    <radialGradient id="desk" cx="30%" cy="0%" r="90%">
+      <stop offset="0%" stop-color="#26231f"/>
+      <stop offset="100%" stop-color="#121110"/>
+    </radialGradient>
+    <pattern id="lines" width="1200" height="34" patternUnits="userSpaceOnUse">
+      <rect y="33" width="1200" height="1" fill="rgba(0,0,0,0.04)"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#desk)"/>
+  <g transform="rotate(-1.2 600 315)">
+    <rect x="86" y="58" width="1028" height="520" fill="#000" opacity="0.35" transform="translate(6 14)"/>
+    <rect x="86" y="58" width="1028" height="520" fill="#efe9da"/>
+    <rect x="86" y="58" width="1028" height="520" fill="url(#lines)"/>
+    <rect x="530" y="44" width="140" height="30" fill="#d9c98f" opacity="0.8" transform="rotate(-2 600 59)"/>
+    <text x="134" y="122" font-family="'Courier Prime','Courier New',monospace" font-size="22" letter-spacing="2" fill="#574f44">FILE GRN-2016-07 · GRIN.MONEY</text>
+    <text x="1066" y="122" text-anchor="end" font-family="'Courier Prime','Courier New',monospace" font-size="22" letter-spacing="2" fill="#574f44">PAGE 1</text>
+    <rect x="134" y="138" width="932" height="3" fill="#1d1b18"/>
+    <text x="134" y="228" font-family="'Special Elite','Courier New',monospace" font-size="74" fill="#1d1b18">The Jedusor File</text>
+    <text x="134" y="304" font-family="'Special Elite','Courier New',monospace" font-size="40" fill="#1d1b18">Grin: private electronic cash.</text>
+    <text x="134" y="376" font-family="'Courier Prime','Courier New',monospace" font-size="27" fill="#1d1b18">Amounts on chain:</text>
+    <rect x="420" y="352" width="190" height="30" fill="#1d1b18"/>
+    <text x="134" y="418" font-family="'Courier Prime','Courier New',monospace" font-size="27" fill="#1d1b18">Addresses on chain: <tspan>none</tspan></text>
+    <text x="134" y="460" font-family="'Courier Prime','Courier New',monospace" font-size="27" fill="#1d1b18">Emission: 60 GRIN per minute, forever</text>
+    <text x="134" y="502" font-family="'Courier Prime','Courier New',monospace" font-size="27" fill="#1d1b18">Mainnet: 15 January 2019 · no pre-mine</text>
+    <g transform="rotate(-7 935 400)">
+      <rect x="796" y="362" width="278" height="74" fill="none" stroke="#a3241c" stroke-width="6"/>
+      <text x="814" y="414" textLength="242" lengthAdjust="spacingAndGlyphs" font-family="'Stardos Stencil',Impact,sans-serif" font-weight="700" font-size="38" fill="#a3241c">DECLASSIFIED</text>
+    </g>
+  </g>
+</svg>

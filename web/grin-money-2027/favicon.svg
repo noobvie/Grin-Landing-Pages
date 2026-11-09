@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>grin.money</title>
+  <path d="M4 14a4 4 0 0 1 4-4h16l6 6h26a4 4 0 0 1 4 4v32a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z" fill="#c9a96a"/>
+  <rect x="4" y="22" width="56" height="34" rx="4" fill="#e3c88a"/>
+  <text x="32" y="50" text-anchor="middle" font-family="'Courier New',Courier,monospace" font-weight="700" font-size="30" fill="#1d1b18">G</text>
+  <rect x="10" y="27" width="20" height="5" fill="#1d1b18"/>
+  <circle cx="49" cy="30" r="6.5" fill="none" stroke="#a3241c" stroke-width="2.5"/>
+</svg>

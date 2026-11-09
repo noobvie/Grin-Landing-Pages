@@ -21,7 +21,8 @@
 #   9) Update Script      — Self-update site_manager.sh via git pull (fast-forward only)
 #
 #   A) Analytics (GA4)    — Inject / update GA4 tracking in a submitted directory (any web server)
-#   G) Grin-Money Desktop — Deploy install.ps1 from GitHub to <domain>/install (reads deploy/installer.conf)
+#   G) Installers         — Publish install.sh + install.ps1 at <domain>/install (one URL, picked by
+#                           User-Agent) and set up the nginx side (reads deploy/installer.conf)
 #
 #   0) Exit
 #
@@ -56,6 +57,9 @@
 ################################################################################
 
 set -euo pipefail
+
+# cron gives root PATH=/usr/bin:/bin; nginx, certbot and friends live in sbin.
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin${PATH:+:$PATH}"
 
 # ── Non-interactive configuration ────────────────────────────────────────────
 # Set ACTION here, or leave empty for interactive menu.
@@ -363,7 +367,7 @@ EOF
     echo "  9) Update Script      — git pull latest site_manager.sh from GitHub"
     echo ""
     echo "  A) Analytics (GA4)         — Inject/refresh GA4 in a directory you submit (any web server)"
-    echo "  G) Grin-Money Desktop      — Deploy install.ps1 to <domain>/install"
+    echo "  G) Installers              — Publish the Linux + Windows one-liners at <domain>/install"
     echo ""
     echo "  0) Exit"
     echo ""
@@ -664,6 +668,10 @@ TMP_NGINX
 
     if [[ "$OS" == "linux" ]]; then
         ln -sf "$conf_file" "$NGINX_ENABLED/$DOMAIN" 2>/dev/null || true
+        # The fresh vhost has no /install include; put it back if option G
+        # serves or redirects the installers on this domain. After the symlink,
+        # so the loaded-vhost check sees the site as enabled.
+        _installer_refresh_after_add "$DOMAIN"
         # Remove default site if it blocks port 443
         [[ -L "$NGINX_ENABLED/default" ]] && rm -f "$NGINX_ENABLED/default" && \
             print_warn "Removed nginx default site symlink to prevent port 443 conflicts."
@@ -1391,7 +1399,10 @@ _site_archive_plan_loaded() {
 #     /docs/…, extension-less as the /docs/ vhost block serves them (the
 #     archive carries no docs/);
 #   - robots meta → "noindex, follow"; canonical → https://<domain>/;
-#   - a one-line banner right after <body …> linking to the current site.
+#   - a one-line banner right after <body …> linking to the current site: a
+#     bar fixed to the bottom of the viewport above everything (an edition
+#     with a fixed header would cover a banner in normal flow), plus a style
+#     tag giving <body> bottom padding so the bar never hides the footer.
 # Lines this adds are exact strings, deleted and re-added on every run;
 # existing robots/canonical tags are replaced in place. Fails (returns 1) when
 # the page has no <head>, when the first <head> sits inside a comment or a
@@ -1411,7 +1422,7 @@ _archive_transform_html() {
     ARCH_CANON="  <link rel=\"canonical\" href=\"https://${domain}/\" data-archive-edition=\"${year}\">" \
     ARCH_ROBOTS_INPLACE="<meta name=\"robots\" content=\"noindex, follow\">" \
     ARCH_CANON_INPLACE="<link rel=\"canonical\" href=\"https://${domain}/\">" \
-    ARCH_BANNER="<div data-archive-edition=\"${year}\" role=\"note\" style=\"display:block;box-sizing:border-box;width:100%;margin:0;padding:6px 16px;background:#15181b;color:#f3f5f7;border-bottom:1px solid #3d444b;font:13px/1.45 system-ui,sans-serif;text-align:center;position:relative;z-index:40\">You&rsquo;re viewing the ${year} edition of ${domain} &middot; <a href=\"/\" style=\"color:#ffd86b;text-decoration:underline;font-weight:600\">see the current site</a></div>" \
+    ARCH_BANNER="<style data-archive-edition=\"${year}\">body{padding-bottom:60px!important}</style><div data-archive-edition=\"${year}\" role=\"note\" style=\"display:block;box-sizing:border-box;position:fixed;left:0;right:0;bottom:0;z-index:2147483000;width:100%;margin:0;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));background:#15181b;color:#f3f5f7;border-top:1px solid #3d444b;font:13px/1.45 system-ui,sans-serif;text-align:center\">You&rsquo;re viewing the ${year} edition of ${domain} &middot; <a href=\"/\" style=\"color:#ffd86b;text-decoration:underline;font-weight:600\">see the current site</a></div>" \
     awk '
         # Replace every match of re (matched case-insensitively) in s: the
         # first one in the file with NEW[kind], later ones with nothing.
@@ -2391,12 +2402,13 @@ ACTIONS:
     --action fail2ban_mgmt    Manage fail2ban
     --action ip_filter        Block / unblock IPs
     --action analytics_ga4    Inject/refresh GA4 in a directory you submit (any web server)
-    --action deploy-installer Deploy Grin-Money Desktop install.ps1 to <domain>/install
-                              (reads deploy/installer.conf)
+    --action deploy-installer Publish install.sh / install.ps1 at <domain>/install and
+                              configure nginx for it (reads deploy/installer.conf)
 
 DEPLOY-INSTALLER OPTIONS:
-    --auto-confirm            Skip the y/N prompt and exit cleanly when nothing
-                              has changed. Use from cron during development:
+    --auto-confirm            Skip the y/N prompts and stay quiet when nothing
+                              has changed. For cron DURING DEVELOPMENT only: it
+                              publishes every new commit with no review.
                               0 * * * * /path/to/site_manager.sh \
                                   --action deploy-installer --auto-confirm \
                                   >> /var/log/grin-installer-deploy.log 2>&1
@@ -2550,231 +2562,747 @@ action_self_update() {
 }
 
 #############################################################################
-# G. Deploy Grin-Money Desktop installer (install.ps1)
+# G. Installers — https://<serving domain>/install for Linux and Windows
 #
-# Pulls install.ps1 from the Grin-Money-Desktop GitHub repo, verifies the
-# signature line, atomically copies to the nginx-served path, and smoke
-# tests the URL. Kept SEPARATE from action_deploy() so the installer's
-# weekly cadence and the landing-page's yearly cadence never collide.
+# Publishes the installer scripts listed in deploy/installer.conf and keeps the
+# nginx side in step, so one URL serves every platform:
+#   /install            PowerShell → install.ps1 · curl/wget → install.sh ·
+#                       anything else (browsers) → the site's own install.html
+#   /install.sh  /install.ps1  /install.sh.sha256  /install.ps1.sha256   fixed URLs
+#   https://<redirect domain>/install*  → 301 to the serving domain
 #
-# Reads config from deploy/installer.conf.
+# Each script is read straight from its GitHub branch (bare partial clone, no
+# checkout), checked for its marker line, and swapped in atomically. The files
+# live OUTSIDE every web root, so a site deploy (rsync --delete) never touches
+# them. Every installer response is `Cache-Control: no-cache` (nginx `expires
+# epoch`, which — unlike add_header — keeps the server's security headers):
+# /install answers differently per client, so a cache such as Cloudflare must
+# never hand one client's body to another.
+#
+# nginx pieces, all rewritten from this function on every run:
+#   conf.d/grin-installer-map.conf           User-Agent → html|sh|ps1 (http context)
+#   snippets/grin-installer-serve.conf       locations for the serving domain
+#   snippets/grin-installer-redirect.conf    301s for the redirect domains
+#   one `include` line in each vhost, after its `index index.html;`
+# A failed `nginx -t` puts every touched file back as it was.
+#
+# Kept apart from action_deploy(): installers change weekly, the site yearly.
 #############################################################################
 
-action_deploy_installer() {
-    print_section "Deploy Grin-Money Desktop Installer"
+INSTALLER_NAMES_KNOWN=(install.sh install.ps1)
+INSTALLER_INCLUDE_TAG="# grin-installer include (site_manager.sh option G)"
 
+# User-Agents the smoke test sends. Both PowerShell strings begin with
+# "Mozilla/5.0", which is why the map's PowerShell rule comes first.
+INSTALLER_UA_PS51="Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.26100.2161"
+INSTALLER_UA_PS7="Mozilla/5.0 (Windows NT 10.0; Microsoft Windows 10.0.26100; en-US) PowerShell/7.4.6"
+INSTALLER_UA_CURL="curl/8.5.0"
+INSTALLER_UA_WGET="Wget/1.21.4"
+INSTALLER_UA_BROWSER="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+
+_installer_map_file()      { echo "$NGINX_CONF_DIR/conf.d/grin-installer-map.conf"; }
+_installer_serve_snippet() { echo "$NGINX_CONF_DIR/snippets/grin-installer-serve.conf"; }
+_installer_redir_snippet() { echo "$NGINX_CONF_DIR/snippets/grin-installer-redirect.conf"; }
+
+# A path that is safe to write verbatim into nginx config and to rm under.
+_installer_valid_path() {
+    [[ "$1" =~ ^/[A-Za-z0-9._/-]+$ && "$1" != *..* && "$1" != "/" ]]
+}
+
+# Loads and validates deploy/installer.conf. Fills INST_NAME/REPO/BRANCH/PATH/
+# MARKER (parallel arrays, one entry per published script). $1 = "quiet" skips
+# the error for a missing file (used by option 1's re-check).
+_installer_load_conf() {
     local conf="$SCRIPT_DIR/deploy/installer.conf"
-
-    # ── 1. Load config ─────────────────────────────────────────────────────
     if [[ ! -f "$conf" ]]; then
-        print_error "Missing: $conf"
+        [[ "${1:-}" == "quiet" ]] || print_error "Missing: $conf"
         return 1
     fi
 
+    # The interactive menu runs this more than once per session: clear the
+    # previous run's values so a removed key cannot survive in memory.
+    unset INSTALLER_SERVING_DOMAIN INSTALLER_REDIRECT_DOMAINS INSTALLER_TARGET_DIR \
+          INSTALLER_CACHE_ROOT INSTALLER_OWNER INSTALLER_PERMS INSTALLER_SCRIPTS \
+          INSTALLER_SOURCE_REPO
     # shellcheck source=/dev/null
-    source "$conf"
+    source "$conf" || { print_error "Cannot read $conf"; return 1; }
 
-    # ── 2. Validate config ──────────────────────────────────────────────────
-    local required=(INSTALLER_SOURCE_REPO INSTALLER_SOURCE_BRANCH \
-                    INSTALLER_SOURCE_FILE INSTALLER_CACHE_DIR \
-                    INSTALLER_TARGET_DIR INSTALLER_TARGET_FILE \
-                    INSTALLER_SERVING_DOMAIN INSTALLER_OWNER \
-                    INSTALLER_PERMS INSTALLER_SIGNATURE_LINE)
-    local missing=()
-    for v in "${required[@]}"; do
-        [[ -z "${!v:-}" ]] && missing+=("$v")
-    done
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        print_error "installer.conf missing keys: ${missing[*]}"
+    if [[ -n "${INSTALLER_SOURCE_REPO:-}" && -z "${INSTALLER_SCRIPTS+x}" ]]; then
+        print_error "$conf is the old one-script format. Pull the repo (option 9) to get the new one."
         return 1
     fi
 
-    # ── 3. Show current state ───────────────────────────────────────────────
-    local current_target="$INSTALLER_TARGET_DIR/$INSTALLER_TARGET_FILE"
-    local current_ref_file="$INSTALLER_TARGET_DIR/.deployed_ref"
-    print_info "Source: $INSTALLER_SOURCE_REPO ($INSTALLER_SOURCE_BRANCH)"
-    print_info "Target: $current_target"
-    print_info "URL:    https://$INSTALLER_SERVING_DOMAIN/install"
-    if [[ -f "$current_ref_file" ]]; then
-        local deployed_ref deployed_at
-        deployed_ref=$(awk '/^ref:/  {print $2}' "$current_ref_file" 2>/dev/null)
-        deployed_at=$(awk  '/^when:/ {print $2}' "$current_ref_file" 2>/dev/null)
-        print_info "Currently deployed: ${deployed_ref:0:12} (at $deployed_at)"
-    else
-        print_info "No prior deployment recorded."
+    local bad=()
+    validate_domain "${INSTALLER_SERVING_DOMAIN:-}" || bad+=("INSTALLER_SERVING_DOMAIN")
+    local d
+    for d in ${INSTALLER_REDIRECT_DOMAINS:-}; do
+        if ! validate_domain "$d" || [[ "$d" == "${INSTALLER_SERVING_DOMAIN:-}" ]]; then
+            bad+=("INSTALLER_REDIRECT_DOMAINS ($d)")
+        fi
+    done
+    _installer_valid_path "${INSTALLER_TARGET_DIR:-}" || bad+=("INSTALLER_TARGET_DIR")
+    _installer_valid_path "${INSTALLER_CACHE_ROOT:-}" || bad+=("INSTALLER_CACHE_ROOT")
+    [[ "${INSTALLER_OWNER:-}" =~ ^[a-z_][a-z0-9_-]*:[a-z_][a-z0-9_-]*$ ]] || bad+=("INSTALLER_OWNER")
+    [[ "${INSTALLER_PERMS:-}" =~ ^[0-7]{3,4}$ ]] || bad+=("INSTALLER_PERMS")
+    if [[ "$(declare -p INSTALLER_SCRIPTS 2>/dev/null)" != "declare -a"* ]]; then
+        bad+=("INSTALLER_SCRIPTS (must be an array)")
     fi
-    echo ""
+    # A target dir inside a web root would be wiped by the next site deploy.
+    if [[ "${INSTALLER_TARGET_DIR:-}" == */public || "${INSTALLER_TARGET_DIR:-}" == */public/* ]]; then
+        bad+=("INSTALLER_TARGET_DIR (must not be inside a site's public/ dir)")
+    fi
+    if [[ ${#bad[@]} -gt 0 ]]; then
+        print_error "installer.conf has missing or invalid keys:"
+        local b; for b in "${bad[@]}"; do print_error "  $b"; done
+        return 1
+    fi
 
-    # ── 4. Clone or fetch the source repo into cache ────────────────────────
-    # Full clone (no --depth 1) — we want history available so step 4a can
-    # show the operator (or the cron log) what's actually changing.
-    if [[ ! -d "$INSTALLER_CACHE_DIR/.git" ]]; then
-        print_info "Cloning source repo to $INSTALLER_CACHE_DIR …"
-        mkdir -p "$(dirname "$INSTALLER_CACHE_DIR")"
-        git clone --branch "$INSTALLER_SOURCE_BRANCH" \
-            "$INSTALLER_SOURCE_REPO" "$INSTALLER_CACHE_DIR" || {
-            print_error "git clone failed."
-            return 1
-        }
+    INST_NAME=(); INST_REPO=(); INST_BRANCH=(); INST_PATH=(); INST_MARKER=()
+    local row name repo branch path marker extra seen=" "
+    for row in "${INSTALLER_SCRIPTS[@]}"; do
+        IFS='|' read -r name repo branch path marker extra <<< "$row"
+        if [[ -n "${extra:-}" || -z "${marker:-}" ]]; then
+            print_error "INSTALLER_SCRIPTS row needs exactly 5 '|' fields: $row"; return 1
+        fi
+        case "$name" in
+            install.sh|install.ps1) ;;
+            *) print_error "Published name must be install.sh or install.ps1: $name"; return 1 ;;
+        esac
+        if [[ "$seen" == *" $name "* ]]; then
+            print_error "$name is listed twice in INSTALLER_SCRIPTS"; return 1
+        fi
+        seen+="$name "
+        [[ "$repo" =~ ^https://[A-Za-z0-9._/-]+$ ]] \
+            || { print_error "$name: repo must be an https:// git URL: $repo"; return 1; }
+        [[ "$branch" =~ ^[A-Za-z0-9._/-]+$ && "$branch" != -* ]] \
+            || { print_error "$name: invalid branch: $branch"; return 1; }
+        [[ "$path" =~ ^[A-Za-z0-9._/-]+$ && "$path" != /* && "$path" != *..* ]] \
+            || { print_error "$name: invalid path in repo: $path"; return 1; }
+        INST_NAME+=("$name"); INST_REPO+=("$repo"); INST_BRANCH+=("$branch")
+        INST_PATH+=("$path"); INST_MARKER+=("$marker")
+    done
+    return 0
+}
+
+# True when $1 is listed in INSTALLER_SCRIPTS.
+_installer_configured() {
+    local n
+    for n in "${INST_NAME[@]}"; do [[ "$n" == "$1" ]] && return 0; done
+    return 1
+}
+
+# The marker must be one whole line within the first five (a UTF-8 BOM and CR
+# endings are ignored), so a GitHub error page or a wrong file is never served.
+_installer_has_marker() {
+    # No `| grep -q` on a pipe: under pipefail an early grep exit can turn a
+    # match into a SIGPIPE failure. Read the five lines first, then test them.
+    local first5
+    first5=$(head -n 5 "$1" 2>/dev/null | LC_ALL=C sed -e '1s/^\xEF\xBB\xBF//' -e 's/\r$//') || return 1
+    grep -qxF -- "$2" <<< "$first5"
+}
+
+# Fetches one script and publishes it if it differs from what is served.
+# Returns 0 (published or already current) or 1 (error); bumps _INST_PUBLISHED.
+_installer_sync_row() {
+    local name="$1" repo="$2" branch="$3" path="$4" marker="$5"
+    local cache="$INSTALLER_CACHE_ROOT/$name.git"
+    local target="$INSTALLER_TARGET_DIR/$name"
+    local ref_file="$INSTALLER_TARGET_DIR/.deployed_ref.$name"
+
+    echo ""
+    print_info "── $name  ←  $repo  ($branch:$path)"
+
+    # Bare partial clone: commits and trees for the change log below, but the
+    # only file content ever downloaded is the installer's own blob.
+    if [[ -f "$cache/HEAD" ]] && \
+       [[ "$(git -C "$cache" config --get remote.origin.url 2>/dev/null || true)" != "$repo" ]]; then
+        print_info "Source repo changed — re-cloning the cache."
+        rm -rf -- "$cache" || { print_error "Cannot remove $cache"; return 1; }
+    fi
+    if [[ ! -f "$cache/HEAD" ]]; then
+        mkdir -p "$INSTALLER_CACHE_ROOT" || { print_error "Cannot create $INSTALLER_CACHE_ROOT"; return 1; }
+        # GIT_TERMINAL_PROMPT=0: a private or renamed repo fails instead of
+        # waiting for a password (cron has no one to type it).
+        GIT_TERMINAL_PROMPT=0 git clone --quiet --bare --filter=blob:none --single-branch --branch "$branch" \
+            -- "$repo" "$cache" </dev/null \
+            || { print_error "git clone failed: $repo ($branch)"; rm -rf -- "$cache"; return 1; }
     else
-        print_info "Fetching latest in $INSTALLER_CACHE_DIR …"
-        git -C "$INSTALLER_CACHE_DIR" fetch origin "$INSTALLER_SOURCE_BRANCH" || {
-            print_error "git fetch failed."
-            return 1
-        }
-        git -C "$INSTALLER_CACHE_DIR" reset --hard "origin/$INSTALLER_SOURCE_BRANCH" || {
-            print_error "git reset failed."
-            return 1
-        }
+        GIT_TERMINAL_PROMPT=0 git -C "$cache" fetch --quiet origin "+refs/heads/$branch:refs/heads/$branch" </dev/null \
+            || { print_error "git fetch failed: $repo ($branch)"; return 1; }
     fi
 
     local new_ref
-    new_ref=$(git -C "$INSTALLER_CACHE_DIR" rev-parse HEAD)
-    print_info "Source commit: ${new_ref:0:12}"
+    new_ref=$(git -C "$cache" rev-parse --verify --quiet "refs/heads/$branch^{commit}" || true)
+    [[ -n "$new_ref" ]] || { print_error "Branch $branch not found in $repo"; return 1; }
 
-    # ── 4a. Compare against last deployed ref ───────────────────────────────
+    mkdir -p "$INSTALLER_TARGET_DIR" || { print_error "Cannot create $INSTALLER_TARGET_DIR"; return 1; }
+    local tmp
+    tmp=$(mktemp "$INSTALLER_TARGET_DIR/.$name.new.XXXXXX") || { print_error "mktemp failed in $INSTALLER_TARGET_DIR"; return 1; }
+    if ! git -C "$cache" show "$new_ref:$path" > "$tmp" 2>/dev/null; then
+        rm -f -- "$tmp"
+        print_error "$path not found at ${new_ref:0:12}"
+        return 1
+    fi
+
+    # ── Checks before anything is served ─────────────────────────────────────
+    local size
+    size=$(wc -c < "$tmp" | tr -d ' ')
+    if [[ "$size" -eq 0 || "$size" -gt 1048576 ]]; then
+        rm -f -- "$tmp"; print_error "$name is $size bytes — refusing (expected 1 B – 1 MiB)."; return 1
+    fi
+    if ! _installer_has_marker "$tmp" "$marker"; then
+        rm -f -- "$tmp"
+        print_error "Marker line not found in the first 5 lines of $path."
+        print_error "  Expected: $marker"
+        print_error "Refusing to publish — wrong file or wrong branch?"
+        return 1
+    fi
+    if [[ "$name" == *.sh ]] && LC_ALL=C grep -q $'\r' "$tmp"; then
+        rm -f -- "$tmp"; print_error "$path has CRLF line endings — bash would fail on it. Refusing."; return 1
+    fi
+
     local deployed_ref=""
-    if [[ -f "$current_ref_file" ]]; then
-        deployed_ref=$(awk '/^ref:/ {print $2}' "$current_ref_file" 2>/dev/null)
+    [[ -f "$ref_file" ]] && deployed_ref=$(awk '/^ref:/ {print $2; exit}' "$ref_file" 2>/dev/null || true)
+
+    if [[ -f "$target" && -f "$target.sha256" ]] && cmp -s "$tmp" "$target"; then
+        rm -f -- "$tmp"
+        # Owner and mode are re-applied every run, not only on a change.
+        chown "$INSTALLER_OWNER" "$target" "$target.sha256" 2>/dev/null || print_warn "chown $INSTALLER_OWNER failed on $target"
+        chmod "$INSTALLER_PERMS" "$target" "$target.sha256" 2>/dev/null || print_warn "chmod failed on $target"
+        print_info "Up to date (${new_ref:0:12})."
+        return 0
     fi
 
-    if [[ -n "$deployed_ref" && "$deployed_ref" == "$new_ref" ]]; then
-        print_info "Already up to date (deployed = upstream = ${new_ref:0:12})."
-        if [[ "$AUTO_CONFIRM" == "yes" ]]; then
-            return 0                                       # cron-quiet: nothing to do
-        fi
-        ask "  Redeploy anyway? (y/N): " _re
-        if [[ "${_re,,}" != "y" ]]; then
-            print_info "Nothing to deploy. Done."
-            return 0
-        fi
-    elif [[ -n "$deployed_ref" ]] && \
-         git -C "$INSTALLER_CACHE_DIR" cat-file -e "$deployed_ref^{commit}" 2>/dev/null; then
-        # Upstream has new commits AND the deployed commit is reachable in our
-        # cache — show the actual diff.
-        local count
-        count=$(git -C "$INSTALLER_CACHE_DIR" rev-list --count "${deployed_ref}..${new_ref}" 2>/dev/null || echo "?")
-        echo ""
-        print_info "Upstream is $count commit(s) ahead of currently deployed."
-        echo ""
-        echo "  Commits since last deploy:"
-        git -C "$INSTALLER_CACHE_DIR" log --oneline --no-decorate \
-            "${deployed_ref}..${new_ref}" 2>/dev/null | head -20 | sed 's/^/    /'
-        echo ""
-    elif [[ -n "$deployed_ref" ]]; then
-        # Deployed ref isn't in our cache (force-pushed branch, perhaps).
-        print_warn "Last deployed ref ${deployed_ref:0:12} not reachable from upstream."
-        print_warn "Branch may have been force-pushed. Showing recent upstream history:"
-        echo ""
-        git -C "$INSTALLER_CACHE_DIR" log --oneline --no-decorate -n 10 \
-            "$new_ref" 2>/dev/null | sed 's/^/    /'
-        echo ""
+    # ── What changes ─────────────────────────────────────────────────────────
+    if [[ -n "$deployed_ref" && "$deployed_ref" != "$new_ref" ]] && \
+       git -C "$cache" cat-file -e "$deployed_ref^{commit}" 2>/dev/null; then
+        print_info "Commits since the last publish (${deployed_ref:0:12} → ${new_ref:0:12}):"
+        git -C "$cache" log --oneline --no-decorate "${deployed_ref}..${new_ref}" 2>/dev/null \
+            | head -20 | sed 's/^/    /' || true
     else
-        # First deploy.
-        print_info "First deploy — showing 10 most recent upstream commits for context:"
-        echo ""
-        git -C "$INSTALLER_CACHE_DIR" log --oneline --no-decorate -n 10 \
-            "$new_ref" 2>/dev/null | sed 's/^/    /'
-        echo ""
+        print_info "Latest commits on $branch:"
+        git -C "$cache" log --oneline --no-decorate -n 5 "$new_ref" 2>/dev/null \
+            | sed 's/^/    /' || true
     fi
+    print_info "New content: $size bytes, sha256 $(sha256sum < "$tmp" | cut -c1-16)…"
 
-    # ── 5. Locate + verify install.ps1 ──────────────────────────────────────
-    local src="$INSTALLER_CACHE_DIR/$INSTALLER_SOURCE_FILE"
-    if [[ ! -f "$src" ]]; then
-        print_error "Source file not found: $src"
-        return 1
-    fi
-
-    local first_line
-    first_line=$(head -n 1 "$src")
-    if [[ "$first_line" != "$INSTALLER_SIGNATURE_LINE"* ]]; then
-        print_error "Signature line mismatch."
-        print_error "  Expected: $INSTALLER_SIGNATURE_LINE"
-        print_error "  Got     : $first_line"
-        print_error "Refusing to deploy — wrong file or corrupted repo?"
-        return 1
-    fi
-    print_info "Signature line OK."
-
-    # ── 6. Confirm before write ─────────────────────────────────────────────
     if [[ "$AUTO_CONFIRM" != "yes" ]]; then
-        echo ""
-        ask "  Deploy this commit to $current_target? (y/N): " _go
+        local _go=""
+        ask "  Publish $name from ${new_ref:0:12}? (y/N): " _go
         if [[ "${_go,,}" != "y" ]]; then
-            print_info "Aborted by user."
-            return 0
+            rm -f -- "$tmp"; print_info "Skipped $name."; return 0
         fi
-    else
-        print_info "--auto-confirm set — proceeding without prompt."
     fi
 
-    # ── 7. Atomic copy ──────────────────────────────────────────────────────
-    # chown/chmod failures are surfaced as warnings (not fatal). The smoke
-    # test in §8 will catch any nginx-serving fallout downstream and tell
-    # the operator what to fix.
-    mkdir -p "$INSTALLER_TARGET_DIR"
-    local tmp="$current_target.new"
-    cp "$src" "$tmp"
-    chown "$INSTALLER_OWNER" "$tmp" || \
-        print_warn "chown $INSTALLER_OWNER on $tmp failed — user/group may not exist"
-    chmod "$INSTALLER_PERMS" "$tmp" || \
-        print_warn "chmod $INSTALLER_PERMS on $tmp failed — invalid mode?"
-    mv -f "$tmp" "$current_target"
-    print_info "Wrote $current_target"
+    # ── Publish: script, then its checksum, then the ref record ──────────────
+    chown "$INSTALLER_OWNER" "$tmp" 2>/dev/null || print_warn "chown $INSTALLER_OWNER failed on $tmp"
+    chmod "$INSTALLER_PERMS" "$tmp" || print_warn "chmod $INSTALLER_PERMS failed on $tmp"
+    mv -f -- "$tmp" "$target" || { rm -f -- "$tmp"; print_error "Cannot write $target"; return 1; }
 
-    # Record the deployed ref for next time
-    {
+    local sum_tmp
+    sum_tmp=$(mktemp "$INSTALLER_TARGET_DIR/.$name.sha256.new.XXXXXX") || { print_error "mktemp failed"; return 1; }
+    ( cd "$INSTALLER_TARGET_DIR" && sha256sum -- "$name" ) > "$sum_tmp" \
+        || { rm -f -- "$sum_tmp"; print_error "sha256sum failed for $target"; return 1; }
+    chown "$INSTALLER_OWNER" "$sum_tmp" 2>/dev/null || true
+    chmod "$INSTALLER_PERMS" "$sum_tmp" || true
+    mv -f -- "$sum_tmp" "$target.sha256" || { print_error "Cannot write $target.sha256"; return 1; }
+
+    # Temp file + mv like the scripts: a plain `>` would follow a symlink
+    # planted at this path.
+    local ref_tmp
+    if ref_tmp=$(mktemp "$INSTALLER_TARGET_DIR/.ref.new.XXXXXX") && {
         echo "ref:  $new_ref"
+        echo "repo: $repo"
         echo "when: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
         echo "by:   ${SUDO_USER:-$(whoami)}"
-    } > "$current_ref_file"
-    chown "$INSTALLER_OWNER" "$current_ref_file" || \
-        print_warn "chown $INSTALLER_OWNER on $current_ref_file failed"
-
-    # ── 8. Check that the nginx vhost serves it ─────────────────────────────
-    echo ""
-    print_info "Smoke testing https://$INSTALLER_SERVING_DOMAIN/install …"
-    local probe
-    probe=$(curl -fsS --max-time 10 "https://$INSTALLER_SERVING_DOMAIN/install" 2>/dev/null | head -n 1)
-    if [[ "$probe" == "$INSTALLER_SIGNATURE_LINE"* ]]; then
-        print_info "Smoke test OK — irm | iex one-liner is live."
-        echo ""
-        echo -e "    ${GREEN}irm https://$INSTALLER_SERVING_DOMAIN/install | iex${NC}"
-        echo ""
-
-        # In manual mode, suggest a cron line if one isn't already set up.
-        # Skip the hint when --auto-confirm is in effect (we ARE the cron).
-        if [[ "$AUTO_CONFIRM" != "yes" ]] && \
-           ! crontab -l 2>/dev/null | grep -q 'site_manager.sh.*deploy-installer.*--auto-confirm'; then
-            print_info "Tip — to auto-pull every hour during development, add to root's crontab:"
-            echo -e "    ${DIM}# crontab -e${NC}"
-            echo -e "    ${GREEN}0 * * * * $SCRIPT_DIR/site_manager.sh --action deploy-installer --auto-confirm >> /var/log/grin-installer-deploy.log 2>&1${NC}"
-            echo ""
-            print_info "Remove the line once you're back to gating every deploy manually."
-            echo ""
-        fi
+    } > "$ref_tmp" && mv -f -- "$ref_tmp" "$ref_file"; then
+        :
     else
-        print_warn "Smoke test failed — the file is on disk but the URL"
-        print_warn "doesn't return it. Likely missing nginx location block."
-        print_warn ""
-        print_warn "Add this to your $INSTALLER_SERVING_DOMAIN vhost:"
-        echo ""
-        cat <<NGINX_EOF
-    location = /install {
-        default_type text/plain;
-        alias $current_target;
-        add_header Cache-Control "public, max-age=300";
-        add_header X-Content-Type-Options "nosniff";
-    }
-    location = /install.ps1 {
-        default_type text/plain;
-        alias $current_target;
-    }
-NGINX_EOF
-        echo ""
-        print_warn "Then: sudo nginx -t && sudo systemctl reload nginx"
-        print_warn "Then re-run this action (G) to re-test."
+        rm -f -- "${ref_tmp:-}"; print_warn "Cannot write $ref_file"
     fi
+
+    print_info "Published $target ($(cut -c1-16 "$target.sha256")…)"
+    _INST_PUBLISHED=$((_INST_PUBLISHED + 1))
+    return 0
+}
+
+# Stops serving scripts whose row was removed from installer.conf.
+_installer_remove_unlisted() {
+    local n
+    for n in "${INSTALLER_NAMES_KNOWN[@]}"; do
+        _installer_configured "$n" && continue
+        if [[ -e "$INSTALLER_TARGET_DIR/$n" ]]; then
+            rm -f -- "$INSTALLER_TARGET_DIR/$n" "$INSTALLER_TARGET_DIR/$n.sha256" \
+                     "$INSTALLER_TARGET_DIR/.deployed_ref.$n" \
+                || { print_error "Cannot remove $INSTALLER_TARGET_DIR/$n"; return 1; }
+            print_info "Removed $n (no longer listed in installer.conf) — its URLs now return 404."
+            _INST_PUBLISHED=$((_INST_PUBLISHED + 1))
+        fi
+    done
+    return 0
+}
+
+# ── nginx ────────────────────────────────────────────────────────────────────
+
+_installer_map_conf() {
+    cat << 'MAP_EOF'
+# Managed by site_manager.sh (option G) — rewritten on every run; do not edit.
+# Picks what https://<serving domain>/install returns. PowerShell's User-Agent
+# also starts with "Mozilla/5.0", so its rule must stay above the default.
+map $http_user_agent $grin_installer_kind {
+    default            html;
+    "~PowerShell/"     ps1;
+    "~*^(curl|wget)"   sh;
+}
+MAP_EOF
+}
+
+_installer_serve_conf() {
+    local dir="$INSTALLER_TARGET_DIR"
+    cat << SERVE_EOF
+# Managed by site_manager.sh (option G) — rewritten on every run; do not edit.
+# Change deploy/installer.conf and re-run option G instead.
+#
+# Exact-match locations win over the vhost's regex blocks (including the one
+# that answers 403 for *.sh). No add_header here: \`expires epoch\` sends
+# Cache-Control: no-cache while the server-level security headers still apply.
+# A script that is not published is simply absent, so its URL is a 404.
+# if_modified_since off on the /install targets: the three bodies share one URL,
+# so a client's If-Modified-Since must never earn a 304 for another body.
+
+location = /install {
+    rewrite ^ /_grin_installer/\$grin_installer_kind last;
+}
+location = /_grin_installer/html {
+    internal;
+    if_modified_since off;
+    expires epoch;
+    try_files /install.html =404;
+}
+location = /_grin_installer/sh {
+    internal;
+    if_modified_since off;
+    alias ${dir}/install.sh;
+    types { } default_type text/plain; charset utf-8;
+    expires epoch;
+}
+location = /_grin_installer/ps1 {
+    internal;
+    if_modified_since off;
+    alias ${dir}/install.ps1;
+    types { } default_type text/plain; charset utf-8;
+    expires epoch;
+}
+location = /install.sh {
+    alias ${dir}/install.sh;
+    types { } default_type text/plain; charset utf-8;
+    expires epoch;
+}
+location = /install.ps1 {
+    alias ${dir}/install.ps1;
+    types { } default_type text/plain; charset utf-8;
+    expires epoch;
+}
+location = /install.sh.sha256 {
+    alias ${dir}/install.sh.sha256;
+    types { } default_type text/plain; charset utf-8;
+    expires epoch;
+}
+location = /install.ps1.sha256 {
+    alias ${dir}/install.ps1.sha256;
+    types { } default_type text/plain; charset utf-8;
+    expires epoch;
+}
+SERVE_EOF
+}
+
+_installer_redirect_conf() {
+    local to="https://$INSTALLER_SERVING_DOMAIN"
+    cat << REDIR_EOF
+# Managed by site_manager.sh (option G) — rewritten on every run; do not edit.
+# The installers live on ${INSTALLER_SERVING_DOMAIN}; old one-liners pointing here keep working
+# (PowerShell's irm and curl -L follow the redirect).
+location = /install            { return 301 ${to}/install; }
+location = /install.sh         { return 301 ${to}/install.sh; }
+location = /install.ps1        { return 301 ${to}/install.ps1; }
+location = /install.sh.sha256  { return 301 ${to}/install.sh.sha256; }
+location = /install.ps1.sha256 { return 301 ${to}/install.ps1.sha256; }
+REDIR_EOF
+}
+
+# Every file the current run replaced, and where its old copy went ("-" = it
+# did not exist), so a failed `nginx -t` can put everything back.
+_INST_NG_FILES=()
+_INST_NG_BACKUPS=()
+_INST_NG_BACKUP_DIR=""
+
+# Writes stdin to $1 if the content differs. Returns 0 = written, 1 = unchanged,
+# 2 = error.
+_installer_stage_file() {
+    local dest="$1" tmp
+    mkdir -p "$(dirname "$dest")" || return 2
+    tmp=$(mktemp "$(dirname "$dest")/.grin-installer.XXXXXX") || return 2
+    if ! cat > "$tmp"; then rm -f -- "$tmp"; return 2; fi
+    if [[ -f "$dest" ]] && cmp -s "$tmp" "$dest"; then rm -f -- "$tmp"; return 1; fi
+
+    if [[ -z "$_INST_NG_BACKUP_DIR" ]]; then
+        local broot="/etc/grin-landing/nginx-backup" old
+        _INST_NG_BACKUP_DIR="$broot/$(date +%Y%m%d_%H%M%S)"
+        mkdir -p "$_INST_NG_BACKUP_DIR" || { rm -f -- "$tmp"; return 2; }
+        # Keep the newest 10 runs (names are timestamps, so they sort by age).
+        while IFS= read -r old; do
+            [[ -n "$old" ]] && rm -rf -- "$old"
+        done < <(find "$broot" -mindepth 1 -maxdepth 1 -type d -name '2*' 2>/dev/null | sort -r | tail -n +11)
+    fi
+    local backup="-"
+    if [[ -f "$dest" ]]; then
+        backup="$_INST_NG_BACKUP_DIR/${#_INST_NG_FILES[@]}_$(basename "$dest")"
+        cp -p -- "$dest" "$backup" || { rm -f -- "$tmp"; return 2; }
+        # keep the original mode/owner on the replacement
+        chmod --reference="$dest" "$tmp" 2>/dev/null || chmod 644 "$tmp"
+        chown --reference="$dest" "$tmp" 2>/dev/null || true
+    else
+        chmod 644 "$tmp"
+    fi
+    if ! mv -f -- "$tmp" "$dest"; then rm -f -- "$tmp"; return 2; fi
+    _INST_NG_FILES+=("$dest"); _INST_NG_BACKUPS+=("$backup")
+    print_info "nginx: updated $dest"
+    return 0
+}
+
+_installer_ng_restore() {
+    local i
+    for (( i=${#_INST_NG_FILES[@]}-1; i>=0; i-- )); do
+        if [[ "${_INST_NG_BACKUPS[$i]}" == "-" ]]; then
+            rm -f -- "${_INST_NG_FILES[$i]}"
+        else
+            cp -p -- "${_INST_NG_BACKUPS[$i]}" "${_INST_NG_FILES[$i]}" \
+                || print_error "Restore failed: ${_INST_NG_FILES[$i]} (copy is in ${_INST_NG_BACKUPS[$i]})"
+        fi
+    done
+    print_warn "nginx: every file changed in this run was put back."
+}
+
+# Puts the right include in one vhost file. $2 = serve | redirect | none.
+# Returns 0 = ok (changed or not), 1 = skipped with a warning, 2 = error.
+_installer_vhost_include() {
+    local conf="$1" role="$2" inc=""
+    case "$role" in
+        serve)    inc="include $(_installer_serve_snippet);" ;;
+        redirect) inc="include $(_installer_redir_snippet);" ;;
+    esac
+
+    # A hand-written /install block (the old option G printed one) would clash.
+    if [[ "$role" != "none" ]] && \
+       grep -Eq '^[[:space:]]*location[[:space:]]*=[[:space:]]*/install(\.sh|\.ps1)?[[:space:]]*\{' "$conf"; then
+        print_warn "$conf has its own 'location = /install…' block — remove it, then re-run option G."
+        return 1
+    fi
+
+    local out rc=0
+    # The anchor must sit in the server block that listens on 443, so the
+    # installers are never served over plain HTTP from the :80 block.
+    out=$(awk -v inc="$inc" -v role="$role" -v tag="$INSTALLER_INCLUDE_TAG" '
+        $0 ~ /^[ \t]*server[ \t]*\{/ { in443 = 0 }
+        $0 ~ /^[ \t]*listen[ \t]+[^;]*443/ { in443 = 1 }
+        $0 ~ /^[ \t]*# grin-installer include / { next }
+        $0 ~ /^[ \t]*include[ \t]+[^;]*grin-installer-(serve|redirect)\.conf;/ { next }
+        { print }
+        role != "none" && !done && in443 && $0 ~ /^[ \t]*index[ \t]+index\.html;/ {
+            print "    " tag; print "    " inc; done = 1
+        }
+        END { if (role != "none" && !done) exit 3 }
+    ' "$conf") || rc=$?
+    if [[ $rc -eq 3 ]]; then
+        print_warn "$conf has no 'index index.html;' line in a 443 server block to anchor on. Add this inside that block:"
+        echo "    $inc"
+        return 1
+    elif [[ $rc -ne 0 ]]; then
+        print_error "Cannot read $conf"; return 2
+    fi
+
+    local src
+    src=$(cat "$conf") || return 2
+    [[ "$out" == "$src" ]] && return 0
+    # Redirect, never a pipe: a pipe would run _installer_stage_file in a
+    # subshell and lose its record of changed files (no reload, no rollback).
+    rc=0
+    _installer_stage_file "$conf" <<< "$out" || rc=$?
+    [[ $rc -eq 2 ]] && { print_error "Cannot write $conf"; return 2; }
+    return 0
+}
+
+# Writes the map + snippets, wires the vhosts, tests and reloads.
+# Sets _INST_NGINX_CHANGED=yes when anything was written. Returns 1 on failure.
+_installer_ensure_nginx() {
+    _INST_NG_FILES=(); _INST_NG_BACKUPS=(); _INST_NG_BACKUP_DIR=""
+    _INST_NGINX_CHANGED="no"
+
+    if ! command -v nginx >/dev/null 2>&1; then
+        print_error "nginx is not installed — add the domain first (option 1)."
+        return 1
+    fi
+    # The map must live in http{} context; the stock nginx.conf on Debian,
+    # Ubuntu, Rocky and Alma includes conf.d/*.conf there.
+    if ! grep -Eq '^[[:space:]]*include[[:space:]]+[^;]*conf\.d/\*\.conf' "$NGINX_CONF_DIR/nginx.conf" 2>/dev/null; then
+        print_error "$NGINX_CONF_DIR/nginx.conf does not include conf.d/*.conf — cannot add the User-Agent map."
+        return 1
+    fi
+
+    # `|| rc=$?` everywhere: under --action, errexit is live and "unchanged"
+    # (status 1) must not end the script. Input by redirect, not a pipe, so the
+    # function runs in this shell and its record of changed files survives.
+    local rc fail=0
+    rc=0; _installer_stage_file "$(_installer_map_file)"      < <(_installer_map_conf)      || rc=$?; [[ $rc -eq 2 ]] && fail=1
+    rc=0; _installer_stage_file "$(_installer_serve_snippet)" < <(_installer_serve_conf)    || rc=$?; [[ $rc -eq 2 ]] && fail=1
+    rc=0; _installer_stage_file "$(_installer_redir_snippet)" < <(_installer_redirect_conf) || rc=$?; [[ $rc -eq 2 ]] && fail=1
+
+    # Vhosts: serving domain, redirect domains, and any other vhost that still
+    # carries one of our includes from an earlier configuration.
+    local -A role=()
+    role["$INSTALLER_SERVING_DOMAIN"]="serve"
+    local d f
+    for d in ${INSTALLER_REDIRECT_DOMAINS:-}; do role["$d"]="redirect"; done
+    # Only vhosts nginx actually loads (a sites-enabled symlink into
+    # sites-available), so a backup such as grinnode.org.bak is never rewritten;
+    # a stale include in a disabled file does nothing.
+    local link real
+    for link in "$NGINX_ENABLED"/*; do
+        [[ -L "$link" ]] || continue
+        real=$(readlink -f -- "$link" 2>/dev/null) || continue
+        [[ "$real" == "$NGINX_AVAILABLE"/* && -f "$real" ]] || continue
+        f="$real"; d=$(basename "$f")
+        [[ -n "${role[$d]:-}" ]] && continue
+        grep -q 'grin-installer-' "$f" 2>/dev/null && role["$d"]="none"
+    done
+    for d in "${!role[@]}"; do
+        f="$NGINX_AVAILABLE/$d"
+        if [[ ! -f "$f" ]]; then
+            print_warn "No vhost for $d at $f — add the domain (option 1), then re-run option G."
+            continue
+        fi
+        rc=0; _installer_vhost_include "$f" "${role[$d]}" || rc=$?
+        [[ $rc -eq 2 ]] && fail=1
+    done
+
+    if [[ $fail -ne 0 ]]; then
+        _installer_ng_restore
+        return 1
+    fi
+    if [[ ${#_INST_NG_FILES[@]} -eq 0 ]]; then
+        print_info "nginx: already configured."
+    else
+        _INST_NGINX_CHANGED="yes"
+        if ! nginx -t >/dev/null 2>&1; then
+            print_error "nginx -t failed after the installer changes:"
+            nginx -t 2>&1 | sed 's/^/    /' || true
+            _installer_ng_restore
+            return 1
+        fi
+        nginx_reload || return 1
+        print_info "nginx: backups of the replaced files are in $_INST_NG_BACKUP_DIR"
+    fi
+    _installer_check_loaded
+}
+
+# A vhost file that nginx never reads (no symlink in sites-enabled, a copy
+# there instead, a distro without sites-enabled) passes `nginx -t` silently.
+# `nginx -T` lists every file it actually loaded.
+_installer_check_loaded() {
+    local dump
+    dump=$(nginx -T 2>/dev/null) || return 0
+    local missing=0
+    if ! grep -qF "# configuration file $(_installer_serve_snippet):" <<< "$dump"; then
+        print_error "nginx does not load $(_installer_serve_snippet): the $INSTALLER_SERVING_DOMAIN vhost it is in is not active."
+        print_error "  Expected $NGINX_ENABLED/$INSTALLER_SERVING_DOMAIN → $NGINX_AVAILABLE/$INSTALLER_SERVING_DOMAIN (a symlink, not a copy)."
+        missing=1
+    fi
+    # Only when some redirect domain has a vhost: a missing one was already
+    # warned about, and must not turn every quiet cron run into a failure.
+    local d any_redirect=no
+    for d in ${INSTALLER_REDIRECT_DOMAINS:-}; do [[ -f "$NGINX_AVAILABLE/$d" ]] && any_redirect=yes; done
+    if [[ "$any_redirect" == yes ]] && \
+       ! grep -qF "# configuration file $(_installer_redir_snippet):" <<< "$dump"; then
+        print_error "nginx does not load $(_installer_redir_snippet): no redirect-domain vhost with it is active."
+        missing=1
+    fi
+    return $missing
+}
+
+# ── Smoke test ───────────────────────────────────────────────────────────────
+
+# $1 label  $2 url  $3 user-agent  $4 expected marker, or "html"
+# $5 (optional) sha256 file the body must match. Bumps _INST_SMOKE_FAIL.
+_installer_probe() {
+    local label="$1" url="$2" ua="$3" expect="$4" sumfile="${5:-}"
+    local body hdr code
+    if ! body=$(mktemp) || ! hdr=$(mktemp); then print_error "mktemp failed"; return 1; fi
+    code=$(curl -sS --max-time 15 -A "$ua" -D "$hdr" -o "$body" -w '%{http_code}' "$url" 2>/dev/null || true)
+    [[ -n "$code" ]] || code="000"
+    local ok=yes why=""
+    if [[ "$code" != "200" ]]; then
+        ok=no; why="HTTP $code"
+    elif [[ "$expect" == "html" ]]; then
+        LC_ALL=C grep -qi '<html' "$body" || { ok=no; why="not an HTML page"; }
+    elif ! _installer_has_marker "$body" "$expect"; then
+        ok=no; why="marker line missing (got: $(head -c 60 "$body" | tr -d '\r\n'))"
+    fi
+    if [[ "$ok" == yes ]] && ! grep -qi '^cache-control:.*no-\(cache\|store\)' "$hdr"; then
+        ok=no; why="no Cache-Control: no-cache — a cache could serve it to the wrong client"
+    fi
+    if [[ "$ok" == yes && -n "$sumfile" ]]; then
+        local want got
+        want=$(cut -d' ' -f1 "$sumfile" 2>/dev/null || true)
+        got=$(sha256sum < "$body" | cut -d' ' -f1)
+        [[ -n "$want" && "$want" == "$got" ]] || { ok=no; why="sha256 differs from the published file (stale cache?)"; }
+    fi
+    rm -f -- "$body" "$hdr"
+    if [[ "$ok" == yes ]]; then
+        echo -e "    ${GREEN}✓${NC} $label"
+    else
+        echo -e "    ${RED}✗${NC} $label — $why"
+        _INST_SMOKE_FAIL=$((_INST_SMOKE_FAIL + 1))
+    fi
+}
+
+_installer_smoke() {
+    local base="https://$INSTALLER_SERVING_DOMAIN" i name marker
+    _INST_SMOKE_FAIL=0
+    echo ""
+    print_info "Smoke test (through DNS / Cloudflare, as a user would):"
+    for i in "${!INST_NAME[@]}"; do
+        name="${INST_NAME[$i]}"; marker="${INST_MARKER[$i]}"
+        [[ -f "$INSTALLER_TARGET_DIR/$name" ]] || continue
+        _installer_probe "$base/$name" "$base/$name" "$INSTALLER_UA_CURL" "$marker" "$INSTALLER_TARGET_DIR/$name.sha256"
+        if [[ "$name" == *.sh ]]; then
+            _installer_probe "/install as curl → $name" "$base/install" "$INSTALLER_UA_CURL" "$marker" "$INSTALLER_TARGET_DIR/$name.sha256"
+            _installer_probe "/install as wget → $name" "$base/install" "$INSTALLER_UA_WGET" "$marker"
+        else
+            _installer_probe "/install as Windows PowerShell 5.1 → $name" "$base/install" "$INSTALLER_UA_PS51" "$marker" "$INSTALLER_TARGET_DIR/$name.sha256"
+            _installer_probe "/install as PowerShell 7 → $name" "$base/install" "$INSTALLER_UA_PS7" "$marker"
+        fi
+    done
+    _installer_probe "/install in a browser → help page" "$base/install" "$INSTALLER_UA_BROWSER" "html"
+
+    local d got
+    for d in ${INSTALLER_REDIRECT_DOMAINS:-}; do
+        got=$(curl -sS -o /dev/null --max-time 15 -A "$INSTALLER_UA_CURL" \
+                   -w '%{http_code} %{redirect_url}' "https://$d/install" 2>/dev/null || true)
+        if [[ "$got" == "301 $base/install" ]]; then
+            echo -e "    ${GREEN}✓${NC} https://$d/install → $base/install"
+        else
+            echo -e "    ${RED}✗${NC} https://$d/install — expected '301 $base/install', got '$got'"
+            _INST_SMOKE_FAIL=$((_INST_SMOKE_FAIL + 1))
+        fi
+    done
+
+    echo ""
+    if [[ $_INST_SMOKE_FAIL -eq 0 ]]; then
+        print_info "Smoke test passed. The one-liners:"
+        _installer_configured install.sh  && echo -e "    ${GREEN}curl -fsSL $base/install | sudo bash${NC}      (Linux)"
+        _installer_configured install.ps1 && echo -e "    ${GREEN}irm $base/install | iex${NC}                  (Windows PowerShell)"
+        return 0
+    fi
+    print_warn "$_INST_SMOKE_FAIL check(s) failed. Usual causes:"
+    print_warn "  • help page missing → deploy the $INSTALLER_SERVING_DOMAIN site (option 3); it ships install.html"
+    print_warn "  • every check fails → see any 'nginx does not load' error above (vhost not enabled)"
+    print_warn "  • old body or HTML for a script → purge /install* in Cloudflare and add a cache-bypass rule for it"
+    print_warn "  • HTTP 403 with an HTML challenge → Cloudflare Bot Fight Mode is blocking curl/PowerShell;"
+    print_warn "    skip it for /install* (WAF custom rule) or turn it off"
+    return 1
+}
+
+# One option G run at a time (an hourly cron run can meet an interactive one,
+# or option 1's re-check): overlapping runs would share temp files and could
+# undo each other's nginx restore.
+INSTALLER_LOCK_FILE="/run/grin-installer.lock"
+_installer_lock() {
+    exec {_INST_LOCK_FD}>"$INSTALLER_LOCK_FILE" || { print_error "Cannot open $INSTALLER_LOCK_FILE"; return 1; }
+    if ! flock -w 120 "$_INST_LOCK_FD"; then
+        exec {_INST_LOCK_FD}>&-
+        print_error "Another option G run still holds $INSTALLER_LOCK_FILE — try again later."
+        return 1
+    fi
+}
+_installer_unlock() { exec {_INST_LOCK_FD}>&-; }
+
+# Option 1 rewrites a vhost from scratch, dropping the include; this puts it
+# back when the domain serves or redirects /install. Silent when unconfigured.
+_installer_refresh_after_add() {
+    local domain="$1" d hit=no
+    _installer_load_conf quiet >/dev/null 2>&1 || return 0
+    [[ "$domain" == "$INSTALLER_SERVING_DOMAIN" ]] && hit=yes
+    for d in ${INSTALLER_REDIRECT_DOMAINS:-}; do [[ "$domain" == "$d" ]] && hit=yes; done
+    [[ "$hit" == yes ]] || return 0
+    print_info "$domain is listed in deploy/installer.conf — re-adding the /install include."
+    _installer_lock || { print_warn "Re-run option G to finish the installer setup for $domain."; return 0; }
+    _installer_ensure_nginx || print_warn "Re-run option G to finish the installer setup for $domain."
+    _installer_unlock
+    return 0
+}
+
+action_deploy_installer() {
+    _installer_lock || return 1
+    local rc=0
+    _installer_run || rc=$?
+    _installer_unlock
+    return $rc
+}
+
+_installer_run() {
+    print_section "Installers — one-line install URLs"
+
+    if [[ "$OS" != "linux" ]]; then
+        print_error "Option G configures nginx on the Linux server; it does not run on $OS."
+        return 1
+    fi
+    _installer_load_conf || return 1
+
+    local base="https://$INSTALLER_SERVING_DOMAIN" i
+    print_info "Serving domain : $INSTALLER_SERVING_DOMAIN  (/install, /install.sh, /install.ps1)"
+    print_info "Redirects from : ${INSTALLER_REDIRECT_DOMAINS:-none}"
+    print_info "Files on disk  : $INSTALLER_TARGET_DIR"
+    for i in "${!INST_NAME[@]}"; do
+        print_info "  ${INST_NAME[$i]}  ←  ${INST_REPO[$i]} (${INST_BRANCH[$i]}:${INST_PATH[$i]})"
+    done
+
+    # Root-owned, not writable by the web server: anything running as www-data
+    # must never be able to swap the script that users pipe into a root shell.
+    if ! mkdir -p "$INSTALLER_TARGET_DIR" || ! chown root:root "$INSTALLER_TARGET_DIR" \
+       || ! chmod 755 "$INSTALLER_TARGET_DIR"; then
+        print_error "Cannot prepare $INSTALLER_TARGET_DIR"; return 1
+    fi
+
+    _INST_PUBLISHED=0
+    local failed=0
+    for i in "${!INST_NAME[@]}"; do
+        _installer_sync_row "${INST_NAME[$i]}" "${INST_REPO[$i]}" "${INST_BRANCH[$i]}" \
+                            "${INST_PATH[$i]}" "${INST_MARKER[$i]}" || failed=1
+    done
+    _installer_remove_unlisted || failed=1
+
+    echo ""
+    _installer_ensure_nginx || failed=1
+
+    # Cron runs: stay quiet when nothing changed and nothing failed.
+    if [[ "$AUTO_CONFIRM" == "yes" && $_INST_PUBLISHED -eq 0 && \
+          "${_INST_NGINX_CHANGED:-no}" == "no" && $failed -eq 0 ]]; then
+        print_info "Nothing changed."
+        return 0
+    fi
+
+    _installer_smoke || failed=1
+
+    if [[ "$AUTO_CONFIRM" != "yes" ]] && \
+       ! crontab -l 2>/dev/null | grep -q 'site_manager.sh.*deploy-installer.*--auto-confirm'; then
+        echo ""
+        print_info "Development only — publish every new commit on the branch hourly, with no review (root's crontab):"
+        echo -e "    ${GREEN}0 * * * * $SCRIPT_DIR/site_manager.sh --action deploy-installer --auto-confirm >> /var/log/grin-installer-deploy.log 2>&1${NC}"
+    fi
+
+    [[ $failed -eq 0 ]] || { print_warn "Finished with errors — see above."; return 1; }
+    print_info "Done. Help page: $base/install"
+    return 0
 }
 
 #############################################################################

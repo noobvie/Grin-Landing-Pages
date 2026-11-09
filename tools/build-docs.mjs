@@ -459,7 +459,7 @@ const rendered = pages.map((p, i) => ({ path: join(OUT_DIR, `${p.slug}.html`), h
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${SITE_URL}/</loc><lastmod>${gitDate(`web/${EDITION}/index.html`) || today}</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-${pages.map((p) => `  <url><loc>${pageUrl(p.slug)}</loc><lastmod>${p.meta.updated || today}</lastmod><changefreq>monthly</changefreq><priority>${p.slug === "index" ? "0.9" : "0.8"}</priority></url>`).join("\n")}
+${existsSync(join(SITE_DIR, "install.html")) ? `  <url><loc>${SITE_URL}/install</loc><lastmod>${gitDate(`web/${EDITION}/install.html`) || today}</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>\n` : ""}${pages.map((p) => `  <url><loc>${pageUrl(p.slug)}</loc><lastmod>${p.meta.updated || today}</lastmod><changefreq>monthly</changefreq><priority>${p.slug === "index" ? "0.9" : "0.8"}</priority></url>`).join("\n")}
 </urlset>
 `;
 const robots = `User-agent: *

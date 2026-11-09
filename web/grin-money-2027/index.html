@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Grin: private electronic cash on Mimblewimble | grin.money</title>
+  <meta name="description" content="New to Grin? A plain-language case file: private money on Mimblewimble, no amounts or addresses on chain, 60 GRIN a minute, no pre-mine, no ICO.">
+  <meta name="keywords" content="Grin, GRIN, Mimblewimble, privacy cryptocurrency, confidential transactions, slatepack, fair launch, no premine, Grim wallet, Goblin wallet, Grin mining">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://grin.money/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="grin.money">
+  <meta property="og:url" content="https://grin.money/">
+  <meta property="og:title" content="The Jedusor File — Grin, private electronic cash">
+  <meta property="og:description" content="Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol. No amounts and no addresses on chain, 60 GRIN per minute, no pre-mine. Mainnet since January 2019.">
+  <meta property="og:image" content="https://grin.money/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Jedusor File: a typewritten case file about Grin, private electronic cash since 2019">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Jedusor File — Grin, private electronic cash">
+  <meta name="twitter:description" content="Mimblewimble privacy: no amounts and no addresses on chain. 60 GRIN per minute forever, no pre-mine, no ICO. Mainnet since January 2019.">
+  <meta name="twitter:image" content="https://grin.money/og-image.png">
+  <meta name="twitter:image:alt" content="The Jedusor File: a typewritten case file about Grin, private electronic cash since 2019">
+  <meta name="author" content="grin.money">
+  <meta name="theme-color" content="#121110">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&amp;family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&amp;family=Special+Elite&amp;family=Stardos+Stencil:wght@700&amp;display=swap">
+  <script>document.documentElement.className += " js";</script>
+  <style>
+    /* The Jedusor File: the page is a leaked case file on a dark desk. Each section is one
+       typed sheet; redaction bars hide words the way the chain hides amounts. */
+    :root{
+      color-scheme:light;
+      --desk:#121110;--desk2:#1c1a17;
+      --paper:#efe9da;--paper2:#e4dcc7;--ink:#1d1b18;--faded:#574f44;
+      --stamp:#a3241c;--tape:#d9c98f;--deskink:#a59c88;--term:#d8f5c8;
+      --f-type:"Special Elite","Courier New",monospace;
+      --f-mono:"Courier Prime","Courier New",monospace;
+      --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+      --f-stamp:"Stardos Stencil",Impact,"Arial Black",sans-serif;
+      --gutl:max(16px,env(safe-area-inset-left,0px));
+      --gutr:max(16px,env(safe-area-inset-right,0px));
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html{background:var(--desk);overflow-x:clip;scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{margin:0;background:var(--desk);color:var(--paper);font:17px/1.65 var(--f-body);
+      background-image:radial-gradient(ellipse at 30% 0%,var(--desk2),var(--desk) 70%);
+      padding-left:var(--gutl);padding-right:var(--gutr)}
+    a{color:inherit;text-underline-offset:3px}
+    :focus-visible{outline:3px solid var(--stamp);outline-offset:3px}
+    .desk :focus-visible,.skip:focus-visible{outline-color:var(--tape)}
+    [tabindex="-1"]:focus{outline:none}
+    .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+    .skip{position:absolute;left:var(--gutl);top:-120px;z-index:70;background:var(--tape);color:var(--ink);padding:10px 16px;min-height:44px;display:inline-flex;align-items:center;font:700 16px var(--f-mono);text-decoration:none}
+    .skip:focus{top:calc(8px + env(safe-area-inset-top,0px))}
+    /* rotated sheets may poke a few px past the column: clip sideways at the page edge, not the column, so focus rings and paper corners stay whole */
+    .wrap{max-width:940px;margin:0 auto;padding-block:12px 40px;display:grid;gap:44px}
+    .wrap>*,.sheets>*{min-width:0}
+    .sheets{display:grid;gap:44px;min-width:0}
+
+    /* desk-top line: brand + short nav */
+    .topline{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 20px;font:15px/1.3 var(--f-mono);color:var(--deskink);letter-spacing:.06em;text-transform:uppercase;padding-top:env(safe-area-inset-top,0px)}
+    .topline .brand{color:var(--paper);text-decoration:none;font-weight:700;min-height:40px;display:inline-flex;align-items:center}
+    .topline .blk{text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .topline nav ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:0 14px}
+    .topline nav a{text-decoration:none;min-height:40px;display:inline-flex;align-items:center;padding:0 2px}
+    .topline nav a:hover{color:var(--paper);text-decoration:underline}
+
+    /* sheets */
+    .sheet{position:relative;background:var(--paper);color:var(--ink);padding:40px clamp(20px,5vw,56px) 36px;
+      box-shadow:0 1px 0 var(--paper2),0 24px 50px -18px rgba(0,0,0,.8);
+      background-image:linear-gradient(transparent 0 calc(100% - 1px),rgba(0,0,0,.03) 0),radial-gradient(circle at 85% 6%,rgba(120,90,40,.09),transparent 40%);
+      background-size:100% 1.65em,auto;min-width:0;scroll-margin-top:16px}
+    @media (min-width:900px){
+      .sheet:nth-of-type(odd){transform:rotate(-.22deg)}
+      .sheet:nth-of-type(even){transform:rotate(.18deg)}
+    }
+    @media (max-width:560px){
+      .wrap,.sheets{gap:28px}
+      .sheet{padding:28px 18px 26px}
+    }
+    .tape{position:absolute;top:-12px;left:50%;width:120px;height:26px;margin-left:-60px;background:var(--tape);opacity:.75;transform:rotate(-2deg)}
+    .fileno{max-width:none;font:15px/1.3 var(--f-mono);color:var(--faded);letter-spacing:.08em;text-transform:uppercase;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;border-bottom:2px solid var(--ink);padding-bottom:8px;margin:0 0 22px}
+    h1,h2,h3{font-family:var(--f-type);font-weight:400;color:var(--ink);text-wrap:balance;overflow-wrap:break-word}
+    h1{font-size:clamp(36px,6.6vw,64px);line-height:1.04;margin:4px 0 20px}
+    h2{font-size:clamp(27px,4.2vw,38px);line-height:1.12;margin:0 0 16px}
+    h3{font-size:21px;line-height:1.2;margin:0 0 6px}
+    p{margin:0 0 14px;max-width:68ch}
+    .lead{font-size:clamp(17px,2.1vw,19px)}
+    .hint{font:16px/1.5 var(--f-mono);color:var(--faded)}
+    .label{font:15px/1.4 var(--f-mono);color:var(--faded);letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px}
+    .mono{font-family:var(--f-mono)}
+    .js-only{display:none}
+    .js .js-only{display:block}
+    .risk{font:16px/1.5 var(--f-mono);color:var(--ink);border-left:3px solid var(--stamp);padding:4px 0 4px 12px;margin:14px 0 0}
+    strong{font-weight:600}
+
+    /* rubber stamps: decorative, text kept AA on paper */
+    .stamp{float:right;margin:-4px 0 12px 18px;font:700 clamp(20px,3.4vw,30px)/1 var(--f-stamp);color:var(--stamp);border:4px solid var(--stamp);padding:6px 12px 5px;letter-spacing:.06em;text-transform:uppercase;transform:rotate(7deg);mix-blend-mode:multiply;pointer-events:none;user-select:none}
+    .stamp.s{font-size:20px;border-width:3px;transform:rotate(-6deg)}
+    @media (max-width:560px){.stamp{float:none;display:inline-block;margin:0 0 14px}}
+
+    /* typed fields */
+    .fields{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 18px;margin:0 0 22px;max-width:76ch}
+    .fields dt{font:15px/1.6 var(--f-mono);color:var(--faded);text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+    .fields dd{margin:0;min-width:0}
+    @media (max-width:560px){.fields{grid-template-columns:minmax(0,1fr);gap:0}.fields dt{padding-top:10px}}
+
+    /* redaction bars: visible text without JS; with JS hidden until hover (mouse only), click, Enter or Space */
+    .rx{font:inherit;line-height:inherit;color:var(--ink);background:rgba(163,36,28,.12);border:0;margin:0;padding:4px .2em;border-radius:1px;-webkit-box-decoration-break:clone;box-decoration-break:clone;transition:background-color .25s,color .25s;text-align:inherit;display:inline}
+    .js .rx{background:var(--ink);color:transparent;cursor:pointer}
+    .js .rx.open{background:rgba(163,36,28,.12);color:var(--ink)}
+    @media (hover:hover){.js .rx:hover{background:rgba(163,36,28,.12);color:var(--ink)}}
+    .rx:focus-visible{outline:3px solid var(--stamp);outline-offset:2px}
+
+    /* buttons */
+    .cta{display:flex;flex-wrap:wrap;gap:12px;margin:22px 0 4px}
+    .btn{font:16px/1.3 var(--f-type);text-decoration:none;border:2px solid var(--ink);padding:10px 16px;min-height:44px;display:inline-flex;align-items:center;color:var(--ink);background:transparent;letter-spacing:.03em;max-width:100%;overflow-wrap:anywhere}
+    .btn:hover{background:var(--ink);color:var(--paper)}
+    .btn.pri{background:var(--ink);color:var(--paper)}
+    .btn.pri:hover{background:var(--stamp);border-color:var(--stamp)}
+
+    /* cover: key facts strip + statement + index */
+    .keyfacts{list-style:none;margin:22px 0 6px;padding:0;display:grid;grid-template-columns:minmax(0,1fr);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+    @media (min-width:640px){.keyfacts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    .keyfacts li{padding:12px 14px 12px 0;min-width:0}
+    @media (min-width:640px){.keyfacts li+li{border-left:1px dashed var(--faded);padding-left:14px}}
+    @media (max-width:639px){.keyfacts li+li{border-top:1px dashed var(--faded)}}
+    .keyfacts b{display:block;font:400 30px/1.1 var(--f-type)}
+    .keyfacts span{font-size:16px}
+    .statement{margin:26px 0 0;padding:18px 20px;border:1px dashed var(--faded);background:rgba(255,255,255,.28)}
+    .statement blockquote{margin:6px 0 10px;font:italic 400 clamp(18px,2.4vw,21px)/1.55 var(--f-body);max-width:62ch}
+    .statement figcaption{font:16px/1.5 var(--f-mono);color:var(--faded)}
+    .index{margin:26px 0 0}
+    .index ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:0 28px;font:16px/1.3 var(--f-mono)}
+    @media (min-width:640px){.index ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .index a{display:flex;gap:10px;align-items:baseline;min-height:40px;padding:9px 0;text-decoration:none;border-bottom:1px dotted var(--faded)}
+    .index a:hover .t{text-decoration:underline}
+    .index .t{flex:1 1 auto;min-width:0}
+    .index .pg{color:var(--faded);white-space:nowrap}
+
+    /* exhibits: dashed evidence cards */
+    .exhibits{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:6px;align-items:start}
+    @media (min-width:700px){.exhibits{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .ex{border:1px dashed var(--faded);padding:16px;min-width:0;background:rgba(255,255,255,.22)}
+    .ex .tag{font:15px/1.3 var(--f-mono);color:var(--stamp);letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px}
+    .ex p{margin:0 0 10px}
+    .ex p:last-child{margin-bottom:0}
+    .ex h3 a{display:inline-block;padding:9px 0;margin:-9px 0}
+    #mining{scroll-margin-top:16px}
+    .ex ul.links{list-style:none;margin:6px 0 0;padding:0}
+    .ex ul.links li{border-top:1px dotted var(--faded)}
+    .ex ul.links a{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;min-height:42px;align-items:center;padding:6px 0;text-decoration:none}
+    .ex ul.links a:hover .n{text-decoration:underline}
+    .ex .more{font:16px var(--f-mono);display:inline-flex;align-items:center;min-height:40px}
+    .badges{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px;padding:0}
+    .badges li{border:1px solid var(--faded);padding:1px 8px;font:16px/1.5 var(--f-mono);color:var(--faded)}
+    .badges li.hot{border-color:var(--stamp);color:var(--stamp)}
+    .note{font:16px/1.5 var(--f-mono);color:var(--faded)}
+
+    /* lists of properties / findings / procedure / labelled items */
+    .props{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:10px;max-width:72ch}
+    .props li{display:grid;grid-template-columns:2ch minmax(0,1fr);gap:0 10px}
+    .props li::before{content:"\2713";font-family:var(--f-mono);color:var(--stamp);font-weight:700}
+    .findings{counter-reset:f;list-style:none;margin:0;padding:0;display:grid;gap:20px}
+    .findings li{counter-increment:f;display:grid;grid-template-columns:3.4em minmax(0,1fr);gap:4px 12px}
+    .findings li::before{content:"F-" counter(f);font:700 17px/1.5 var(--f-mono);color:var(--stamp)}
+    .findings h3{margin:0 0 4px}
+    .findings p{margin:0;max-width:66ch}
+    .proc{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+    @media (min-width:700px){.proc{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .proc li{counter-increment:s;border-top:2px solid var(--ink);padding-top:10px;min-width:0}
+    .proc li::before{content:"Step " counter(s,decimal-leading-zero);display:block;font:700 15px/1.4 var(--f-mono);color:var(--stamp);letter-spacing:.08em;text-transform:uppercase}
+    .proc p{margin:0}
+    .items{list-style:none;margin:0;padding:0;display:grid;gap:0;max-width:78ch}
+    .items li{display:grid;grid-template-columns:minmax(0,12.5em) minmax(0,1fr);gap:2px 16px;padding:10px 0;border-bottom:1px dotted var(--faded)}
+    .items li:first-child{border-top:1px dotted var(--faded)}
+    .items b{font:700 16px/1.6 var(--f-mono);color:var(--ink)}
+    @media (max-width:560px){.items li{grid-template-columns:minmax(0,1fr)}}
+
+    /* evidence log */
+    .log{list-style:none;margin:0;padding:0;border-left:2px solid var(--ink);max-width:78ch}
+    .log li{position:relative;display:grid;grid-template-columns:7.2em minmax(0,1fr);gap:2px 16px;padding:10px 0 10px 18px;border-bottom:1px dotted var(--faded)}
+    .log li::before{content:"";position:absolute;left:-7px;top:17px;width:12px;height:12px;background:var(--paper);border:2px solid var(--ink);border-radius:50%}
+    .log li.key::before{background:var(--stamp);border-color:var(--stamp)}
+    .log .when{font:700 16px/1.6 var(--f-mono);color:var(--stamp);white-space:nowrap}
+    .log p{margin:0}
+    @media (max-width:560px){.log li{grid-template-columns:minmax(0,1fr)}}
+
+    /* folded sections: closed by default, readable without JS */
+    details.fold{margin-top:14px;max-width:78ch}
+    details.fold>summary{cursor:pointer;list-style:none;font:700 16px/1.4 var(--f-mono);color:var(--ink);min-height:44px;display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed var(--faded);border-bottom:1px dashed var(--faded)}
+    details.fold>summary::-webkit-details-marker{display:none}
+    details.fold>summary::before{content:"[+]";color:var(--stamp)}
+    details.fold[open]>summary::before{content:"[\2212]"}
+    details.fold>summary:hover{text-decoration:underline}
+    details.fold[open]>summary{margin-bottom:10px}
+
+    /* transcript (code) */
+    .transcript{background:var(--ink);color:var(--term);margin:8px 0 0;min-width:0}
+    .transcript .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #4a463f;padding:4px 4px 4px 14px;min-height:49px;font:15px var(--f-mono);color:#c9c1ae}
+    .transcript .bar button{font:700 15px var(--f-mono);background:var(--paper);color:var(--ink);border:0;padding:6px 14px;min-height:40px;min-width:72px;cursor:pointer}
+    .transcript .bar button[hidden]{display:none}
+    .transcript .bar button:hover{background:var(--tape)}
+    .transcript .bar button:focus-visible{outline-color:var(--tape)}
+    .transcript pre{margin:0;padding:14px 16px;white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.7 var(--f-mono)}
+
+    /* tables: donors + contributors */
+    .cols{display:grid;grid-template-columns:minmax(0,1fr);gap:26px;align-items:start}
+    @media (min-width:820px){.cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    table.ledger{width:100%;border-collapse:collapse;font:16px/1.4 var(--f-mono);font-variant-numeric:tabular-nums}
+    .ledger caption{text-align:left;font:15px/1.4 var(--f-mono);color:var(--faded);letter-spacing:.06em;text-transform:uppercase;padding-bottom:6px}
+    .ledger th{font-weight:700;text-align:left;font-size:15px;color:var(--faded);border-bottom:2px solid var(--ink);padding:6px 8px 6px 0;text-transform:uppercase;letter-spacing:.04em}
+    .ledger td{padding:7px 8px 7px 0;border-bottom:1px dotted var(--faded);vertical-align:top}
+    .ledger .r{color:var(--stamp);width:3ch}
+    .ledger .num{text-align:right;white-space:nowrap;padding-right:0}
+    .ledger .yr{white-space:nowrap}
+    .ledger .nm{overflow-wrap:anywhere}
+    .ledger tfoot td{border-bottom:0;padding-top:10px;font-size:16px;color:var(--faded)}
+    .ledger tfoot a{display:inline-block;padding:10px 0}
+    .names{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+    .names li{border:1px solid var(--faded);padding:1px 8px;font:16px/1.6 var(--f-mono)}
+
+    /* live figures */
+    .figs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;margin-top:6px}
+    @media (min-width:700px){.figs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    .fig{border-top:2px solid var(--ink);padding:10px 0 14px;min-width:0}
+    .fig .v{display:block;font:400 clamp(19px,5.6vw,30px)/1.1 var(--f-type);font-variant-numeric:tabular-nums;white-space:nowrap}
+    @media (min-width:700px){.fig .v{font-size:clamp(22px,2.9vw,30px)}}
+    .fig .l{display:block;font:16px/1.35 var(--f-mono);color:var(--faded);margin-top:4px}
+
+    /* get started */
+    .steps{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}
+    @media (min-width:700px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (min-width:1000px){.steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media (min-width:700px) and (max-width:999px){.steps>:last-child:nth-child(odd){grid-column:1/-1}}
+
+    /* contacts */
+    .contacts{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+    @media (min-width:640px){.contacts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+    /* sign-off + footer */
+    .sign{font:400 22px/1.3 var(--f-type);margin:22px 0 0}
+    footer{font:15px/1.6 var(--f-mono);color:var(--deskink);text-align:center;letter-spacing:.03em;display:grid;gap:10px;justify-items:center}
+    footer p{margin:0;max-width:62ch}
+    footer a{color:var(--paper)}
+    footer .tagline{font:20px/1.4 var(--f-type);color:var(--paper)}
+    footer .quote{font:italic 17px/1.55 var(--f-body);color:#cfc7b4}
+    footer .quote span{display:block;font:15px var(--f-mono);font-style:normal;color:var(--deskink)}
+    footer .flag{vertical-align:-2px}
+    footer .links a{display:inline-flex;align-items:center;min-height:40px;padding:0 4px}
+
+    @media (prefers-reduced-motion:reduce){
+      html{scroll-behavior:auto}
+      .rx{transition:none}
+    }
+    @media (forced-colors:active){
+      .js .rx{color:CanvasText;background:Canvas;border:1px solid CanvasText}
+      .stamp{border-color:CanvasText;color:CanvasText}
+    }
+    @media print{
+      html,body{background:#fff!important;background-image:none!important;color:#000}
+      body{padding:0}
+      .wrap{overflow:visible}
+      .desk,.desk a,footer,footer p,footer a,footer .tagline,footer .quote,footer .quote span,.topline .brand,.topline .blk{color:#000!important}
+      .sheet{transform:none!important;box-shadow:none;border:1px solid #999;background:#fff;break-inside:auto}
+      .ex,.log li,tr,.fig,.findings li,.proc li,.statement,.transcript{break-inside:avoid}
+      h2,h3{break-after:avoid}
+      .tape,.skip,.topline nav,.transcript .bar button,.js-only{display:none!important}
+      .transcript{background:#fff;color:#000;border:1px solid #000}
+      .transcript .bar{color:#000}
+      .js .rx{color:inherit;background:none}
+      details.fold>summary::before{content:""}
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://grin.money/#org",
+        "name": "grin.money",
+        "url": "https://grin.money/",
+        "description": "Community landing page that introduces Grin to newcomers."
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://grin.money/#website",
+        "name": "grin.money",
+        "url": "https://grin.money/",
+        "inLanguage": "en",
+        "description": "Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol: no amounts and no addresses on chain, 60 GRIN per minute, no pre-mine, no ICO, no founder's reward. Open source since 2016, mainnet since January 2019.",
+        "publisher": { "@id": "https://grin.money/#org" },
+        "about": {
+          "@type": "Thing",
+          "name": "Grin",
+          "alternateName": "GRIN",
+          "description": "Privacy-focused cryptocurrency using the Mimblewimble protocol, mainnet since 15 January 2019.",
+          "sameAs": [
+            "https://grin.mw/",
+            "https://github.com/mimblewimble/grin",
+            "https://forum.grin.mw/",
+            "https://docs.grin.mw/"
+          ]
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+
+<header class="topline desk">
+  <a class="brand" href="#top">grin.money / case file</a>
+  <span class="blk"><span class="sr">Current </span>block <span id="lv-height">—</span></span>
+  <nav aria-label="Sections">
+    <ul role="list">
+      <li><a href="#protocol">Protocol</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#get-started">Get started</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#live">Live</a></li>
+      <li><a href="#community">Community</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main id="main" tabindex="-1" class="sheets">
+
+<!-- ============================== COVER ============================== -->
+<article class="sheet" id="top" aria-labelledby="top-h">
+  <div class="tape" aria-hidden="true"></div>
+  <p class="fileno"><span>File GRN-2016-07 · The Jedusor File</span><span aria-hidden="true">Page 1 of 13</span></p>
+  <div class="stamp" aria-hidden="true">Declassified</div>
+  <dl class="fields">
+    <dt>Subject</dt><dd>Grin: private electronic cash built on Mimblewimble</dd>
+    <dt>Protocol by</dt><dd>&ldquo;Tom Elvis Jedusor&rdquo; <span class="hint">(pseudonym, identity unknown)</span>, author of the Mimblewimble paper, 2016</dd>
+    <dt>Grin started by</dt><dd>&ldquo;Ignotus Peverell&rdquo; <span class="hint">(pseudonym)</span>, 2016</dd>
+    <dt>Mainnet</dt><dd>15 January 2019</dd>
+    <dt>Status</dt><dd>Running. No pre-mine, no ICO, no founder&rsquo;s reward.</dd>
+  </dl>
+  <h1 id="top-h">Grin: money with no amounts and no addresses on chain.</h1>
+  <p class="lead">Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol. It was described by an anonymous author, started by a pseudonymous developer, and is kept running by ordinary people. This file explains it from the start, no background needed.</p>
+  <p>Your balance is none of anyone&rsquo;s business. There are no amounts and no addresses on the chain, so nobody can look up your balance on the chain: not <button type="button" class="rx" aria-describedby="rx-hint">a block explorer</button>, not <button type="button" class="rx" aria-describedby="rx-hint">a data broker</button>. Exchanges and hosted wallets you use still see what passes through them.</p>
+  <p class="hint js-only" id="rx-hint">Hover, tap or press the black bars to uncover them. On chain, amounts stay hidden.</p>
+  <div class="cta">
+    <a class="btn pri" href="#get-started">Get started</a>
+    <a class="btn" href="#how-it-works">How Grin works</a>
+    <a class="btn" href="https://gri.mw/" target="_blank" rel="noopener">Get Grim wallet</a>
+  </div>
+  <ul class="keyfacts" role="list" aria-label="Key facts">
+    <li><b>60 GRIN</b><span>per block, one block per minute on average (1 GRIN per second)</span></li>
+    <li><b>2019</b><span>mainnet launch, 15 January</span></li>
+    <li><b>No cap</b><span>supply grows linearly, forever</span></li>
+  </ul>
+  <figure class="statement">
+    <p class="label">Statement on file</p>
+    <blockquote>&ldquo;Grin was started with as fair of a launch as possible for what&rsquo;s under our control. We did this for good reason: we believe in Grin&rsquo;s mission.&rdquo;</blockquote>
+    <figcaption>— Ignotus Peverell, Grin&rsquo;s founding developer (<a href="https://forum.grin.mw/t/3682" target="_blank" rel="noopener">Grin forum, Feb 2019</a>)</figcaption>
+  </figure>
+  <nav class="index" aria-labelledby="index-h">
+    <p class="label" id="index-h">Index of exhibits</p>
+    <ol role="list">
+      <li><a href="#protocol"><span class="t">A · What is Mimblewimble?</span><span class="pg" aria-hidden="true">p. 2</span></a></li>
+      <li><a href="#how-it-works"><span class="t">B · How Grin works</span><span class="pg" aria-hidden="true">p. 3</span></a></li>
+      <li><a href="#why-grin"><span class="t">C · How Grin compares</span><span class="pg" aria-hidden="true">p. 4</span></a></li>
+      <li><a href="#use-cases"><span class="t">D · Known uses</span><span class="pg" aria-hidden="true">p. 5</span></a></li>
+      <li><a href="#get-started"><span class="t">Instructions · Get started</span><span class="pg" aria-hidden="true">p. 6</span></a></li>
+      <li><a href="#projects"><span class="t">E · Active projects</span><span class="pg" aria-hidden="true">p. 7</span></a></li>
+      <li><a href="#run-a-node"><span class="t">Memo · Run a Grin node</span><span class="pg" aria-hidden="true">p. 8</span></a></li>
+      <li><a href="#live"><span class="t">Appendix · The network, live</span><span class="pg" aria-hidden="true">p. 9</span></a></li>
+      <li><a href="#log"><span class="t">Evidence log · History</span><span class="pg" aria-hidden="true">p. 10</span></a></li>
+      <li><a href="#talents"><span class="t">Wanted · Talents needed</span><span class="pg" aria-hidden="true">p. 11</span></a></li>
+      <li><a href="#hall-of-fame"><span class="t">Commendations · Hall of fame</span><span class="pg" aria-hidden="true">p. 12</span></a></li>
+      <li><a href="#community"><span class="t">Contacts · Community</span><span class="pg" aria-hidden="true">p. 13</span></a></li>
+    </ol>
+  </nav>
+</article>
+
+<!-- ============================== A · PROTOCOL ============================== -->
+<article class="sheet" id="protocol" aria-labelledby="protocol-h">
+  <p class="fileno"><span>Exhibit A · The protocol</span><span aria-hidden="true">Page 2 of 13</span></p>
+  <h2 id="protocol-h">What is Mimblewimble?</h2>
+  <p class="lead">Mimblewimble is a way to build a blockchain that hides amounts, writes no addresses, and throws away spent coins. Grin is a minimal implementation of it.</p>
+  <dl class="fields">
+    <dt>Origin</dt><dd>Paper by the pseudonymous &ldquo;Tom Elvis Jedusor&rdquo; (Voldemort&rsquo;s name in the French Harry Potter books), dated 19 July 2016. It was posted anonymously to the #bitcoin-wizards IRC channel as a text file on a Tor (.onion) server on 2 Aug 2016 (UTC; 1 Aug in US time zones).</dd>
+    <dt>Paper</dt><dd><a href="https://github.com/mimblewimble/docs/wiki/MimbleWimble-Origin" target="_blank" rel="noopener">MimbleWimble Origin (2016)</a></dd>
+    <dt>Follow-up</dt><dd>Andrew Poelstra published a follow-up paper with refinements in October 2016.</dd>
+    <dt>Grin</dt><dd>Ignotus Peverell announced Grin, a minimal implementation, on 20 Oct 2016; mainnet followed on 15 Jan 2019. Igno stepped away a few months after launch (last commit April 2019).</dd>
+    <dt>Status</dt><dd><strong>Active.</strong> Mainnet since 15 January 2019. Open source since 2016.</dd>
+  </dl>
+  <p class="label">Core properties</p>
+  <ul class="props" role="list">
+    <li><span><strong>No addresses on chain.</strong> Sender and receiver build each transaction together by passing a &ldquo;slatepack&rdquo; (a block of text) by copy-paste, file, QR, or automatically over Tor. Wallets also give you a slatepack address you can share, but it is never written to the chain: it only encrypts and routes that exchange.</span></li>
+    <li><span><strong>Hidden amounts:</strong> each amount is locked inside a cryptographic commitment (Confidential Transactions, using Pedersen commitments, plus Bulletproof range proofs that show no amount is negative).</span></li>
+    <li><span><strong>Cut-through</strong> drops spent outputs, so the chain keeps only unspent outputs, block headers and a small kernel per transaction (a tiny signature proving the transaction is valid).</span></li>
+    <li><span><strong>No scripting language:</strong> a small, fixed set of transaction kinds.</span></li>
+    <li><span><strong>Linear emission:</strong> 60 GRIN per minute, forever.</span></li>
+  </ul>
+  <div class="exhibits">
+    <div class="ex"><p class="tag">A-1 · Ownership</p><h3>No company</h3><p>No company, no foundation, no pre-mine. Development is funded by donations.</p></div>
+    <div class="ex"><p class="tag">A-2 · Privacy</p><h3>Private by default</h3><p>No amounts and no addresses on chain. Transactions in a block merge together, which makes them harder to link, but an observer running many nodes can still link many of them. Grin reduces linkability; it does not remove it.</p></div>
+    <div class="ex"><p class="tag">A-3 · Size</p><h3>A small chain</h3><p>Cut-through keeps the chain small: a pruned node needs only a few gigabytes.</p></div>
+    <div class="ex"><p class="tag">A-4 · Launch</p><h3>Fair launch</h3><p>No ICO, no airdrop, no venture backing. 60 GRIN per minute, the same forever.</p></div>
+  </div>
+</article>
+
+<!-- ============================== B · HOW IT WORKS ============================== -->
+<article class="sheet" id="how-it-works" aria-labelledby="how-h">
+  <p class="fileno"><span>Exhibit B · Procedure</span><span aria-hidden="true">Page 3 of 13</span></p>
+  <h2 id="how-h">How Grin works, in four steps</h2>
+  <p class="lead">A Grin payment is a short conversation between two wallets, then a block that hides what it can and forgets what it no longer needs.</p>
+  <ol class="proc" role="list">
+    <li><h3>Build it together</h3><p>Sender and receiver build each transaction interactively. No address is ever written on chain: the wallets exchange a &ldquo;slate&rdquo; (as text, a slatepack) to build a joint signature. A slatepack address, if you use one, only routes and encrypts that exchange.</p></li>
+    <li><h3>Hide the amount</h3><p>Amounts are hidden using Confidential Transactions (Pedersen commitments). Only sender and receiver know the value transferred.</p></li>
+    <li><h3>Relay and merge</h3><p>A new transaction is first passed through a few peers (a Dandelion++ variant) to make it harder to tell where it came from. In a block, transactions are merged by CoinJoin-style aggregation (many transactions combined into one), which makes individual transactions harder to trace.</p></li>
+    <li><h3>Cut through</h3><p>Spent outputs are cut through. What is left is the unspent outputs, the block headers, and one small kernel per transaction, so the chain grows far more slowly than the transaction history.</p></li>
+  </ol>
+</article>
+
+<!-- ============================== C · HOW GRIN COMPARES ============================== -->
+<article class="sheet" id="why-grin" aria-labelledby="why-h">
+  <p class="fileno"><span>Exhibit C · Findings</span><span aria-hidden="true">Page 4 of 13</span></p>
+  <h2 id="why-h">How Grin compares: nine findings</h2>
+  <ol class="findings" role="list">
+    <li><div><h3>Time-backed monetary policy</h3><p>60 GRIN are minted on average every 60 seconds, forever. No halving shock, no supply cliff: every block pays the same 60 GRIN in 2019 and in 2099. One minute of network time equals 60 new coins, so the supply is as predictable as a clock.</p></div></li>
+    <li><div><h3>Privacy on chain, honestly stated</h3><p>No addresses and no amounts are ever written to the blockchain. Which outputs were spent together can often be worked out by someone watching the network with many nodes. Grin reduces this linkability; it does not remove it.</p></div></li>
+    <li><div><h3>Compared with gold: checkable in digital form</h3><p>Nobody can audit the world&rsquo;s gold supply, and tokenized gold depends on trusting a custodian. Grin&rsquo;s supply is mathematically verifiable by anyone running a full node: every node checks that the hidden amounts add up to the known emission. No custodian required.</p></div></li>
+    <li><div><h3>Compared with USD-pegged coins: no decree</h3><p>Fiat-backed stablecoins import their central bank&rsquo;s monetary policy. Grin&rsquo;s emission is fixed in the consensus rules. Changing it would take a hard fork (a rule change every node must upgrade to) that node operators would have to choose to run, and there is no company or foundation to decree one.</p></div></li>
+    <li><div><h3>Compared with Bitcoin: a reward that keeps paying</h3><p>Bitcoin&rsquo;s 21 million cap means that once the last coin is mined, miners rely entirely on transaction fees. Whether that keeps the network secure is an open economic question. Grin&rsquo;s constant block reward keeps paying miners.</p></div></li>
+    <li><div><h3>A small footprint</h3><p>Since 2019 the chain has stayed compact: spent outputs are cut through, so a pruned node stays small.</p></div></li>
+    <li><div><h3>Emission for generations</h3><p>With a fixed reward and a growing supply, the inflation rate approaches zero over time, with no hard stops or abrupt halvings. Annual inflation is about 13% in late 2026 and falls every year. No coins were set aside for insiders.</p></div></li>
+    <li><div><h3>Simple and open source</h3><p>A deliberately minimal protocol. No proprietary components, no hidden supply curves, no pre-allocated coins. Open source since 2016.</p></div></li>
+    <li><div><h3>Time cannot be copied <span class="hint">(our opinion)</span></h3><p>We think this is what makes Grin hard to replicate: anyone can fork the code, but a fork resets the clock. The proof-of-work mined since 2019 cannot be mined again.</p></div></li>
+  </ol>
+</article>
+
+<!-- ============================== D · USE CASES ============================== -->
+<article class="sheet" id="use-cases" aria-labelledby="uses-h">
+  <p class="fileno"><span>Exhibit D · Known uses</span><span aria-hidden="true">Page 5 of 13</span></p>
+  <h2 id="uses-h">What people use Grin for</h2>
+  <ul class="items" role="list">
+    <li><b>Peer to peer</b><span>Direct payments between individuals, no intermediary</span></li>
+    <li><b>Micropayments</b><span>Small payments with low fees</span></li>
+    <li><b>Online shopping</b><span>Private online payments: amounts and addresses never appear on chain</span></li>
+    <li><b>Remittances</b><span>International transfers person to person, with no bank in between</span></li>
+    <li><b>Privacy</b><span>Amounts and addresses stay off the chain</span></li>
+    <li><b>Predictability</b><span>Known emission: anyone can compute supply at any block</span></li>
+    <li><b>Point of sale</b><span>Merchant tools exist (for example <a href="https://github.com/2ro/GoblinPay" target="_blank" rel="noopener">GoblinPay</a>, a self-hostable payment server that receives Grin)</span></li>
+    <li><b>Financial freedom</b><span>Censorship-resistant, permissionless, no gatekeeper</span></li>
+  </ul>
+</article>
+
+<!-- ============================== GET STARTED ============================== -->
+<article class="sheet" id="get-started" aria-labelledby="start-h">
+  <p class="fileno"><span>Instructions · For the new recruit</span><span aria-hidden="true">Page 6 of 13</span></p>
+  <h2 id="start-h">Start using Grin</h2>
+  <p class="lead">Three steps: a wallet, a first few grin, and, if you like, a node of your own.</p>
+  <div class="steps">
+    <div class="ex">
+      <p class="tag">Step 01</p>
+      <h3>Choose a wallet</h3>
+      <ul class="links" role="list">
+        <li><a href="https://gri.mw/" target="_blank" rel="noopener"><span class="n">Grim</span><span class="note">recommended</span></a></li>
+        <li><a href="https://goblin.st/" target="_blank" rel="noopener"><span class="n">Goblin</span><span class="note">mobile · Nostr · Tor</span></a></li>
+        <li><a href="https://grinplusplus.github.io/" target="_blank" rel="noopener"><span class="n">Grin++</span><span class="note">desktop + Android</span></a></li>
+        <li><a href="https://wallet.easygrin.org/" target="_blank" rel="noopener"><span class="n">EasyGrin web wallet</span><span class="note">hosted</span></a></li>
+        <li><a href="https://github.com/mimblewimble/grin-wallet" target="_blank" rel="noopener"><span class="n">grin-wallet</span><span class="note">official CLI · v5.5.1 (Oct 2026)</span></a></li>
+      </ul>
+      <p class="note" style="margin-top:8px">What each wallet does: <a href="#projects">Active projects, p. 7</a>.</p>
+    </div>
+    <div class="ex">
+      <p class="tag">Step 02</p>
+      <h3>Get GRIN</h3>
+      <ul class="links" role="list">
+        <li><a href="https://drop.grin.money/" target="_blank" rel="noopener"><span class="n">drop.grin.money</span><span class="note">small free amounts to practice slatepack (faucet, in testing)</span></a></li>
+        <li><a href="https://www.gate.com/trade/GRIN_USDT" target="_blank" rel="noopener"><span class="n">Gate</span><span class="note">largest GRIN/USDT market (KYC)</span></a></li>
+        <li><a href="https://noirtrade.com/" target="_blank" rel="noopener"><span class="n">NoirTrade</span><span class="note">smaller no-KYC venue, thin liquidity</span></a></li>
+        <li><a href="https://nonlogs.io/" target="_blank" rel="noopener"><span class="n">Nonlogs</span><span class="note">smaller no-KYC venue, thin liquidity</span></a></li>
+        <li><a href="#mining"><span class="n">Mine it</span><span class="note">ASIC or GPU, see p. 7</span></a></li>
+      </ul>
+      <p class="note" style="margin-top:8px">Listings change: check current listings before you trade.</p>
+      <p class="risk">Grin is experimental software. Nothing here is financial advice.</p>
+    </div>
+    <div class="ex">
+      <p class="tag">Step 03</p>
+      <h3>Run a node</h3>
+      <p>A node checks every rule of the chain for you and helps the network. On a Linux server, Grin Node Toolkit walks you through it from a menu; at home, an Umbrel community app runs one.</p>
+      <p><a class="more" href="#run-a-node">See the memo, p. 8</a></p>
+      <p><a class="more" href="https://grinnode.org/" target="_blank" rel="noopener">grinnode.org</a></p>
+    </div>
+  </div>
+</article>
+
+<!-- ============================== E · PROJECTS ============================== -->
+<article class="sheet" id="projects" aria-labelledby="proj-h">
+  <p class="fileno"><span>Exhibit E · Known associates</span><span aria-hidden="true">Page 7 of 13</span></p>
+  <h2 id="proj-h">Active projects</h2>
+  <p class="lead">Community-built wallets, tools and infrastructure around the Grin network today (as of Nov 2026).</p>
+  <div class="exhibits">
+    <div class="ex">
+      <p class="tag">E-1 · Wallet</p>
+      <h3><a href="https://gri.mw/" target="_blank" rel="noopener">Grim</a></h3>
+      <p>Cross-platform wallet app with a built-in node, written in Rust. Android, Linux, macOS, Windows (iOS announced, not out yet as of Nov 2026). Actively developed (v0.3.6, Aug 2026).</p>
+      <ul class="badges" role="list" aria-label="Tags"><li>wallet</li><li class="hot">recommended</li></ul>
+    </div>
+    <div class="ex">
+      <p class="tag">E-2 · Mobile payments</p>
+      <h3><a href="https://goblin.st/" target="_blank" rel="noopener">Goblin</a></h3>
+      <p>A mobile-first payments app built on Grim. Pay a username like alice@goblin.st, or a Nostr key. No sign-up: your identity is a Nostr key kept on your device, separate from your wallet seed.</p>
+      <p>Payments travel as sealed, encrypted messages over Tor built into the app; relays never see the amount. Android, Linux, macOS, Windows (iOS coming, as of Nov 2026).</p>
+      <ul class="badges" role="list" aria-label="Tags"><li>wallet</li><li>nostr</li><li>tor</li></ul>
+    </div>
+    <div class="ex">
+      <p class="tag">E-3 · Node infrastructure</p>
+      <h3><a href="https://grinnode.org/" target="_blank" rel="noopener">Grin Node Toolkit</a></h3>
+      <p>Open-source Bash toolkit to build and manage Grin nodes, API servers, explorers, wallet services and mining on a Linux server, from one menu. A dozen live demo sites run on it.</p>
+      <ul class="badges" role="list" aria-label="Tags"><li>node</li><li>bash</li><li>open source</li></ul>
+    </div>
+    <div class="ex">
+      <p class="tag">E-4 · Home server</p>
+      <h3><a href="https://github.com/wiesche89/umbrel-community-app-store" target="_blank" rel="noopener">Umbrel node</a></h3>
+      <p>Run a full Grin node (Rust grin or Grin++) with a web dashboard on Umbrel, via a community app store (mainnet and testnet apps).</p>
+      <ul class="badges" role="list" aria-label="Tags"><li>node</li><li>umbrel</li><li>home server</li></ul>
+    </div>
+    <div class="ex">
+      <p class="tag">E-5 · Hosted wallet</p>
+      <h3><a href="https://wallet.easygrin.org/" target="_blank" rel="noopener">EasyGrin web wallet</a></h3>
+      <p>Hosted web wallet run by the EasyGrin pool, built for miners collecting pool payouts. Needs an account; you can export your recovery phrase. It is a hosted service, so keep small amounts.</p>
+      <ul class="badges" role="list" aria-label="Tags"><li>wallet</li><li>web</li></ul>
+    </div>
+    <div class="ex">
+      <p class="tag">E-6 · Wallet</p>
+      <h3><a href="https://grinplusplus.github.io/" target="_blank" rel="noopener">Grin++</a></h3>
+      <p>Classic wallet app with a long history in the Grin ecosystem, full node included. Written in C++; Windows, macOS, Linux, Android. Last stable release v1.2.8 (Mar 2023); v1.2.9 pre-release (Oct 2024).</p>
+      <ul class="badges" role="list" aria-label="Tags"><li>wallet</li><li>desktop</li><li>android</li></ul>
+    </div>
+    <div class="ex" id="mining">
+      <p class="tag">E-7 · Mining</p>
+      <h3>Mining hardware &amp; pools</h3>
+      <p><a href="https://ipollo.com/products/ipollo-g1-mini" target="_blank" rel="noopener">iPollo G1 Mini</a>: a dedicated ASIC miner for Grin&rsquo;s Cuckatoo32 puzzle, about 1.2 graphs/s at about 120 W. A GPU with 8 GB+ VRAM can also mine Cuckatoo32 (more VRAM is better); ASICs now dominate.</p>
+      <ul class="links" role="list">
+        <li><a href="https://2miners.com/grin-mining-pool" target="_blank" rel="noopener"><span class="n">2miners.com</span><span class="note">pool</span></a></li>
+        <li><a href="https://easygrin.org/" target="_blank" rel="noopener"><span class="n">easygrin.org</span><span class="note">pool</span></a></li>
+        <li><a href="https://pool.always.vip/" target="_blank" rel="noopener"><span class="n">pool.always.vip</span><span class="note">pool</span></a></li>
+        <li><a href="https://ntminerpool.com/" target="_blank" rel="noopener"><span class="n">ntminerpool.com</span><span class="note">pool</span></a></li>
+        <li><a href="https://gaeapool.com/" target="_blank" rel="noopener"><span class="n">gaeapool.com</span><span class="note">pool</span></a></li>
+      </ul>
+    </div>
+    <div class="ex">
+      <p class="tag">E-8 · Explorers &amp; stats</p>
+      <h3>Watch the network</h3>
+      <ul class="links" role="list">
+        <li><a href="https://grincoin.org/" target="_blank" rel="noopener"><span class="n">grincoin.org</span><span class="note">explorer</span></a></li>
+        <li><a href="https://grinnode.live/" target="_blank" rel="noopener"><span class="n">grinnode.live</span><span class="note">nodes</span></a></li>
+        <li><a href="https://world.grin.money/" target="_blank" rel="noopener"><span class="n">world.grin.money</span><span class="note">stats</span></a></li>
+      </ul>
+    </div>
+  </div>
+</article>
+
+<!-- ============================== MEMO · RUN A NODE ============================== -->
+<article class="sheet" id="run-a-node" aria-labelledby="node-h">
+  <p class="fileno"><span>Memo · Field office</span><span aria-hidden="true">Page 8 of 13</span></p>
+  <h2 id="node-h">Run a Grin node</h2>
+  <p class="lead">One Bash toolkit for a Linux server: full node, pruned node, explorer, public API, mining pool, wallet portal, Nostr relay, all semi-automated. A dozen live demo sites are built with it.</p>
+  <p>The toolkit has its own home now, with a manual and setup paths for servers, home servers and desktops: <a href="https://grinnode.org/">grinnode.org</a>.</p>
+  <div class="transcript">
+    <div class="bar"><span>root@vps: ~</span><button type="button" id="copy" data-target="code-clone" hidden>copy</button></div>
+    <span class="sr" id="copy-status" aria-live="polite"></span>
+<pre id="code-clone">git clone https://github.com/noobvie/Grin-Node-Toolkit
+cd Grin-Node-Toolkit
+sudo ./grin-node-toolkit.sh</pre>
+  </div>
+  <p class="hint" style="margin-top:10px">Then choose <span class="mono">1) Build/Control Grin Node</span>.</p>
+  <div class="cta">
+    <a class="btn pri" href="https://grinnode.org/">Visit grinnode.org</a>
+    <a class="btn" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">noobvie/Grin-Node-Toolkit</a>
+  </div>
+</article>
+
+<!-- ============================== APPENDIX · LIVE ============================== -->
+<article class="sheet" id="live" aria-labelledby="live-h">
+  <p class="fileno"><span>Appendix · Network figures</span><span aria-hidden="true">Page 9 of 13</span></p>
+  <div class="stamp s" aria-hidden="true">Live</div>
+  <h2 id="live-h">The Grin network, right now</h2>
+  <p>Read from <a href="https://world.grin.money/" target="_blank" rel="noopener">world.grin.money</a> and refreshed every 5 minutes. A dash means the figure has not loaded.</p>
+  <div class="figs">
+    <div class="fig"><span class="v" id="stat-height">—</span><span class="l">block height</span></div>
+    <div class="fig"><span class="v" id="stat-supply">—</span><span class="l">GRIN issued so far (60 per block)</span></div>
+    <div class="fig"><span class="v" id="stat-hashrate">—</span><span class="l">hashrate · graphs per second</span></div>
+    <div class="fig"><span class="v" id="stat-difficulty">—</span><span class="l">mining difficulty (how hard a block is to find)</span></div>
+    <div class="fig"><span class="v" id="stat-peers">—</span><span class="l">active mainnet nodes · last 30 days</span></div>
+    <div class="fig"><span class="v" id="stat-inflation">—</span><span class="l">annual inflation (approx.)</span></div>
+    <div class="fig"><span class="v" id="stat-price-usd">—</span><span class="l">GRIN/USDT · Gate</span></div>
+    <div class="fig"><span class="v" id="stat-price-btc">—</span><span class="l">sats per GRIN · CoinGecko (converted)</span></div>
+  </div>
+</article>
+
+<!-- ============================== EVIDENCE LOG ============================== -->
+<article class="sheet" id="log" aria-labelledby="log-h">
+  <p class="fileno"><span>Evidence log · Newest first</span><span aria-hidden="true">Page 10 of 13</span></p>
+  <div class="stamp s" aria-hidden="true">On record</div>
+  <h2 id="log-h">How Grin got here</h2>
+  <p class="hint">A hard fork is a rule change every node must upgrade to. Names like Cuckaroo and Cuckatoo are Grin&rsquo;s mining puzzles.</p>
+  <ol class="log" role="list">
+    <li class="key"><span class="when">Jun 2026</span><p>v5.5.0 node release (latest v5.5.2, Oct 2026).</p></li>
+    <li><span class="when">2025</span><p>The Original and Community councils merged; one community council now holds all funds in a single multisig (a wallet that needs several council members to sign). <a href="https://aglkm.github.io/gcc/" target="_blank" rel="noopener">Council info</a></p></li>
+    <li><span class="when">Aug 2024</span><p>Grim, cross-platform wallet app + node, public release. <a href="https://gri.mw/" target="_blank" rel="noopener">gri.mw</a></p></li>
+    <li><span class="when">2024</span><p>grincoin.org community block explorer. <a href="https://grincoin.org/" target="_blank" rel="noopener">grincoin.org</a></p></li>
+    <li><span class="when">Jan 2024</span><p>v5.2.0: fast parallel sync (PIBD) on mainnet for new nodes.</p></li>
+    <li><span class="when">May 2021</span><p>Community Council formed; seeded with 33 BTC from the development fund that September.</p></li>
+    <li class="key"><span class="when">Jan 2021</span><p>v5.0.0, 4th and last scheduled hard fork (block 1,048,320): ASIC-resistant proof-of-work retired (Cuckatoo32+ only), new difficulty algorithm, fixed fees; wallet sends over Tor/Slatepack instead of HTTP.</p></li>
+  </ol>
+  <details class="fold">
+    <summary>Earlier entries, 2016 to 2020 (8)</summary>
+    <ol class="log" role="list">
+      <li><span class="when">Jul 2020</span><p>v4.0.0, 3rd hard fork (block 786,240): proof-of-work changed to Cuckarooz29; the wallet introduces Slatepack.</p></li>
+      <li><span class="when">Jan 2020</span><p>v3.0.0, 2nd hard fork (block 524,160): proof-of-work changed to Cuckaroom29; the wallet adds Tor sending and payment proofs.</p></li>
+      <li><span class="when">Oct 2019</span><p>Coinspect security audit published (node + wallet), all findings fixed.</p></li>
+      <li><span class="when">Jul 2019</span><p>v2.0.0, 1st hard fork (block 262,080): proof-of-work Cuckaroo29 changed to Cuckarood29.</p></li>
+      <li class="key"><span class="when">15 Jan 2019</span><p><strong>Mainnet launch.</strong> Fair for all. Time starts now.</p></li>
+      <li><span class="when">20 Oct 2016</span><p>Ignotus Peverell announces Grin, a minimal implementation, in #bitcoin-wizards.</p></li>
+      <li><span class="when">Oct 2016</span><p>Andrew Poelstra publishes a follow-up paper with refinements.</p></li>
+      <li class="key"><span class="when">Aug 2016</span><p>The Mimblewimble paper by &ldquo;Tom Elvis Jedusor&rdquo; (dated 19 July) appears in #bitcoin-wizards as a text file on a Tor server.</p></li>
+    </ol>
+  </details>
+</article>
+
+<!-- ============================== WANTED · TALENTS ============================== -->
+<article class="sheet" id="talents" aria-labelledby="talents-h">
+  <p class="fileno"><span>Wanted · Open positions</span><span aria-hidden="true">Page 11 of 13</span></p>
+  <div class="stamp" aria-hidden="true">Recruiting</div>
+  <h2 id="talents-h">Talents needed</h2>
+  <p class="lead">Grin is a small, passionate community building a technically rigorous privacy protocol. No foundation, no VC, no boss. Pure open-source meritocracy: every contribution counts.</p>
+  <ul class="items" role="list">
+    <li><b>Developers</b><span>Rust, C++, JS or mobile: build wallets, improve tooling, extend protocol integrations</span></li>
+    <li><b>Marketing</b><span>Spread Grin&rsquo;s story: private money for a surveilled world</span></li>
+    <li><b>AI / ML</b><span>Build analytics bots, AI-assisted tools, and ecosystem automation</span></li>
+    <li><b>Design &amp; content</b><span>UX, brand assets, infographics; research, tutorials and translations that make Grin accessible</span></li>
+    <li><b>Security</b><span>Audit protocol and tooling code, find vulnerabilities, review cryptographic assumptions, disclose responsibly</span></li>
+    <li><b>Mining</b><span>Secure the network and contribute hashrate</span></li>
+    <li><b>Node operators</b><span>Run a public node or API</span></li>
+    <li><b>Community</b><span>Moderate, organize, onboard, and grow the global Grin network</span></li>
+  </ul>
+  <p style="margin-top:18px">Interested? Start a thread on the forum and introduce yourself.</p>
+  <div class="cta"><a class="btn pri" href="https://forum.grin.mw/" target="_blank" rel="noopener">Join the forum</a></div>
+</article>
+
+<!-- ============================== COMMENDATIONS · HALL OF FAME ============================== -->
+<article class="sheet" id="hall-of-fame" aria-labelledby="hof-h">
+  <p class="fileno"><span>Commendations · Supporters</span><span aria-hidden="true">Page 12 of 13</span></p>
+  <h2 id="hof-h">Hall of fame</h2>
+  <p class="lead">Generous donors and open-source contributors who built and sustained Grin.</p>
+  <div class="cols">
+    <table class="ledger">
+      <caption>Donors · USD value at the time of each gift</caption>
+      <thead><tr><th scope="col" class="r">#</th><th scope="col">Donor</th><th scope="col">Year</th><th scope="col" class="num">USD</th></tr></thead>
+      <tbody>
+        <tr><td class="r">01</td><td class="nm">Anonymous II</td><td class="yr">2019</td><td class="num">437,882</td></tr>
+        <tr><td class="r">02</td><td class="nm">Anonymous</td><td class="yr">2019</td><td class="num">294,999</td></tr>
+        <tr><td class="r">03</td><td class="nm">Nervos</td><td class="yr">2020</td><td class="num">95,810</td></tr>
+        <tr><td class="r">04</td><td class="nm">SparkPool</td><td class="yr">2019</td><td class="num">84,451</td></tr>
+        <tr><td class="r">05</td><td class="nm">Aurel</td><td class="yr">2018</td><td class="num">65,036</td></tr>
+        <tr><td class="r">06</td><td class="nm">Qtum</td><td class="yr">2019</td><td class="num">50,265</td></tr>
+        <tr><td class="r">07</td><td class="nm">Gate.io</td><td class="yr">2019</td><td class="num">40,729</td></tr>
+        <tr><td class="r">08</td><td class="nm">bminer</td><td class="yr">2019</td><td class="num">28,294</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="4">Full list: <a href="https://grin.mw/friends.html" target="_blank" rel="noopener">grin.mw/friends.html</a></td></tr></tfoot>
+    </table>
+    <table class="ledger">
+      <caption>Code · mimblewimble/grin · commits</caption>
+      <thead><tr><th scope="col" class="r">#</th><th scope="col">Contributor</th><th scope="col" class="num">Commits</th></tr></thead>
+      <tbody>
+        <tr><td class="r">01</td><td class="nm">ignopeverell</td><td class="num">603</td></tr>
+        <tr><td class="r">02</td><td class="nm">antiochp</td><td class="num">574</td></tr>
+        <tr><td class="r">03</td><td class="nm">quentinlesceller</td><td class="num">185</td></tr>
+        <tr><td class="r">04</td><td class="nm">hashmap</td><td class="num">161</td></tr>
+        <tr><td class="r">05</td><td class="nm">garyyu</td><td class="num">151</td></tr>
+        <tr><td class="r">06</td><td class="nm">sesam</td><td class="num">52</td></tr>
+        <tr><td class="r">07</td><td class="nm">tromp</td><td class="num">39</td></tr>
+        <tr><td class="r">08</td><td class="nm">jaspervdm</td><td class="num">32</td></tr>
+        <tr><td class="r">09</td><td class="nm">eupn</td><td class="num">29</td></tr>
+        <tr><td class="r">10</td><td class="nm">ardocrat</td><td class="num">27</td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="3">GitHub contributors count, Nov 2026 · and hundreds more contributors across all repositories</td></tr></tfoot>
+    </table>
+  </div>
+  <details class="fold" style="margin-top:26px">
+    <summary>Forum &amp; community: 50 top posters</summary>
+    <p class="hint">Snapshot, Nov 2026, in no particular order: each name is in the forum&rsquo;s all-time top 50 by post count.</p>
+    <ul class="names" role="list">
+      <li>Anynomous</li><li>tromp</li><li>oryhp</li><li>monkyyy</li><li>trab</li><li>Cobragrin</li><li>vegycslol</li><li>ardocrat</li><li>davidtavarez</li><li>david</li><li>0xb100d</li><li>Chronos</li><li>Kurt</li><li>Grumpy</li><li>noobvie</li><li>transatoshi</li><li>johndavies24</li><li>Trinitron</li><li>Neo</li><li>MerlinsBeard</li><li>mcm-mike</li><li>Paouky</li><li>syntaxjak</li><li>kargakis</li><li>BOBO</li><li>nirg</li><li>renzokuken</li><li>Rabinovitch</li><li>antioch</li><li>Neo-Geo</li><li>grn</li><li>Yeastplume</li><li>Alice</li><li>FirsArgentum</li><li>igno.peverell</li><li>Doogevol</li><li>SiriusB</li><li>satoshocrat</li><li>shush</li><li>AceKaplin</li><li>gig</li><li>minexpert</li><li>Grin1</li><li>Roelsmajor</li><li>gary</li><li>timolson</li><li>bruges</li><li>debilnypes</li><li>Shobji</li><li>hellogrin</li><li>+ thousands more</li>
+    </ul>
+  </details>
+</article>
+
+<!-- ============================== CONTACTS · COMMUNITY ============================== -->
+<article class="sheet" id="community" aria-labelledby="comm-h">
+  <p class="fileno"><span>Contacts · Where to find us</span><span aria-hidden="true">Page 13 of 13</span></p>
+  <h2 id="comm-h">Join the network</h2>
+  <div class="contacts">
+    <div class="ex"><p class="tag">Forum</p><h3><a href="https://forum.grin.mw/" target="_blank" rel="noopener">Grin Forum</a></h3><p>Research, mining, market, governance: all discussions in one place.</p></div>
+    <div class="ex"><p class="tag">Chat · Telegram</p><h3><a href="https://t.me/grinprivacy" target="_blank" rel="noopener">Grin Community (Eng)</a></h3><p>The official community chat listed on grin.mw: @grinprivacy.</p></div>
+    <div class="ex"><p class="tag">Governance · Telegram</p><h3><a href="https://t.me/Grin_Governance" target="_blank" rel="noopener">Grin Governance Council</a></h3><p>Public council group, @Grin_Governance. Council meetings: 1st and 3rd Tuesday, 18:30 UTC. <a href="https://aglkm.github.io/gcc/" target="_blank" rel="noopener">Council info</a></p></div>
+    <div class="ex"><p class="tag">Contribute · GitHub</p><h3><a href="https://github.com/mimblewimble/grin/blob/master/CONTRIBUTING.md" target="_blank" rel="noopener">Contribute</a></h3><p>Write code, documentation, or simply run a node. Every bit helps.</p></div>
+  </div>
+  <p style="margin-top:20px">Want to read further? The official docs start at <a href="https://docs.grin.mw/" target="_blank" rel="noopener">docs.grin.mw</a>, and the project site is <a href="https://grin.mw/" target="_blank" rel="noopener">grin.mw</a>.</p>
+  <p class="sign">Case remains open.</p>
+</article>
+
+</main>
+
+<footer class="desk">
+  <p class="tagline">Electronic cash for all. Private by default.</p>
+  <p class="quote">&ldquo;I&rsquo;ve been trying BTC / Zcash / Monero / USDT&hellip; but Grin is the place where I find interesting.&rdquo;<span>— Noobvie</span></p>
+  <p>Grin is experimental software. Nothing here is financial advice.</p>
+  <p>From Saigon with ❤️ <svg class="flag" viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></p>
+  <p class="links"><a href="https://grin.mw/" target="_blank" rel="noopener">grin.mw</a> · <a href="https://forum.grin.mw/" target="_blank" rel="noopener">forum</a> · <a href="https://grinnode.org/">grinnode.org</a> · <a href="https://world.grin.money/" target="_blank" rel="noopener">world.grin.money</a></p>
+  <p>past editions: <a href="/2026/">2026</a></p>
+</footer>
+</div>
+
+<script>
+  (function () {
+    // Redaction bars: click, Enter or Space keeps one uncovered (native button behaviour).
+    document.querySelectorAll(".rx").forEach(function (el) {
+      el.setAttribute("aria-pressed", "false");
+      el.addEventListener("click", function () {
+        var on = el.classList.toggle("open");
+        el.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+    });
+
+    // Copy button: shown only when this script runs; clipboard API, falling back to selecting the text.
+    var copy = document.getElementById("copy"), status = document.getElementById("copy-status");
+    if (copy) {
+      copy.hidden = false;
+      copy.addEventListener("click", function () {
+        var code = document.getElementById(copy.getAttribute("data-target"));
+        function say(msg) {
+          copy.textContent = msg; status.textContent = msg;
+          clearTimeout(copy._t); copy._t = setTimeout(function () { copy.textContent = "copy"; status.textContent = ""; }, 2000);
+        }
+        function selectIt() {
+          var r = document.createRange(); r.selectNodeContents(code);
+          var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+          say("selected");
+        }
+        try {
+          if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(code.textContent).then(function () { say("copied"); }, selectIt);
+          else selectIt();
+        } catch (e) { selectIt(); }
+      });
+    }
+  })();
+
+  // Live network stats from world.grin.money. Values stay "—" until data arrives;
+  // a failed, slow (10 s) or malformed response leaves only its own fields unchanged.
+  let statsBusy = false, statsAt = 0;
+  const REFRESH_MS = 300000;
+  async function loadLiveStats() {
+    if (statsBusy) return;
+    statsBusy = true;
+    try {
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      const fmtHR = v => {
+        if (v >= 1e6) return (v / 1e6).toFixed(2) + " MG/s";
+        if (v >= 1e3) return (v / 1e3).toFixed(2) + " kG/s";
+        return v.toFixed(2) + " G/s";
+      };
+      const fmtDiff = v => {
+        if (v >= 1e9) return (v / 1e9).toFixed(2) + "G";
+        if (v >= 1e6) return (v / 1e6).toFixed(2) + "M";
+        if (v >= 1e3) return (v / 1e3).toFixed(1) + "K";
+        return String(v);
+      };
+      const get = url => {
+        const ctl = typeof AbortController === "function" ? new AbortController() : null;
+        const t = ctl ? setTimeout(() => ctl.abort(), 10000) : 0;
+        return fetch(url, ctl ? { signal: ctl.signal } : undefined)
+          .then(r => r.ok ? r.json() : null)
+          .finally(() => clearTimeout(t));
+      };
+      const [sumRes, peersRes, priceRes] = await Promise.allSettled([
+        get("https://world.grin.money/api/summary"),
+        get("https://world.grin.money/api/versions"),
+        get("https://world.grin.money/api/price"),
+      ]);
+      statsAt = Date.now();
+      try {
+        const d = sumRes.status === "fulfilled" ? sumRes.value : null;
+        if (d) {
+          const h = Number(d.tip_height);
+          if (h > 0) {
+            const supply = h * 60;
+            set("lv-height", "#" + h.toLocaleString("en-US"));
+            set("stat-height", h.toLocaleString("en-US"));
+            set("stat-supply", (supply / 1e6).toFixed(1) + "M");
+            set("stat-inflation", (31557600 / supply * 100).toFixed(1) + "%");
+          }
+          if (d.current_hashrate != null && Number.isFinite(Number(d.current_hashrate))) set("stat-hashrate", fmtHR(Number(d.current_hashrate)));
+          if (d.current_difficulty != null && Number.isFinite(Number(d.current_difficulty))) set("stat-difficulty", fmtDiff(Number(d.current_difficulty)));
+        }
+      } catch (e) {}
+      try {
+        const d = peersRes.status === "fulfilled" ? peersRes.value : null;
+        // Active mainnet nodes = distinct mainnet nodes seen in the last 30 days
+        const m = d && d.timeframes && d.timeframes.month && d.timeframes.month.mainnet;
+        const count = Number(m && m.sampled_from) || 0;
+        if (count > 0) set("stat-peers", count.toLocaleString("en-US"));
+      } catch (e) {}
+      try {
+        const d = priceRes.status === "fulfilled" ? priceRes.value : null;
+        const usdt = d && d["GRIN_USDT"], btc = d && d["GRIN_BTC"];
+        if (usdt && usdt.last != null && Number.isFinite(Number(usdt.last))) set("stat-price-usd", "$" + Number(usdt.last).toFixed(4));
+        if (btc && btc.last != null && Number.isFinite(Number(btc.last))) set("stat-price-btc", (Number(btc.last) * 1e8).toFixed(1));
+      } catch (e) {}
+    } finally {
+      statsBusy = false;
+    }
+  }
+  // world.grin.money refreshes every 5 minutes; follow it while the tab is visible,
+  // and catch up at once when a tab comes back with stale figures.
+  setInterval(function () { if (!document.hidden) loadLiveStats(); }, REFRESH_MS);
+  // Folded sections would print as just their summary line; open them for print.
+  window.addEventListener("beforeprint", function () {
+    document.querySelectorAll("details.fold:not([open])").forEach(function (d) {
+      d.setAttribute("open", "");
+      d.setAttribute("data-print-opened", "");
+    });
+  });
+  window.addEventListener("afterprint", function () {
+    document.querySelectorAll("details[data-print-opened]").forEach(function (d) {
+      d.removeAttribute("open");
+      d.removeAttribute("data-print-opened");
+    });
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && Date.now() - statsAt >= REFRESH_MS) loadLiveStats();
+  });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", loadLiveStats);
+  else loadLiveStats();
+</script>
+</body>
+</html>

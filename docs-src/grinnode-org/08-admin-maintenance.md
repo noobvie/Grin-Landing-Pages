@@ -6,7 +6,7 @@ order: 8
 short: Admin
 label: Script 08
 covers: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-08
 ---
 
 Script 08 is the operations toolbox. Nothing here installs a Grin product; everything here keeps the server that runs them healthy, watched and up to date. It is also home to the two things every operator eventually needs — [backups](089-backup-restore.html) and the [full uninstall](#full-grin-cleanup-key-del).
@@ -548,7 +548,7 @@ Downloads the toolkit from GitHub as a tarball and copies it over the directory 
 
 `main` is the right answer unless a maintainer told you otherwise. After a confirmation it downloads, extracts, copies every file in place and makes the scripts executable. Then it offers **Enter** to exit the toolkit completely (start it again to run the new code) or `0` to go back — going back runs a mixed set of old and new scripts, so exit.
 
-- Files you edited locally are overwritten; files removed upstream are left behind. If you would rather update with git, `cd Grin-Node-Toolkit && git pull` does the same thing from the clone directory, and it is what [Getting started](getting-started.html#keeping-the-toolkit-up-to-date) recommends.
+- Files you edited locally are overwritten; files removed upstream are left behind. If you would rather update with git, `cd /opt/grin-node-toolkit && git pull` does the same thing from the toolkit directory (or wherever you cloned it), and it is what [Getting started](getting-started.html#keeping-the-toolkit-up-to-date) recommends.
 - To update from your own fork, save its `owner/repo` slug to `/opt/grin/conf/github_repo.conf`.
 - Updating the toolkit does not touch a node; the node *binary* is updated by Script 01 → *Update Grin binary*.
 - Products that keep a **copy** of code outside the clone — the solo-mining collector and stats page, Fidelius, GrinScan, the node event recorder, Script 04's status page and its collector, the Tiny Explorer, Global Grin Health's ecosystem checker — need their own "deploy new code" action afterwards (for the recorder: `6` → `7` → `I`; for Script 04: *Deploy / Update page* and *Enable REST API*; for the Tiny Explorer: *Update*; for the checker: *Install* under Network Stats); each product page says which.

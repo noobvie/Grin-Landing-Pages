@@ -22,7 +22,7 @@ Grin-Landing-Pages/
 │   ├── sites.conf                 # site manifest (key→domain, archived editions)
 │   ├── analytics.conf             # GA4 site→ID map
 │   ├── custom_repo.conf           # git deploy config
-│   └── installer.conf             # install.ps1 publishing config
+│   └── installer.conf             # option G: install.sh + install.ps1 at grinnode.org/install
 ├── snippets/
 │   └── ga4.html                   # GA4 reference (documentation only)
 ├── docs-src/
@@ -30,7 +30,8 @@ Grin-Landing-Pages/
 ├── tools/
 │   └── build-docs.mjs             # renders docs-src → web/grinnode-org-2027/docs/
 └── web/
-    ├── grin-money-2026/           # grin.money
+    ├── grin-money-2027/           # grin.money
+    ├── grin-money-2026/           # grin.money/2026/ — archived edition
     ├── grinnode-org-2027/         # grinnode.org  (+ docs/ = the generated manual)
     ├── grinnode-org-2026/         # grinnode.org/2026/ — archived edition
     └── fidelius-2026/             # fidelius.grin.money
@@ -44,7 +45,8 @@ Config files in `deploy/` are committed with working defaults — edit in place.
 
 | Directory | Domain | Purpose |
 |---|---|---|
-| `web/grin-money-2026/` | [grin.money](https://grin.money) | Main landing — wallets, ecosystem, toolkit |
+| `web/grin-money-2027/` | [grin.money](https://grin.money) | Main landing for newcomers — "The Jedusor File" case-file edition |
+| `web/grin-money-2026/` | [grin.money/2026/](https://grin.money/2026/) | Archived 2026 edition — published by the grin.money deploy, `noindex`, banner to the current site |
 | `web/grinnode-org-2027/` | [grinnode.org](https://grinnode.org) | Node operator hub — Linux toolkit, Grim wallet |
 | `web/grinnode-org-2027/docs/` | [grinnode.org/docs/](https://grinnode.org/docs/) | Grin Node Toolkit manual — **generated, do not edit the HTML by hand** (only `docs.css` is hand-maintained; see below) |
 | `web/grinnode-org-2026/` | [grinnode.org/2026/](https://grinnode.org/2026/) | Archived 2026 edition — published by the grinnode.org deploy, `noindex`, banner to the current site |
@@ -185,8 +187,9 @@ the template and read, not run through `nginx -t` — do that on the server.)
   and the Top 20 bandwidth parser are gone: those bugs are fixed in the code.
   Script 03's Note stays, because a box scheduled earlier keeps its dead lines
   until someone opens Script 03.
-- **Nym on another site:** `web/grin-money-2026/index.html` still names Nym for
-  Goblin (lines 581, 794). The grinnode.org home page now says Tor.
+- **Nym in the archived grin.money 2026 edition:** `web/grin-money-2026/index.html` still names Nym for
+  Goblin (lines 581, 794); it is served only as the `/2026/` archive. The current
+  grin.money edition (`web/grin-money-2027/`) and the grinnode.org home page say Tor.
 - **Soft 404 elsewhere on the site:** `location /` falls back to `/index.html`,
   so any missing URL outside `/docs/` returns the home page with HTTP 200.
   Fine for a one-page site; worth a real 404 if more pages are added.
@@ -224,7 +227,7 @@ The interactive menu handles everything from there.
 | 8 | IP Filtering | Block/unblock IPs via ufw / iptables / firewalld |
 | 9 | Update Script | `git pull` latest site_manager.sh |
 | A | Analytics (GA4) | Manually tag a directory you submit — any web server (deploys tag automatically) |
-| G | Desktop Installer | Publish `install.ps1` to `<domain>/install` |
+| G | Installers | Publish `install.sh` + `install.ps1` at `<domain>/install` and configure nginx for it |
 
 ### nginx config generated per domain
 
@@ -246,7 +249,8 @@ web dir. Web dir is derived from the domain automatically — no per-site typing
 
 ```
 # <site_key>          <domain>          [web_dir_override | archive]
-grin-money-2026       grin.money
+grin-money-2027       grin.money
+grin-money-2026       grin.money        archive
 grinnode-org-2027     grinnode.org
 grinnode-org-2026     grinnode.org      archive
 some-other-2026       example.org       /var/www/custom/pub
@@ -297,7 +301,9 @@ archived copy:
 - manual links (`docs/…`) go to the current manual, extension-less:
   `docs/getting-started.html` → `/docs/getting-started`;
 - a one-line banner after `<body>`: *You're viewing the 2026 edition of
-  grinnode.org · see the current site* (inline-styled, normal flow).
+  grinnode.org · see the current site*, a bar fixed to the bottom of the
+  viewport (an edition with a fixed header would hide a normal-flow banner),
+  with bottom padding added to `<body>` so it never covers the footer.
 
 The rewrite is idempotent, keeps each file's mode, and touches only the staged
 copy — `web/` is never modified. A page whose first `<head>` is inside a
@@ -328,6 +334,7 @@ Each site maps to its own GA4 Measurement ID in `deploy/analytics.conf`:
 
 ```
 grin-money-2026="G-98GRB5MKDT"
+grin-money-2027="G-98GRB5MKDT"
 grinnode-org-2026="G-EERXEJ55PZ"
 grinnode-org-2027="G-EERXEJ55PZ"
 ```
@@ -354,21 +361,46 @@ re-deploying replaces the old one everywhere.
 
 ---
 
-## Desktop Installer (Option G)
+## Installers (Option G)
 
-Publishes the PowerShell installer from
-[Grin-Money-Desktop](https://github.com/noobvie/Grin-Money-Desktop) so users
-can run:
+One URL for every platform:
 
-```powershell
-irm https://grin.money/install | iex
+```bash
+curl -fsSL https://grinnode.org/install | sudo bash    # Linux → Grin Node Toolkit (install.sh)
 ```
 
-Config is in `deploy/installer.conf`. Use menu option **G** — the script clones
-the repo, verifies the file, deploys it, and prints the nginx location block to
-add if needed.
+```powershell
+irm https://grinnode.org/install | iex                 # Windows → Grin Money Desktop (install.ps1)
+```
 
-For unattended hourly deploys via cron, use `--auto-confirm`:
+nginx answers `/install` by User-Agent: PowerShell gets `install.ps1`, curl/wget
+get `install.sh`, anything else (browsers) gets the site's `install.html` help
+page (shipped in `web/grinnode-org-2027/`). `/install.sh`, `/install.ps1` and a
+`.sha256` beside each are fixed URLs. `grin.money/install` answers 301 to
+grinnode.org so the older Windows one-liner keeps working.
+
+Config is in `deploy/installer.conf` (serving domain, redirect domains, one row
+per script: repo, branch, path, marker line). Menu option **G**:
+
+1. reads each script from its GitHub branch (bare partial clone), refuses it
+   unless the marker line is in its first five lines (and, for `.sh`, it has no
+   CRLF), then swaps it into `/var/www/grin-installers/` with its `.sha256`;
+2. writes the nginx side itself — `conf.d/grin-installer-map.conf` (the
+   User-Agent map), `snippets/grin-installer-{serve,redirect}.conf`, and one
+   `include` line after `index index.html;` in each vhost — then `nginx -t`,
+   putting every touched file back if the test fails;
+3. smoke-tests through DNS/Cloudflare with curl, wget, PowerShell 5.1/7 and
+   browser User-Agents, checks each SHA256, the `no-cache` header and the redirect.
+
+Every installer response is `Cache-Control: no-cache`, because `/install`
+differs per client. In Cloudflare, also add a cache-bypass rule for `/install*`,
+and make sure Bot Fight Mode does not challenge curl or PowerShell there.
+
+Order on a fresh server: add both domains (option 1), deploy the grinnode.org
+site (option 3, for the help page), then option G. Option 1 re-adds the include
+when it rewrites a listed domain's vhost.
+
+During development only, an hourly cron run with `--auto-confirm` publishes every new commit on the branch automatically — with no review, so leave it off in production:
 
 ```bash
 0 * * * * /path/to/site_manager.sh --action deploy-installer --auto-confirm \

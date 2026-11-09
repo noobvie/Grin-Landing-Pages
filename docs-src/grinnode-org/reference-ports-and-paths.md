@@ -4,7 +4,7 @@ description: Every port the Grin Node Toolkit uses, which ones must be open in t
 section: Reference
 order: 1
 covers: 2026-11-06
-updated: 2026-11-06
+updated: 2026-11-08
 ---
 
 One page to look things up: the port each service listens on, which of them need a hole in the firewall, and the directories the toolkit creates. Every value here was checked against the scripts' own constants; where a script lets you change a port, the table gives the default.
@@ -100,7 +100,7 @@ Full archive mode on testnet is not offered — its chain is too large for a pra
 
 ## Where things live under `/opt/grin`
 
-Everything the toolkit installs goes under `/opt/grin/`, one folder per product. The clone of the toolkit itself is wherever you ran `git clone`, and can be deleted or moved without affecting anything below.
+Everything the toolkit installs goes under `/opt/grin/`, one folder per product. The toolkit itself lives in `/opt/grin-node-toolkit` when installed with the one-line installer (or wherever you ran `git clone`), and can be deleted or moved without affecting anything below.
 
 ```text
 /opt/grin/

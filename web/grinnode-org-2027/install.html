@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Install the Grin Node Toolkit on a Linux server with one command: curl -fsSL https://grinnode.org/install | sudo bash. Read the script and its SHA256 first.">
+  <meta name="robots" content="index, follow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="GrinNode.org">
+  <meta property="og:title" content="Install the Grin Node Toolkit in one line">
+  <meta property="og:description" content="One URL for Linux and Windows: curl or wget get the Linux node toolkit installer, PowerShell gets Grin Money Desktop, a browser gets this page.">
+  <meta property="og:url" content="https://grinnode.org/install">
+  <meta property="og:image" content="https://grinnode.org/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="GrinNode.org — Run Grin. Own the network.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Install the Grin Node Toolkit in one line">
+  <meta name="twitter:description" content="curl -fsSL https://grinnode.org/install | sudo bash — read the script and its SHA256 first if you like.">
+  <meta name="twitter:image" content="https://grinnode.org/og-image.png">
+  <meta name="theme-color" content="#050a06">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="https://grinnode.org/install">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&amp;family=VT323&amp;display=swap">
+  <title>Install the Grin Node Toolkit in one line | GrinNode.org</title>
+  <style>
+    /* Same Phosphor look as the home page (index.html), trimmed to what this page uses. */
+    :root{
+      color-scheme:dark;
+      --bg:#050a06;--bg2:#0a140c;--bg3:#020402;
+      --fg:#9dffb0;--dim:#7dbf8a;--hot:#e9ffe9;--warn:#ffcc4d;
+      --line:#1f4a29;--line2:#2f6b3c;
+      --f-crt:"VT323","Courier New",monospace;
+      --f-mono:"IBM Plex Mono",ui-monospace,Consolas,"Liberation Mono",monospace;
+      --gutl:max(16px,env(safe-area-inset-left,0px));
+      --gutr:max(16px,env(safe-area-inset-right,0px));
+      --glow:0 0 5px rgba(120,255,150,.28);
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html{background:var(--bg);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--f-mono);text-shadow:var(--glow)}
+    body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none}
+    body::before{z-index:49;background:radial-gradient(ellipse at center,transparent 70%,rgba(0,0,0,.3) 100%)}
+    body::after{z-index:50;background:repeating-linear-gradient(to bottom,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
+    a{color:var(--hot);text-underline-offset:3px}
+    a:hover{color:var(--fg)}
+    :focus-visible{outline:2px dashed var(--warn);outline-offset:3px}
+    ::selection{background:var(--fg);color:var(--bg);text-shadow:none}
+    .skip{position:absolute;left:var(--gutl);top:-120px;z-index:70;background:var(--warn);color:var(--bg);text-shadow:none;padding:10px 16px;font-weight:700;text-decoration:none}
+    .skip:focus{top:calc(8px + env(safe-area-inset-top,0px))}
+    .wrap{max-width:1000px;margin:0 auto;padding-left:var(--gutl);padding-right:var(--gutr)}
+    .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+    .tmux{position:sticky;top:0;z-index:40;background:var(--fg);color:var(--bg);text-shadow:none;padding-top:env(safe-area-inset-top,0px)}
+    .tmux nav{max-width:1000px;margin:0 auto;padding:4px var(--gutr) 4px var(--gutl);display:flex;flex-wrap:wrap;align-items:center;gap:2px;font:500 13px/1.2 var(--f-mono)}
+    .tmux a{color:var(--bg);text-decoration:none;white-space:nowrap;padding:4px 6px;min-height:40px;display:inline-flex;align-items:center}
+    .tmux a:hover,.tmux a[aria-current]{background:var(--bg);color:var(--fg)}
+    .tmux a:focus-visible{outline:2px solid var(--bg);outline-offset:-2px}
+    .tmux .brand{font-weight:700}
+
+    section{padding:44px 0 24px;border-bottom:1px dashed var(--line)}
+    .cmd{font:400 22px/1.25 var(--f-crt);color:var(--hot);margin:0 0 6px;overflow-wrap:anywhere}
+    .cmd .p{color:var(--dim)}
+    h1,h2,h3{font-family:var(--f-crt);font-weight:400;color:var(--hot);text-wrap:balance;overflow-wrap:break-word}
+    h1{font-size:clamp(44px,8vw,76px);line-height:.95;margin:8px 0 18px}
+    h2{font-size:clamp(30px,5vw,44px);line-height:1.02;margin:0 0 14px}
+    h3{font-size:24px;line-height:1.1;margin:22px 0 8px}
+    p{margin:0 0 14px}
+    .lead{max-width:74ch}
+    .dim{color:var(--dim)}
+    code{font-family:var(--f-mono);color:var(--hot);overflow-wrap:anywhere}
+    .badge{display:inline-block;border:1px solid var(--warn);color:var(--warn);font-size:13px;padding:2px 8px;margin:0 0 12px}
+    .tags{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;padding:0}
+    .tags li{border:1px solid var(--line2);padding:2px 8px;font-size:12px;color:var(--dim)}
+
+    .term{border:1px solid var(--fg);background:var(--bg3);min-width:0;margin:0 0 14px;max-width:820px}
+    .term .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--fg);padding:4px 4px 4px 12px;font-size:12px;color:var(--dim)}
+    .term .bar span{overflow-wrap:anywhere;min-width:0}
+    .term .bar button{font:500 13px var(--f-mono);background:var(--fg);color:var(--bg);text-shadow:none;border:0;padding:6px 14px;min-height:40px;min-width:64px;cursor:pointer;flex:0 0 auto}
+    .term .bar button:hover{background:var(--hot)}
+    .term pre{margin:0;padding:14px 16px;overflow-x:auto;white-space:pre;font:14px/1.7 var(--f-mono);color:var(--hot)}
+    .term .c{color:var(--dim)}
+    /* One-line commands wrap on phones rather than hiding their end off-screen. */
+    .term pre.wrap1{white-space:pre-wrap;overflow-wrap:anywhere}
+
+    ol.does{list-style:none;margin:0 0 16px;padding:0;counter-reset:st;max-width:78ch}
+    /* Not a grid: inline <code>/<a>/<b> inside an item would each become a grid cell. */
+    ol.does li{counter-increment:st;position:relative;padding-left:3.5ch;margin-bottom:6px;overflow-wrap:anywhere}
+    ol.does li::before{content:counter(st) ".";color:var(--warn);position:absolute;left:0}
+
+    .sum{font-size:13px;color:var(--dim);overflow-wrap:anywhere;max-width:820px;margin:0 0 14px}
+    .sum .h{color:var(--fg)}
+
+    details.disclose{margin:6px 0 0;border-top:1px dotted var(--line2);padding-top:6px;max-width:820px}
+    details.disclose>summary{cursor:pointer;list-style:none;font-size:15px;color:var(--fg);padding:6px 0;min-height:44px;display:flex;align-items:center}
+    details.disclose>summary::-webkit-details-marker{display:none}
+    details.disclose>summary::before{content:"[+]";color:var(--warn);margin-right:1ch;flex:0 0 auto}
+    details.disclose[open]>summary::before{content:"[-]"}
+
+    table.how{border-collapse:collapse;width:100%;max-width:820px;font-size:14px;margin:0 0 14px}
+    table.how th,table.how td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+    table.how th{color:var(--dim);font-weight:500}
+    @media (max-width:560px){
+      table.how thead{display:none}
+      table.how tr{display:block;border:1px solid var(--line);margin:0 0 8px}
+      table.how td{display:block;border:0;padding:6px 10px}
+      table.how td::before{content:attr(data-h) ": ";color:var(--dim)}
+    }
+
+    footer{padding:36px 0 48px;font-size:14px;color:var(--dim)}
+    footer p{margin:0 0 8px}
+    footer a{color:var(--fg)}
+
+    @media (max-width:640px){
+      .tmux nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+      .tmux nav::-webkit-scrollbar{display:none}
+      .tmux a{flex:0 0 auto}
+      section{padding-top:34px}
+    }
+    @media print{
+      body::before,body::after,.tmux,.skip,.term .bar button{display:none}
+      html,body,.term,.term pre{background:#fff}
+      body,body *{color:#000 !important;text-shadow:none !important}
+      .term,table.how th,table.how td{border-color:#000}
+      .term pre{white-space:pre-wrap;overflow-wrap:anywhere}
+    }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Install the Grin Node Toolkit in one line",
+    "url": "https://grinnode.org/install",
+    "description": "One URL for Linux and Windows installers: curl or wget get the Grin Node Toolkit installer, PowerShell gets Grin Money Desktop.",
+    "isPartOf": { "@type": "WebSite", "name": "GrinNode.org", "url": "https://grinnode.org/" }
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <span class="sr" id="copy-status" aria-live="polite"></span>
+  <header class="tmux">
+    <nav aria-label="Primary navigation">
+      <a class="brand" href="/">[grinnode.org]</a>
+      <a href="#linux">Linux</a>
+      <a href="#windows">Windows</a>
+      <a href="#how">How it works</a>
+      <a href="/docs/">Manual</a>
+    </nav>
+  </header>
+
+  <main id="main" class="wrap">
+    <section aria-labelledby="top-h">
+      <p class="cmd"><span class="p" aria-hidden="true">anon@grinnode:~$ </span>lynx grinnode.org/install</p>
+      <h1 id="top-h">Install in one line.</h1>
+      <p class="lead">One address, two installers. The server looks at the program asking for it: <b>curl</b> and <b>wget</b> get the Linux installer, <b>PowerShell</b> gets the Windows one, and a browser gets this page. Prefer to read a script before running it? Each one has its own fixed address and a SHA256 checksum below.</p>
+    </section>
+
+    <section id="linux" aria-labelledby="linux-h">
+      <h2 id="linux-h">Linux server &mdash; Grin Node Toolkit</h2>
+      <ul class="tags" aria-label="Supported systems">
+        <li>Ubuntu 24.04+</li><li>Rocky 10+</li><li>AlmaLinux 10+</li><li>run as root</li><li>a fresh VPS is best</li>
+      </ul>
+      <p>Connect to your server over SSH and paste:</p>
+      <div class="term">
+        <div class="bar"><span>root@vps: ~</span><button type="button" class="copy" data-target="cmd-linux" hidden>copy</button></div>
+<pre id="cmd-linux" class="wrap1">curl -fsSL https://grinnode.org/install | sudo bash</pre>
+      </div>
+      <p class="dim">Already logged in as root? Leave out <code>sudo</code>: <code>curl -fsSL https://grinnode.org/install | bash</code></p>
+      <p>What the script does, and nothing more:</p>
+      <ol class="does">
+        <li>Checks that it runs as root on Linux with <code>apt-get</code> or <code>dnf</code>.</li>
+        <li>Installs <code>git</code> if it is missing.</li>
+        <li>Downloads the toolkit from <a href="https://github.com/noobvie/Grin-Node-Toolkit" rel="noopener">GitHub</a> into <code>/opt/grin-node-toolkit</code>. A toolkit already in that folder is left as it is.</li>
+        <li>Starts the toolkit menu. The node itself is installed only when you choose it there (<b>1) Build/Control Grin Node</b>).</li>
+      </ol>
+      <p class="sum">SHA256 of <a href="/install.sh">install.sh</a>: <span class="h" id="sum-sh">see <a href="/install.sh.sha256">install.sh.sha256</a></span></p>
+
+      <details class="disclose">
+        <summary>Read it before you run it</summary>
+        <div class="term">
+          <div class="bar"><span>download, check, read, run</span><button type="button" class="copy" data-target="cmd-linux-read" hidden>copy</button></div>
+<pre id="cmd-linux-read">curl -fsSLO https://grinnode.org/install.sh
+curl -fsSL https://grinnode.org/install.sh.sha256 | sha256sum -c -
+less install.sh
+sudo bash install.sh</pre>
+        </div>
+        <p>The source is also on GitHub: <a href="https://github.com/noobvie/Grin-Node-Toolkit/blob/main/install.sh" rel="noopener">install.sh</a>.</p>
+      </details>
+      <details class="disclose">
+        <summary>Options</summary>
+        <p>Piped into bash, pass options after <code>bash -s --</code>:</p>
+        <div class="term">
+          <div class="bar"><span>install only, start the menu later</span><button type="button" class="copy" data-target="cmd-linux-opt" hidden>copy</button></div>
+<pre id="cmd-linux-opt" class="wrap1">curl -fsSL https://grinnode.org/install | sudo bash -s -- --no-launch</pre>
+        </div>
+        <p><code>--dir PATH</code> installs somewhere other than <code>/opt/grin-node-toolkit</code>. <code>--no-launch</code> installs without starting the menu. <code>--branch NAME</code> picks a branch other than <code>main</code>.</p>
+      </details>
+      <details class="disclose">
+        <summary>Install by hand instead</summary>
+        <div class="term">
+          <div class="bar"><span>root@vps: ~</span><button type="button" class="copy" data-target="cmd-linux-hand" hidden>copy</button></div>
+<pre id="cmd-linux-hand">git clone https://github.com/noobvie/Grin-Node-Toolkit.git
+cd Grin-Node-Toolkit
+chmod +x grin-node-toolkit.sh scripts/*.sh
+sudo ./grin-node-toolkit.sh</pre>
+        </div>
+      </details>
+      <p>Next: the <a href="/docs/getting-started">getting-started guide</a> walks through the first run.</p>
+    </section>
+
+    <section id="windows" aria-labelledby="win-h">
+      <h2 id="win-h">Windows &mdash; Grin Money Desktop</h2>
+      <p class="badge">Work in progress &mdash; not ready for general use yet</p>
+      <p>A Windows wallet app that runs its own Grin node. Open <b>PowerShell as Administrator</b> and paste:</p>
+      <div class="term">
+        <div class="bar"><span>PS C:\&gt;</span><button type="button" class="copy" data-target="cmd-win" hidden>copy</button></div>
+<pre id="cmd-win" class="wrap1">irm https://grinnode.org/install | iex</pre>
+      </div>
+      <p>What the script does:</p>
+      <ol class="does">
+        <li>Picks <code>D:\Grin</code>, or <code>C:\Grin</code>, on a drive with at least 20&nbsp;GiB free.</li>
+        <li>Installs Git and Node.js LTS with <code>winget</code> if they are missing.</li>
+        <li>Downloads the app from <a href="https://github.com/noobvie/Grin-Money-Desktop" rel="noopener">GitHub</a> into that folder, or updates an existing copy.</li>
+        <li>Starts the app, which opens in your browser.</li>
+      </ol>
+      <p class="sum">SHA256 of <a href="/install.ps1">install.ps1</a>: <span class="h" id="sum-ps1">see <a href="/install.ps1.sha256">install.ps1.sha256</a></span></p>
+      <details class="disclose">
+        <summary>Read it before you run it</summary>
+        <div class="term">
+          <div class="bar"><span>download, check, read, run</span><button type="button" class="copy" data-target="cmd-win-read" hidden>copy</button></div>
+<pre id="cmd-win-read">cd $env:USERPROFILE
+iwr https://grinnode.org/install.ps1 -OutFile install.ps1 -UseBasicParsing
+Get-FileHash install.ps1    <span class="c"># compare with the SHA256 above (case does not matter)</span>
+notepad install.ps1
+iex (Get-Content install.ps1 -Raw -Encoding UTF8)</pre>
+        </div>
+        <p>Run this in the <b>Administrator</b> PowerShell; without admin rights the script stops and asks you to.</p>
+        <p>The source is also on GitHub: <a href="https://github.com/noobvie/Grin-Money-Desktop/blob/main/install.ps1" rel="noopener">install.ps1</a>.</p>
+      </details>
+    </section>
+
+    <section id="how" aria-labelledby="how-h">
+      <h2 id="how-h">How one address serves both</h2>
+      <p class="lead">Every request names the program that sent it (the <code>User-Agent</code> header). The server answers <code>https://grinnode.org/install</code> like this:</p>
+      <table class="how">
+        <thead><tr><th scope="col">Asked by</th><th scope="col">Gets</th></tr></thead>
+        <tbody>
+          <tr><td data-h="Asked by">PowerShell (Windows PowerShell 5.1, PowerShell 7)</td><td data-h="Gets"><a href="/install.ps1">install.ps1</a> &mdash; Grin Money Desktop</td></tr>
+          <tr><td data-h="Asked by">curl, wget</td><td data-h="Gets"><a href="/install.sh">install.sh</a> &mdash; Grin Node Toolkit</td></tr>
+          <tr><td data-h="Asked by">a browser, anything else</td><td data-h="Gets">this page</td></tr>
+        </tbody>
+      </table>
+      <p>The fixed addresses <a href="/install.sh">/install.sh</a> and <a href="/install.ps1">/install.ps1</a> always return the same script to everyone, with checksums at <a href="/install.sh.sha256">/install.sh.sha256</a> and <a href="/install.ps1.sha256">/install.ps1.sha256</a>. The older <code>https://grin.money/install</code> redirects here.</p>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p aria-hidden="true">anon@grinnode:~$ logout</p>
+    <p><a href="/">grinnode.org</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Money-Desktop" rel="noopener">Grin Money Desktop</a></p>
+  </footer>
+
+  <script>
+    (function () {
+      // Copy buttons stay hidden until this script runs, so a no-JS visitor never sees a dead button.
+      var status = document.getElementById("copy-status");
+      document.querySelectorAll("button.copy").forEach(function (btn) {
+        var code = document.getElementById(btn.getAttribute("data-target"));
+        if (!code) return;
+        btn.hidden = false;
+        btn.setAttribute("aria-label", "Copy: " + code.textContent.split("\n")[0]);
+        function say(msg) {
+          // The button's aria-label is fixed, so announce through the shared live region.
+          btn.textContent = msg; status.textContent = msg === "copied" ? "Command copied" : "Command selected, copy it now";
+          clearTimeout(btn._t); btn._t = setTimeout(function () { btn.textContent = "copy"; status.textContent = ""; }, 2000);
+        }
+        function selectIt() {
+          var r = document.createRange(); r.selectNodeContents(code);
+          var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+          say("selected");
+        }
+        btn.addEventListener("click", function () {
+          // Copy the command only: comment spans (".c") are notes for the reader.
+          var clone = code.cloneNode(true);
+          clone.querySelectorAll(".c").forEach(function (c) { c.remove(); });
+          var text = clone.textContent.replace(/[ \t]+$/gm, "");
+          try {
+            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(function () { say("copied"); }, selectIt);
+            else selectIt();
+          } catch (e) { selectIt(); }
+        });
+      });
+
+      // Print shows every folded section, then folds back the ones the reader had closed.
+      addEventListener("beforeprint", function () {
+        document.querySelectorAll("details:not([open])").forEach(function (d) { d.open = true; d.setAttribute("data-print-opened", ""); });
+      });
+      addEventListener("afterprint", function () {
+        document.querySelectorAll("details[data-print-opened]").forEach(function (d) { d.open = false; d.removeAttribute("data-print-opened"); });
+      });
+
+      // Live checksums: the scripts are published separately from this page, so read
+      // the current .sha256 files instead of hard-coding a value that would go stale.
+      [["sum-sh", "/install.sh.sha256"], ["sum-ps1", "/install.ps1.sha256"]].forEach(function (pair) {
+        var out = document.getElementById(pair[0]);
+        if (!out || !window.fetch) return;
+        fetch(pair[1], { cache: "no-store" }).then(function (r) {
+          return r.ok ? r.text() : null;
+        }).then(function (t) {
+          var h = t && t.trim().split(/\s+/)[0];
+          if (h && /^[0-9a-f]{64}$/.test(h)) { out.textContent = h; out.setAttribute("title", "from " + pair[1]); }
+        }).catch(function () { /* keep the link fallback */ });
+      });
+    })();
+  </script>
+</body>
+</html>

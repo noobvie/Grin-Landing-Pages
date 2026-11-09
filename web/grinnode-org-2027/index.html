@@ -149,6 +149,9 @@
     .term .bar button:hover{background:var(--hot)}
     .term pre{margin:0;padding:14px 16px;overflow-x:auto;white-space:pre;font:14px/1.7 var(--f-mono);color:var(--hot)}
     .term--sm pre{font-size:12.5px;padding:12px}
+    .term .note{margin:0;padding:8px 12px;border-top:1px dotted var(--line2)}
+    /* A one-line command wraps on phones rather than hiding its end off-screen. */
+    .term pre.wrap1{white-space:pre-wrap;overflow-wrap:anywhere}
     details.disclose{margin-top:14px;border-top:1px dotted var(--line2);padding-top:10px}
     details.disclose>summary{cursor:pointer;list-style:none;font-size:14px;color:var(--fg);padding:6px 0;min-height:40px;display:flex;align-items:center}
     details.disclose>summary::-webkit-details-marker{display:none}
@@ -394,10 +397,8 @@
         <div class="term">
           <div class="bar"><span>root@vps: ~</span><button type="button" id="copy" data-target="code-clone">copy</button></div>
           <span class="sr" id="copy-status" aria-live="polite"></span>
-<pre id="code-clone">git clone https://github.com/noobvie/Grin-Node-Toolkit.git
-cd Grin-Node-Toolkit
-chmod +x grin-node-toolkit.sh scripts/*.sh
-sudo ./grin-node-toolkit.sh</pre>
+<pre id="code-clone" class="wrap1">curl -fsSL https://grinnode.org/install | sudo bash</pre>
+          <p class="hint note">Installs git if needed, downloads the toolkit to <code>/opt/grin-node-toolkit</code> and opens its menu. <a href="/install">Read the script first, or install by hand &rarr;</a></p>
         </div>
       </div>
     </section>
@@ -475,7 +476,7 @@ chmod +x Grim-*.AppImage &amp;&amp; ./Grim-*.AppImage</pre>
       <ol class="steps">
         <li><h3>Understand</h3><p>Learn what Grin is, why it is different from other cryptocurrencies, and why running a node matters.</p></li>
         <li><h3>Choose</h3><p>Pick your path: Linux server node via Grin Node Toolkit, desktop wallet via Grim, or Goblin mobile wallet on your phone.</p></li>
-        <li><h3>Install</h3><p>Follow the quick start &mdash; copy the commands, point at your VPS or download the installer.</p></li>
+        <li><h3>Install</h3><p>Follow the quick start &mdash; paste one line on your VPS, or download the installer.</p></li>
         <li><h3>Operate</h3><p>Check status, API endpoints, snapshots, wallet services, backups, and monitoring after setup.</p></li>
       </ol>
     </section>
