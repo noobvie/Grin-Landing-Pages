@@ -8,7 +8,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="GrinNode.org">
   <meta property="og:title" content="Install the Grin Node Toolkit in one line">
-  <meta property="og:description" content="One URL for Linux and Windows: curl or wget get the Linux node toolkit installer, PowerShell gets Grin Money Desktop, a browser gets this page.">
+  <meta property="og:description" content="One URL for Linux and Windows: curl or wget get the Linux node toolkit installer, PowerShell gets Grin Node Desktop, a browser gets this page.">
   <meta property="og:url" content="https://grinnode.org/install">
   <meta property="og:image" content="https://grinnode.org/og-image.png">
   <meta property="og:image:width" content="1200">
@@ -134,7 +134,7 @@
     "@type": "WebPage",
     "name": "Install the Grin Node Toolkit in one line",
     "url": "https://grinnode.org/install",
-    "description": "One URL for Linux and Windows installers: curl or wget get the Grin Node Toolkit installer, PowerShell gets Grin Money Desktop.",
+    "description": "One URL for Linux and Windows installers: curl or wget get the Grin Node Toolkit installer, PowerShell gets Grin Node Desktop.",
     "isPartOf": { "@type": "WebSite", "name": "GrinNode.org", "url": "https://grinnode.org/" }
   }
   </script>
@@ -174,7 +174,7 @@
       <ol class="does">
         <li>Checks that it runs as root on Linux with <code>apt-get</code> or <code>dnf</code>.</li>
         <li>Installs <code>git</code> if it is missing.</li>
-        <li>Downloads the toolkit from <a href="https://github.com/noobvie/Grin-Node-Toolkit" rel="noopener">GitHub</a> into <code>/opt/grin-node-toolkit</code>. A toolkit already in that folder is left as it is.</li>
+        <li>Downloads the toolkit from <a href="https://github.com/noobvie/Grin-Node-Toolkit" rel="noopener">GitHub</a> into <code>/root/grin-node-toolkit</code>. A toolkit already in that folder is left as it is.</li>
         <li>Starts the toolkit menu. The node itself is installed only when you choose it there (<b>1) Build/Control Grin Node</b>).</li>
       </ol>
       <p class="sum">SHA256 of <a href="/install.sh">install.sh</a>: <span class="h" id="sum-sh">see <a href="/install.sh.sha256">install.sh.sha256</a></span></p>
@@ -197,14 +197,14 @@ sudo bash install.sh</pre>
           <div class="bar"><span>install only, start the menu later</span><button type="button" class="copy" data-target="cmd-linux-opt" hidden>copy</button></div>
 <pre id="cmd-linux-opt" class="wrap1">curl -fsSL https://grinnode.org/install | sudo bash -s -- --no-launch</pre>
         </div>
-        <p><code>--dir PATH</code> installs somewhere other than <code>/opt/grin-node-toolkit</code>. <code>--no-launch</code> installs without starting the menu. <code>--branch NAME</code> picks a branch other than <code>main</code>.</p>
+        <p><code>--dir PATH</code> installs somewhere other than <code>/root/grin-node-toolkit</code>. <code>--no-launch</code> installs without starting the menu. <code>--branch NAME</code> picks a branch other than <code>main</code>.</p>
       </details>
       <details class="disclose">
         <summary>Install by hand instead</summary>
         <div class="term">
           <div class="bar"><span>root@vps: ~</span><button type="button" class="copy" data-target="cmd-linux-hand" hidden>copy</button></div>
-<pre id="cmd-linux-hand">git clone https://github.com/noobvie/Grin-Node-Toolkit.git
-cd Grin-Node-Toolkit
+<pre id="cmd-linux-hand">git clone https://github.com/noobvie/Grin-Node-Toolkit.git grin-node-toolkit
+cd grin-node-toolkit
 chmod +x grin-node-toolkit.sh scripts/*.sh
 sudo ./grin-node-toolkit.sh</pre>
         </div>
@@ -213,7 +213,7 @@ sudo ./grin-node-toolkit.sh</pre>
     </section>
 
     <section id="windows" aria-labelledby="win-h">
-      <h2 id="win-h">Windows &mdash; Grin Money Desktop</h2>
+      <h2 id="win-h">Windows &mdash; Grin Node Desktop</h2>
       <p class="badge">Work in progress &mdash; not ready for general use yet</p>
       <p>A Windows wallet app that runs its own Grin node. Open <b>PowerShell as Administrator</b> and paste:</p>
       <div class="term">
@@ -224,7 +224,7 @@ sudo ./grin-node-toolkit.sh</pre>
       <ol class="does">
         <li>Picks <code>D:\Grin</code>, or <code>C:\Grin</code>, on a drive with at least 20&nbsp;GiB free.</li>
         <li>Installs Git and Node.js LTS with <code>winget</code> if they are missing.</li>
-        <li>Downloads the app from <a href="https://github.com/noobvie/Grin-Money-Desktop" rel="noopener">GitHub</a> into that folder, or updates an existing copy.</li>
+        <li>Downloads the app from <a href="https://github.com/noobvie/Grin-Node-Desktop" rel="noopener">GitHub</a> into that folder, or updates an existing copy.</li>
         <li>Starts the app, which opens in your browser.</li>
       </ol>
       <p class="sum">SHA256 of <a href="/install.ps1">install.ps1</a>: <span class="h" id="sum-ps1">see <a href="/install.ps1.sha256">install.ps1.sha256</a></span></p>
@@ -239,7 +239,7 @@ notepad install.ps1
 iex (Get-Content install.ps1 -Raw -Encoding UTF8)</pre>
         </div>
         <p>Run this in the <b>Administrator</b> PowerShell; without admin rights the script stops and asks you to.</p>
-        <p>The source is also on GitHub: <a href="https://github.com/noobvie/Grin-Money-Desktop/blob/main/install.ps1" rel="noopener">install.ps1</a>.</p>
+        <p>The source is also on GitHub: <a href="https://github.com/noobvie/Grin-Node-Desktop/blob/main/install.ps1" rel="noopener">install.ps1</a>.</p>
       </details>
     </section>
 
@@ -249,7 +249,7 @@ iex (Get-Content install.ps1 -Raw -Encoding UTF8)</pre>
       <table class="how">
         <thead><tr><th scope="col">Asked by</th><th scope="col">Gets</th></tr></thead>
         <tbody>
-          <tr><td data-h="Asked by">PowerShell (Windows PowerShell 5.1, PowerShell 7)</td><td data-h="Gets"><a href="/install.ps1">install.ps1</a> &mdash; Grin Money Desktop</td></tr>
+          <tr><td data-h="Asked by">PowerShell (Windows PowerShell 5.1, PowerShell 7)</td><td data-h="Gets"><a href="/install.ps1">install.ps1</a> &mdash; Grin Node Desktop</td></tr>
           <tr><td data-h="Asked by">curl, wget</td><td data-h="Gets"><a href="/install.sh">install.sh</a> &mdash; Grin Node Toolkit</td></tr>
           <tr><td data-h="Asked by">a browser, anything else</td><td data-h="Gets">this page</td></tr>
         </tbody>
@@ -260,7 +260,7 @@ iex (Get-Content install.ps1 -Raw -Encoding UTF8)</pre>
 
   <footer class="wrap">
     <p aria-hidden="true">anon@grinnode:~$ logout</p>
-    <p><a href="/">grinnode.org</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Money-Desktop" rel="noopener">Grin Money Desktop</a></p>
+    <p><a href="/">grinnode.org</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Desktop" rel="noopener">Grin Node Desktop</a></p>
   </footer>
 
   <script>

@@ -100,7 +100,7 @@ Full archive mode on testnet is not offered — its chain is too large for a pra
 
 ## Where things live under `/opt/grin`
 
-Everything the toolkit installs goes under `/opt/grin/`, one folder per product. The toolkit itself lives in `/opt/grin-node-toolkit` when installed with the one-line installer (or wherever you ran `git clone`), and can be deleted or moved without affecting anything below.
+Everything the toolkit installs goes under `/opt/grin/`, one folder per product. The toolkit itself lives in `/root/grin-node-toolkit` when installed with the one-line installer (or wherever you ran `git clone`), and can be deleted or moved without affecting anything below.
 
 ```text
 /opt/grin/

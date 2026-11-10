@@ -272,7 +272,7 @@ Email needs the `mail` command (`apt install mailutils`) and a working local mai
 
 ### Mass deployment
 
-`4` opens a fleet menu for servers you administer over SSH. The fleet lives in `/opt/grin/conf/mass_deploy.conf`, one server per line (defaults: port 22, user root, toolkit at `/opt/grin-node-toolkit`):
+`4` opens a fleet menu for servers you administer over SSH. The fleet lives in `/opt/grin/conf/mass_deploy.conf`, one server per line (defaults: port 22, user root, toolkit at `/root/grin-node-toolkit`):
 
 ```text
 label|host|ssh_port|user|key_path|toolkit_path
@@ -308,7 +308,7 @@ Remote *start* and *Upgrade grin binary* launch every installed node at once, wi
 label|ip|port|user|password
 ```
 
-`port` and `user` may be empty (22 and root). A line with no password uses one shared password, asked once. It installs `sshpass` if needed (from EPEL on Rocky and Alma), asks for the toolkit path (default `/opt/grin-node-toolkit`), and writes only the servers whose key login then works. The toolkit never saves a password, but your list file holds them, so answer yes to `Securely delete the password file <src> now? [Y/n]`. That question comes only at the end of a finished run. If a run stops early (no lines read, no shared password, `sshpass` or the key could not be set up), delete the file yourself with `shred -u`.
+`port` and `user` may be empty (22 and root). A line with no password uses one shared password, asked once. It installs `sshpass` if needed (from EPEL on Rocky and Alma), asks for the toolkit path (default `/root/grin-node-toolkit`), and writes only the servers whose key login then works. The toolkit never saves a password, but your list file holds them, so answer yes to `Securely delete the password file <src> now? [Y/n]`. That question comes only at the end of a finished run. If a run stops early (no lines read, no shared password, `sshpass` or the key could not be set up), delete the file yourself with `shred -u`.
 
 **Host keys.** Fleet connections trust a server's SSH key the first time they meet it and refuse a key that changes, so a swapped server never receives commands silently. The cost is that a server you rebuild at the same address stops working until its old key is forgotten; see [Troubleshooting](#troubleshooting).
 
@@ -548,7 +548,7 @@ Downloads the toolkit from GitHub as a tarball and copies it over the directory 
 
 `main` is the right answer unless a maintainer told you otherwise. After a confirmation it downloads, extracts, copies every file in place and makes the scripts executable. Then it offers **Enter** to exit the toolkit completely (start it again to run the new code) or `0` to go back — going back runs a mixed set of old and new scripts, so exit.
 
-- Files you edited locally are overwritten; files removed upstream are left behind. If you would rather update with git, `cd /opt/grin-node-toolkit && git pull` does the same thing from the toolkit directory (or wherever you cloned it), and it is what [Getting started](getting-started.html#keeping-the-toolkit-up-to-date) recommends.
+- Files you edited locally are overwritten; files removed upstream are left behind. If you would rather update with git, `cd /root/grin-node-toolkit && git pull` does the same thing from the toolkit directory (or wherever you cloned it), and it is what [Getting started](getting-started.html#keeping-the-toolkit-up-to-date) recommends.
 - To update from your own fork, save its `owner/repo` slug to `/opt/grin/conf/github_repo.conf`.
 - Updating the toolkit does not touch a node; the node *binary* is updated by Script 01 → *Update Grin binary*.
 - Products that keep a **copy** of code outside the clone — the solo-mining collector and stats page, Fidelius, GrinScan, the node event recorder, Script 04's status page and its collector, the Tiny Explorer, Global Grin Health's ecosystem checker — need their own "deploy new code" action afterwards (for the recorder: `6` → `7` → `I`; for Script 04: *Deploy / Update page* and *Enable REST API*; for the Tiny Explorer: *Update*; for the checker: *Install* under Network Stats); each product page says which.
@@ -582,7 +582,7 @@ The screen opens with a red box listing the steps and asks you to type exactly `
 
 What is left: nginx, certbot and its certificates, Tor itself, the `grin` system user, swapfiles under `/opt/grin/swap` (deleted with step 4, but their `/etc/fstab` lines remain — remove them by hand), the OS automatic security-update policy from [Automatic Security Updates](#automatic-security-updates) if you enabled it (the cleanup prints a reminder; use *Disable* before you delete the clone if you want it gone), and the toolkit clone, which you delete yourself. If you kept the event recorder's evidence at step 3c, it is in `/root/grin-node-events-saved_<UTC>/` — raw, unmasked logs, plus the public history's secret salt; delete it once you no longer need it. An admin user and `grinops` group made by the [guided SSH setup](#guided-setup-w), and the SSH drop-in, are not touched either.
 
-> **Note:** If the toolkit clone lives directly under `/opt` with a name starting `grin` — the mass-deployment default is `/opt/grin-node-toolkit` — step 4 keeps it and prints `Kept: <path> (the toolkit running this cleanup)`. A clone **inside** a listed path, such as one under `/opt/grin`, is not kept: step 4 warns that the path contains the toolkit, and answering `y` deletes the toolkit too. To keep it, answer `N`, move the clone out, and run the cleanup again. Also, step 6 looks in `/var/log` and a `log/` folder that the toolkit never writes; the real logs in `/opt/grin/logs` went with step 4 — including this run's own log, so the *Review log* path printed at the end no longer exists.
+> **Note:** If the toolkit clone lives directly under `/opt` with a name starting `grin` — such as `/opt/grin-node-toolkit`, the mass-deployment default in older versions — step 4 keeps it and prints `Kept: <path> (the toolkit running this cleanup)`. A clone **inside** a listed path, such as one under `/opt/grin`, is not kept: step 4 warns that the path contains the toolkit, and answering `y` deletes the toolkit too. To keep it, answer `N`, move the clone out, and run the cleanup again. Also, step 6 looks in `/var/log` and a `log/` folder that the toolkit never writes; the real logs in `/opt/grin/logs` went with step 4 — including this run's own log, so the *Review log* path printed at the end no longer exists.
 
 ## Troubleshooting
 

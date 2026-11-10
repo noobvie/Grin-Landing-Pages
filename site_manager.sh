@@ -668,13 +668,14 @@ TMP_NGINX
 
     if [[ "$OS" == "linux" ]]; then
         ln -sf "$conf_file" "$NGINX_ENABLED/$DOMAIN" 2>/dev/null || true
-        # The fresh vhost has no /install include; put it back if option G
-        # serves or redirects the installers on this domain. After the symlink,
-        # so the loaded-vhost check sees the site as enabled.
-        _installer_refresh_after_add "$DOMAIN"
         # Remove default site if it blocks port 443
         [[ -L "$NGINX_ENABLED/default" ]] && rm -f "$NGINX_ENABLED/default" && \
             print_warn "Removed nginx default site symlink to prevent port 443 conflicts."
+        # The fresh vhost has no /install include; put it back if option G
+        # serves or redirects the installers on this domain. Last, so the site
+        # is enabled (the loaded-vhost check) and the default site is gone
+        # (its `nginx -t` must not fail on a conflict that is not ours).
+        _installer_refresh_after_add "$DOMAIN"
     fi
 
     nginx_reload

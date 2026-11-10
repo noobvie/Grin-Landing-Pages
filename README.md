@@ -370,7 +370,7 @@ curl -fsSL https://grinnode.org/install | sudo bash    # Linux → Grin Node Too
 ```
 
 ```powershell
-irm https://grinnode.org/install | iex                 # Windows → Grin Money Desktop (install.ps1)
+irm https://grinnode.org/install | iex                 # Windows → Grin Node Desktop (install.ps1)
 ```
 
 nginx answers `/install` by User-Agent: PowerShell gets `install.ps1`, curl/wget
