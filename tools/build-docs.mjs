@@ -90,7 +90,7 @@ function inline(text) {
   s = esc(s);
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => {
     const ext = /^https?:\/\//.test(u);
-    return `<a href="${u}"${ext ? ' target="_blank" rel="noopener"' : ""}>${t}</a>`;
+    return `<a href="${u}"${ext ? ' target="_blank" rel="noopener noreferrer nofollow"' : ""}>${t}</a>`;
   });
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:)!?]|$)/g, "$1<em>$2</em>");
@@ -267,7 +267,7 @@ function page(p, pages, idx) {
   ];
   const toc = headings.length > 1 ? `<aside class="toc" aria-label="On this page"><div class="toc-title">On this page</div><nav>${headings.map((h) => `<a href="#${h.id}">${h.text}</a>`).join("")}</nav></aside>` : "";
   const stamp = (meta.covers || meta.updated)
-    ? `<div class="stamp">${meta.covers ? `<span>Covers the toolkit as of <time datetime="${meta.covers}">${fmtDate(meta.covers)}</time></span>` : ""}${meta.updated ? `<span>Page updated <time datetime="${meta.updated}">${fmtDate(meta.updated)}</time></span>` : ""}<a href="${REPO_URL}" target="_blank" rel="noopener">Toolkit on GitHub</a></div>`
+    ? `<div class="stamp">${meta.covers ? `<span>Covers the toolkit as of <time datetime="${meta.covers}">${fmtDate(meta.covers)}</time></span>` : ""}${meta.updated ? `<span>Page updated <time datetime="${meta.updated}">${fmtDate(meta.updated)}</time></span>` : ""}<a href="${REPO_URL}" target="_blank" rel="noopener noreferrer nofollow">Toolkit on GitHub</a></div>`
     : "";
   const pager = `<nav class="pager" aria-label="Previous and next page">${prev ? `<a class="pager-prev" href="${prev.slug}.html"><span>Previous</span><strong>${esc(prev.meta.title)}</strong></a>` : "<span></span>"}${next ? `<a class="pager-next" href="${next.slug}.html"><span>Next</span><strong>${esc(next.meta.title)}</strong></a>` : ""}</nav>`;
 
@@ -309,7 +309,7 @@ function page(p, pages, idx) {
         <a href="../#why-nodes">Why nodes</a><a href="../#run">Run a node</a><a href="../#toolkit">Toolkit</a><a href="../#grim">Wallets &amp; Docker</a><a href="../#why-grin">Why Grin</a><a href="../#status">Status</a>
       </div>
       <div class="actions">
-        <a class="btn" href="${REPO_URL}" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn" href="${REPO_URL}" target="_blank" rel="noopener noreferrer nofollow">GitHub</a>
         <button class="btn menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
       </div>
     </nav>
@@ -338,7 +338,7 @@ ${html}
   <footer class="footer">
     <div class="footerInner">
       <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
-      <span><a href="${REPO_URL}" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="${REPO_URL}/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+      <span><a href="${REPO_URL}" target="_blank" rel="noopener noreferrer nofollow">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="${REPO_URL}/issues" target="_blank" rel="noopener noreferrer nofollow">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener noreferrer nofollow">Grin</a></span>
     </div>
   </footer>
 

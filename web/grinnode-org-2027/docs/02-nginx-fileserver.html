@@ -36,7 +36,7 @@
         <a href="../#why-nodes">Why nodes</a><a href="../#run">Run a node</a><a href="../#toolkit">Toolkit</a><a href="../#grim">Wallets &amp; Docker</a><a href="../#why-grin">Why Grin</a><a href="../#status">Status</a>
       </div>
       <div class="actions">
-        <a class="btn" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn" href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener noreferrer nofollow">GitHub</a>
         <button class="btn menu-btn" id="menuToggle" type="button" aria-expanded="false" aria-controls="sidebar">Contents</button>
       </div>
     </nav>
@@ -53,7 +53,7 @@
         <div class="kicker">Scripts · Script 02</div>
         <h1>Host a file server for chain snapshots</h1>
         <p class="lead">How Script 02 sets up an nginx file server with a Let's Encrypt certificate to distribute Grin chain snapshots, plus rate caps, fail2ban and IP blocking.</p>
-        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-11-06">6 Nov 2026</time></span><span>Page updated <time datetime="2026-11-06">6 Nov 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Toolkit on GitHub</a></div>
+        <div class="stamp"><span>Covers the toolkit as of <time datetime="2026-11-06">6 Nov 2026</time></span><span>Page updated <time datetime="2026-11-06">6 Nov 2026</time></span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener noreferrer nofollow">Toolkit on GitHub</a></div>
 <p>Script 02 turns your server into a web host for the <a href="reference-glossary#chain-data-and-snapshots">chain snapshots</a> that Script 03 produces. It installs <strong><a href="reference-glossary#nginx-vhosts-and-reverse-proxies">nginx</a></strong> (a web server), asks for a domain name, gets a free HTTPS certificate from <strong><a href="reference-glossary#let-s-encrypt-and-certbot">Let's Encrypt</a></strong>, and publishes a folder as a plain, browsable download page. Anyone running Script 01 anywhere in the world can then fetch your snapshot instead of syncing from genesis — the same way you fetched one when you built your node.</p>
 <p>You need a synced node from <a href="01-build-node">Script 01</a> and a domain name whose DNS you control. Script 02 sets up the <em>web host</em>; <a href="03-share-chain-data">Script 03</a> then fills it with an archive and keeps it fresh.</p>
 <h2 id="what-it-does">What it does<a class="anchor" href="#what-it-does" aria-label="Link to this section">#</a></h2>
@@ -112,7 +112,7 @@ check_status_before_download.txt        &quot;Sync completed…&quot; or &quot;S
 grin_pruned_mainnet_20260919.tar.gz     the snapshot
 grin_pruned_mainnet_20260919.sha256     its checksum
 README.txt                              download and install instructions for humans</code></pre></div>
-<p><a href="https://prunemain.grin.money" target="_blank" rel="noopener">prunemain.grin.money</a> is a live example — with the landing page from menu <code>11</code> installed rather than the bare list.</p>
+<p><a href="https://prunemain.grin.money" target="_blank" rel="noopener noreferrer nofollow">prunemain.grin.money</a> is a live example — with the landing page from menu <code>11</code> installed rather than the bare list.</p>
 <h3 id="what-was-created">What was created<a class="anchor" href="#what-was-created" aria-label="Link to this section">#</a></h3>
 <div class="table-wrap"><table><thead><tr><th>Path</th><th>Purpose</th></tr></thead><tbody><tr><td><code>/etc/nginx/sites-available/&lt;domain&gt;</code></td><td>The site configuration (symlinked from <code>sites-enabled/</code>)</td></tr><tr><td><code>/var/www/fullmain</code>, <code>/var/www/prunemain</code> or <code>/var/www/prunetest</code></td><td>The web root Script 03 publishes into</td></tr><tr><td><code>/etc/letsencrypt/live/&lt;domain&gt;/</code></td><td>The certificate and key, renewed by certbot's timer</td></tr><tr><td><code>/var/log/nginx/&lt;domain&gt;-access.log</code>, <code>&lt;domain&gt;-error.log</code></td><td>Per-site request and error logs</td></tr><tr><td><code>/opt/grin/logs/nginx-session-&lt;date&gt;.log</code></td><td>This session's log</td></tr></tbody></table></div>
 <p>Custom domains (menu <code>3</code>) default to <code>/var/www/fileserver</code> or a folder you name. With the quota option on they also get <code>/usr/local/bin/nginx-bandwidth-limiter.sh</code>, a <code>/etc/cron.d/nginx-bandwidth-limiter</code> job every 5 minutes with a monthly reset, and a <code>/var/log/nginx/&lt;domain&gt;-bandwidth.log</code>.</p>
@@ -163,7 +163,7 @@ README.txt                              download and install instructions for hu
   <footer class="footer">
     <div class="footerInner">
       <span>From Saigon with ❤️ <svg viewBox="0 0 27 18" width="21" height="14" role="img" aria-label="Yellow flag with three red stripes" style="vertical-align:-2px;border-radius:2px"><rect width="27" height="18" fill="#FFCD00"/><rect y="4" width="27" height="2" fill="#DA251D"/><rect y="8" width="27" height="2" fill="#DA251D"/><rect y="12" width="27" height="2" fill="#DA251D"/></svg></span>
-      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener">Grin</a></span>
+      <span><a href="https://github.com/noobvie/Grin-Node-Toolkit" target="_blank" rel="noopener noreferrer nofollow">Grin Node Toolkit</a> &nbsp;/&nbsp; <a href="https://github.com/noobvie/Grin-Node-Toolkit/issues" target="_blank" rel="noopener noreferrer nofollow">Report an issue</a> &nbsp;/&nbsp; <a href="https://grin.mw" target="_blank" rel="noopener noreferrer nofollow">Grin</a></span>
     </div>
   </footer>
 
