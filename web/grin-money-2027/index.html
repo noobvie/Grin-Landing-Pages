@@ -348,7 +348,7 @@
     <dt>Status</dt><dd>Running. No pre-mine, no ICO, no founder&rsquo;s reward.</dd>
   </dl>
   <h1 id="top-h">Grin: private cash, with nothing on the chain to read.</h1>
-  <p class="lead">Grin is a privacy-focused cryptocurrency using the Mimblewimble protocol. It was described by an anonymous author, started by a pseudonymous developer, and is kept running by ordinary people. This file explains it from the start, no background needed.</p>
+  <p class="lead">Grin is digital cash that keeps your business to yourself, built on a protocol called Mimblewimble. An anonymous author sketched it, a pseudonymous developer built it, and ordinary people keep it running. This file walks you through it from page one; no background needed.</p>
   <p>What you hold is your own business. Grin records no amounts and no addresses on its chain, so there is no balance for anyone to read: not <button type="button" class="rx">a block explorer</button>, not <button type="button" class="rx">a data broker</button>. Exchanges and hosted wallets you use still see what passes through them.</p>
   <div class="cta">
     <a class="btn pri" href="#get-started">Get started</a>
@@ -407,7 +407,7 @@
   </ul>
   <div class="exhibits">
     <div class="ex"><p class="tag">A-1 · Ownership</p><h3>No company</h3><p>No company, no foundation, no pre-mine. Development is funded by donations.</p></div>
-    <div class="ex"><p class="tag">A-2 · Privacy</p><h3>Private by default</h3><p>No amounts and no addresses on chain. Transactions in a block merge together, which makes them harder to link, but an observer running many nodes can still link many of them. Grin reduces linkability; it does not remove it.</p></div>
+    <div class="ex"><p class="tag">A-2 · Privacy</p><h3>Private by default</h3><p>There is no public mode to switch off by mistake. Every Grin payment, large or small, uses the same hidden-amount maths.</p></div>
     <div class="ex"><p class="tag">A-3 · Size</p><h3>A small chain</h3><p>Cut-through keeps the chain small: a pruned node needs only a few gigabytes.</p></div>
     <div class="ex"><p class="tag">A-4 · Launch</p><h3>Fair launch</h3><p>No ICO, no airdrop, no venture backing. 60 GRIN per minute, the same forever.</p></div>
   </div>
@@ -431,15 +431,15 @@
   <p class="fileno"><span>Exhibit C · Findings</span><span aria-hidden="true">Page 4 of 13</span></p>
   <h2 id="why-h">How Grin compares: nine findings</h2>
   <ol class="findings" role="list">
-    <li><div><h3>Time-backed monetary policy</h3><p>60 GRIN are minted on average every 60 seconds, forever. No halving shock, no supply cliff: every block pays the same 60 GRIN in 2019 and in 2099. One minute of network time equals 60 new coins, so the supply is as predictable as a clock.</p></div></li>
+    <li><div><h3>Money that runs on a clock</h3><p>Every block pays 60 GRIN, about one block a minute, and there is no last block: no halving, no final coin, no end date. The first block in 2019 paid 60 GRIN, and so will every block after this one. Tell anyone a date and they can work out the supply on that day.</p></div></li>
     <li><div><h3>Privacy on chain, honestly stated</h3><p>No addresses and no amounts are ever written to the blockchain. Which outputs were spent together can often be worked out by someone watching the network with many nodes. Grin reduces this linkability; it does not remove it.</p></div></li>
     <li><div><h3>Compared with gold: checkable in digital form</h3><p>Nobody can audit the world&rsquo;s gold supply, and tokenized gold depends on trusting a custodian. Grin&rsquo;s supply is mathematically verifiable by anyone running a full node: every node checks that the hidden amounts add up to the known emission. No custodian required.</p></div></li>
     <li><div><h3>Compared with USD-pegged coins: no decree</h3><p>Fiat-backed stablecoins import their central bank&rsquo;s monetary policy. Grin&rsquo;s emission is fixed in the consensus rules. Changing it would take a hard fork (a rule change every node must upgrade to) that node operators would have to choose to run, and there is no company or foundation to decree one.</p></div></li>
     <li><div><h3>Compared with Bitcoin: a reward that keeps paying</h3><p>Bitcoin&rsquo;s 21 million cap means that once the last coin is mined, miners rely entirely on transaction fees. Whether that keeps the network secure is an open economic question. Grin&rsquo;s constant block reward keeps paying miners.</p></div></li>
-    <li><div><h3>A small footprint</h3><p>Since 2019 the chain has stayed compact: spent outputs are cut through, so a pruned node stays small.</p></div></li>
-    <li><div><h3>Emission for generations</h3><p>With a fixed reward and a growing supply, the inflation rate approaches zero over time, with no hard stops or abrupt halvings. Annual inflation is about 13% in late 2026 and falls every year. No coins were set aside for insiders.</p></div></li>
+    <li><div><h3>No account, no permission</h3><p>There is nothing to sign up for. Install a wallet, write down its recovery phrase, and you can receive GRIN. The protocol has no gatekeeper who can freeze a wallet or refuse a payment.</p></div></li>
+    <li><div><h3>Inflation that fades by itself</h3><p>New coins arrive at the same pace while the pile they land on keeps growing, so each year adds a smaller share. Annual inflation is about 13% in late 2026 and lower every year after, without ever reaching zero, because issuance never stops. No coins were set aside for insiders.</p></div></li>
     <li><div><h3>Simple and open source</h3><p>A deliberately minimal protocol. No proprietary components, no hidden supply curves, no pre-allocated coins. Open source since 2016.</p></div></li>
-    <li><div><h3>Time cannot be copied <span class="hint">(our opinion)</span></h3><p>We think this is what makes Grin hard to replicate: anyone can fork the code, but a fork resets the clock. The proof-of-work mined since 2019 cannot be mined again.</p></div></li>
+    <li><div><h3>Funded in the open</h3><p>There is no treasury skimmed from mining. Development has been paid for by donations since the start, and today one community council holds the funds in a multisig wallet that needs several members to sign.</p></div></li>
   </ol>
 </article>
 
@@ -450,7 +450,7 @@
   <ul class="items" role="list">
     <li><b>Peer to peer</b><span>Direct payments between individuals, no intermediary</span></li>
     <li><b>Micropayments</b><span>Small payments with low fees</span></li>
-    <li><b>Online shopping</b><span>Private online payments: amounts and addresses never appear on chain</span></li>
+    <li><b>Online shopping</b><span>Pay a shop without leaving a public receipt for anyone to look up</span></li>
     <li><b>Remittances</b><span>International transfers person to person, with no bank in between</span></li>
     <li><b>Privacy</b><span>Amounts and addresses stay off the chain</span></li>
     <li><b>Predictability</b><span>Known emission: anyone can compute supply at any block</span></li>
@@ -483,8 +483,7 @@
       <ul class="links" role="list">
         <li><a href="https://drop.grin.money/" target="_blank" rel="noopener noreferrer nofollow"><span class="n">drop.grin.money</span><span class="note">small free amounts to practice slatepack (faucet, in testing)</span></a></li>
         <li><a href="https://www.gate.com/trade/GRIN_USDT" target="_blank" rel="noopener noreferrer nofollow"><span class="n">Gate</span><span class="note">largest GRIN/USDT market (KYC)</span></a></li>
-        <li><a href="https://noirtrade.com/" target="_blank" rel="noopener noreferrer nofollow"><span class="n">NoirTrade</span><span class="note">smaller no-KYC venue, thin liquidity</span></a></li>
-        <li><a href="https://nonlogs.io/" target="_blank" rel="noopener noreferrer nofollow"><span class="n">Nonlogs</span><span class="note">smaller no-KYC venue, thin liquidity</span></a></li>
+        <li><a href="https://noirtrade.com/" target="_blank" rel="noopener noreferrer nofollow"><span class="n">NoirTrade</span><span class="note">no-KYC, very thin order book</span></a></li>
         <li><a href="#mining"><span class="n">Mine it</span><span class="note">ASIC or GPU, see p. 7</span></a></li>
       </ul>
       <p class="note" style="margin-top:8px">Listings change: check current listings before you trade.</p>
@@ -571,8 +570,8 @@
 <article class="sheet" id="run-a-node" aria-labelledby="node-h">
   <p class="fileno"><span>Memo · Field office</span><span aria-hidden="true">Page 8 of 13</span></p>
   <h2 id="node-h">Run a Grin node</h2>
-  <p class="lead">One Bash toolkit for a Linux server: full node, pruned node, explorer, public API, mining pool, wallet portal, Nostr relay, all semi-automated. A dozen live demo sites are built with it.</p>
-  <p>The toolkit has its own home now, with a manual and setup paths for servers, home servers and desktops: <a href="https://grinnode.org/" target="_blank" rel="noopener noreferrer nofollow">grinnode.org</a>.</p>
+  <p class="lead">Have a Linux server? Three commands open a menu that sets up a Grin node for you, and later an explorer, a public API, a mining pool, wallet services or a Nostr relay if you want them.</p>
+  <p>Full instructions, the manual, and other ways to run a node (home server, desktop) live at <a href="https://grinnode.org/" target="_blank" rel="noopener noreferrer nofollow">grinnode.org</a>.</p>
   <div class="transcript">
     <div class="bar"><span>root@vps: ~</span><button type="button" id="copy" data-target="code-clone" hidden>copy</button></div>
     <span class="sr" id="copy-status" aria-live="polite"></span>
